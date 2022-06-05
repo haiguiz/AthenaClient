@@ -1686,3 +1686,5 @@ local oldindex; oldindex = hookmetamethod(game,"__namecall",function(s,...)
 end)
 
 lib:Note("Athena Client","Loaded in "..tostring(math.round(tick() - STick)).." second(s)")
+
+return "Beta"
