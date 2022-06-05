@@ -2,7 +2,7 @@
 -- ui might not be accurate cuz exactly recreating it is way to time consuming
 
 local STick = tick()
-local ret = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/GFXTI/d/main/AthenaUi.lua"))()
+local lib = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/GFXTI/d/main/AthenaUi.lua"))():Library()
 local togs = {
     SilentAim = {
         Toggled = false;
@@ -34,7 +34,6 @@ local togs = {
 		['Entity Esp'] = false;
 		['Printer Esp'] = false;
 		['Shipment Esp'] = false;
-		['Refresh Rate'] = 0.0001;
 		Tracers = false;
 		TracerMouse = false;
 	};
@@ -42,11 +41,14 @@ local togs = {
 		Toggled = false;
 		Rate = 26;
 	};
-	KillauraWhitelist = {
-		"";
+	Killaura = {
+		Whitelist = {};
+		Toggled = false;
+		Type = 1;
 	};
-	HealauraBlacklist = {
-		"";
+	Healaura = {
+		Whitelist = {};
+		Toggled = false;
 	};
 	Printers = {
 		Toggled = false;
@@ -65,17 +67,23 @@ local togs = {
 		Z = 0;
 		Lookat = "Mouse";
 	};
+	SpinBot = {
+		Toggled = false;
+		Rate = .05;
+	};
+	Audio = {
+		Id = "";
+		Pitch = "1";
+	};
     NoSpread = false;
 	InfJump = false;
 	TriggerBot = false;
 	InfHunger = false;
-	Killaura = false;
 	AutoReload = false;
 	AutoDrink = false;
 	InfEnergy = false;
 	NCS = false;
 	AutoInvisJet = false;
-	Healaura = false;
 	MaterialFarm = false;
 	DestroyPrints = false;
 	AInfCapacity = false;
@@ -84,6 +92,8 @@ local togs = {
 	AntiSpyCheck = false;
 	AureusFarm = false;
 	AdminNotifier = false;
+	LoopTime = .2;
+	PPD = false;
 }
 local PlayerSelected
 local Collecting
@@ -96,6 +106,9 @@ fovcircle.Thickness = 2
 
 local oldshake = getrenv()._G.CSH
 local shoot = getrenv()._G.FR
+local olddrawbullet = getrenv()._G.DrawBullet
+
+local CLFrame = Instance.new("Frame")
 
 -- the things
 
@@ -272,6 +285,152 @@ local espupdates = {}
 local connections = {}
 local playernames = {}
 
+local stepped = run.Stepped
+local function draggable(obj)
+	spawn(function()
+		obj.Active = true
+		local minitial
+		local initial
+		local isdragging
+		obj.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				minitial = input.Position
+				initial = obj.Position
+				local con
+				con = stepped:Connect(function()
+					local delta = Vector3.new(mouse.X, mouse.Y, 0) - minitial
+					obj.Position = UDim2.new(initial.X.Scale, initial.X.Offset + delta.X, initial.Y.Scale, initial.Y.Offset + delta.Y)
+				end)
+				input.Changed:Connect(function()
+					if input.UserInputState == Enum.UserInputState.End then
+						con:Disconnect()
+					end
+				end)
+			end
+		end)
+	end)
+end
+
+local Chatlog do
+	local ChatLogs = Instance.new("ScreenGui")
+	local Top = Instance.new("Frame")
+	local Min = Instance.new("TextButton")
+	local UIGradient = Instance.new("UIGradient")
+	local Commands = Instance.new("TextLabel")
+	local UIGradient_2 = Instance.new("UIGradient")
+	local Logs = Instance.new("ScrollingFrame")
+	local UIListLayout = Instance.new("UIListLayout")
+	local UIPadding = Instance.new("UIPadding")
+
+	ChatLogs.Name = "ChatLogs"
+	ChatLogs.Enabled = false
+	ChatLogs.Parent = sv.CoreGui
+
+	CLFrame.Parent = ChatLogs
+	CLFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	CLFrame.BackgroundTransparency = 0.350
+	CLFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	CLFrame.BorderSizePixel = 2
+	CLFrame.Position = UDim2.new(0.258771926, 0, 0.771712184, 0)
+	CLFrame.Size = UDim2.new(0, 209, 0, 148)
+
+	Top.Name = "Top"
+	Top.Parent = CLFrame
+	Top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Top.BackgroundTransparency = 0.650
+	Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Top.BorderSizePixel = 2
+	Top.Position = UDim2.new(0, 0, -0.00165289803, 0)
+	Top.Size = UDim2.new(0, 209, 0, 22)
+
+	Min.Name = "Min"
+	Min.Parent = Top
+	Min.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	Min.BorderColor3 = Color3.fromRGB(51, 51, 51)
+	Min.BorderSizePixel = 2
+	Min.Position = UDim2.new(0.879999995, -1, 0.125, 0)
+	Min.Size = UDim2.new(0, 17, 0, 17)
+	Min.Font = Enum.Font.SourceSans
+	Min.LineHeight = 1.150
+	Min.Text = "-"
+	Min.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Min.TextSize = 39.000
+
+	UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
+	UIGradient.Rotation = 90
+	UIGradient.Parent = Top
+
+	Commands.Name = "Commands"
+	Commands.Parent = Top
+	Commands.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Commands.BackgroundTransparency = 1.000
+	Commands.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Commands.BorderSizePixel = 0
+	Commands.Position = UDim2.new(0.0306459349, 0, -0.0416666679, 0)
+	Commands.Size = UDim2.new(0, 95, 0, 24)
+	Commands.Font = Enum.Font.SourceSansBold
+	Commands.Text = "Chat Logs"
+	Commands.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Commands.TextSize = 20.000
+	Commands.TextStrokeTransparency = 0.500
+	Commands.TextXAlignment = Enum.TextXAlignment.Left
+
+	UIGradient_2.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
+	UIGradient_2.Rotation = 90
+	UIGradient_2.Parent = CLFrame
+
+	Logs.Name = "Logs"
+	Logs.Parent = CLFrame
+	Logs.Active = true
+	Logs.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Logs.BackgroundTransparency = 1.000
+	Logs.BorderSizePixel = 0
+	Logs.Position = UDim2.new(0, 0, 0.160509259, 0)
+	Logs.Size = UDim2.new(0, 209, 0, 123)
+	Logs.CanvasSize = UDim2.new(0,0,0,0)
+	Logs.ScrollBarThickness = 2
+
+	UIListLayout.Parent = Logs
+	UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	UIListLayout.Padding = UDim.new(0, 1)
+
+	UIPadding.Parent = Logs
+	UIPadding.PaddingLeft = UDim.new(0, 5)
+
+	Min.Activated:Connect(function()
+		ChatLogs.Enabled = false
+	end)
+
+	Logs.ChildAdded:Connect(function(item)
+		local os = Logs.AbsoluteCanvasSize
+		local op = Logs.CanvasPosition
+		Logs.CanvasSize = Logs.CanvasSize + UDim2.new(0,0,item.Size.Y.Scale,item.Size.Y.Offset + 1)
+		if math.round(os.Y-123) == op.Y then
+			Logs.CanvasPosition = Logs.AbsoluteCanvasSize
+		end
+	end)
+
+	draggable(CLFrame)
+
+	function Chatlog(user,msg)
+		local Text = Instance.new("TextLabel")
+		local size = sv.TextService:GetTextSize(user..": "..msg,15,"SourceSansLight",Vector2.new(202,1/0)).Y
+		Text.Name = "Text"
+		Text.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Text.BackgroundTransparency = 1.000
+		Text.Position = UDim2.new(0, 0, 0, 0)
+		Text.Size = UDim2.new(0,202,0,size)
+		Text.Font = Enum.Font.SourceSansBold
+		Text.Text = user..": "..msg
+		Text.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Text.TextSize = 15.000
+		Text.TextStrokeTransparency = 0.500
+		Text.TextXAlignment = Enum.TextXAlignment.Left
+		Text.TextWrapped = true
+		Text.Parent = Logs
+	end
+end
+
 local function RandomString(int)
 	local charset = "QWERTYUIOPASDFGHJKLZXCVBNM1234567890"
 	local fstr = ""
@@ -283,7 +442,9 @@ local function RandomString(int)
 	return fstr
 end
 
-local function CharacterAdded(c)
+local function CharacterAdded()
+	local c = lp.Character
+	task.wait(.5)
 	if togs.AutoInvisJet then
 		Instance.new("Model",c:WaitForChild("Util")).Name = "Jetpack"
 	end
@@ -298,7 +459,7 @@ local function CharacterAdded(c)
 		end
 	end)
 
-	c:WaitForChild("Humanoid").Changed:Connect(function(t)
+	c:WaitForChild("Humanoid").Changed:Connect(function()
 		if togs.AutoSemiGod.Toggled and togs.AutoSemiGod.Rate >= c.Humanoid.Health then
 			SemiGod()
 		end
@@ -462,67 +623,62 @@ local function ClosestToMouse()
     return plr
 end
 
+local function RemoveUpdate(thing)
+	for i,v in pairs(espupdates) do
+		if v.Instance == thing then
+			pcall(function(s) -- god this is so messy can anbody help
+				v.cham:Destroy()
+				v.string1:Remove()
+				v.string2:Remove()
+				v.tracer:Remove()
+				v.Instance = nil
+				v.string1 = nil
+				v.string2 = nil
+				v.tracer = nil
+				v.cham = nil
+				v.esptype = nil
+				table.remove(espupdates,i)
+				table.foreach(s,function()end)
+			end,{})
+		end
+	end
+end
+
 local function AddUpdate(thing)
 	if thing.Parent ~= nil then
-		local s1 = Drawing.new("Text")
-		local s2 = Drawing.new("Text")
-		local t = Drawing.new("Line")
+		local tbl = {
+			["Instance"] = thing;
+			["string1"] = Drawing.new("Text");
+			["string2"] = Drawing.new("Text");
+			["tracer"] = Drawing.new("Line");
+			['cham'] = Instance.new("Highlight");
+		}
 		local con
 		con = thing.Parent.ChildRemoved:Connect(function(item)
 			if item == thing then
-				s1:Remove()
-				s2:Remove()
-				t:Remove()
-				t = nil
-				s2 = nil
-				s1 = nil
+				RemoveUpdate(thing)
 				con:Disconnect()
 			end
 		end)
 
-		if plrs:FindFirstChild(tostring(thing)) then
-			table.insert(espupdates,{
-				["Instance"] = thing;
-				["string1"] = s1;
-				["string2"] = s2;
-				["tracer"] = t;
-				['esptype'] = 'Player Esp';
-			})
-			return
+		if plrs:FindFirstChild(tostring(thing)) and togs.Esp["Player Esp"] then
+			tbl['esptype'] = 'Player Esp'
 		end
 
-		if thing ~= nil and thing.Parent == workspace.MoneyPrinters then
-			table.insert(espupdates,{
-				["Instance"] = thing;
-				["string1"] = s1;
-				["string2"] = s2;
-				["tracer"] = t;
-				['esptype'] = 'Printer Esp';
-			})
-			return
+		if thing ~= nil and thing.Parent == workspace.MoneyPrinters and togs.Esp["Printer Esp"] then
+			tbl['esptype'] = 'Printer Esp'
 		end
 
-		if thing ~= nil and thing.Parent == workspace.Entities and thing.Name:find("Shipment") then
-			table.insert(espupdates,{
-				["Instance"] = thing;
-				["string1"] = s1;
-				["string2"] = s2;
-				["tracer"] = t;
-				['esptype'] = 'Shipment Esp';
-			})
-			return
+		if thing ~= nil and thing.Parent == workspace.Entities and thing.Name:find("Shipment") and togs.Esp["Shipment Esp"] then
+			tbl['esptype'] = 'Shipment Esp'
 		end
 
-		if thing ~= nil and thing.Parent == workspace.Entities and thing.Name == "Gun" then
-			table.insert(espupdates,{
-				["Instance"] = thing;
-				["string1"] = s1;
-				["string2"] = s2;
-				["tracer"] = t;
-				['esptype'] = 'Entity Esp';
-			})
-			return
+		if thing ~= nil and thing.Parent == workspace.Entities and thing.Name == "Gun" and togs.Esp["Entity Esp"] then
+			tbl['esptype'] = 'Entity Esp'
 		end
+
+		table.insert(espupdates,tbl)
+		return
 	end
 end
 
@@ -540,7 +696,7 @@ local function Hasnt(inst)
 end
 
 local function UpdateEsp(v) -- good luck reading any of this
-	if v['tracer'] ~= nil and v['string1'] ~= nil and v['string2'] ~= nil then
+	if v['tracer'] ~= nil and v['string1'] ~= nil and v['string2'] ~= nil and v['Instance'] ~= nil then
 		local string1 = ""
 		local string2 = ""
 		local color
@@ -570,7 +726,8 @@ local function UpdateEsp(v) -- good luck reading any of this
 		end
 
 		if v["esptype"] == "Entity Esp" then
-			string1 = v["Instance"].Int.Value
+			local t = v['Instance']
+			string1 = t.Int and t.Int.Value or t.Int2.Value
 			instance = v["Instance"]
 			color = v["Instance"]:FindFirstChildWhichIsA("BasePart").Color
 		end
@@ -584,29 +741,38 @@ local function UpdateEsp(v) -- good luck reading any of this
 			yp = true
 		end
 
-		local pos,vis = workspace.CurrentCamera:WorldToViewportPoint(v["esptype"] == "Player Esp" and instance.Head:GetPivot().p or instance:GetPivot().p)
+		if instance==nil then return end
+
+		local pos,vis = workspace.CurrentCamera:WorldToViewportPoint(instance:GetPivot().p)
 
 		v['string2'].Text = string2
 		v['string2'].Position = Vector2.new(pos.x,pos.y)
-		v['string2'].Color = Color3.new(1,1,1)
+		v['string2'].Color = Color3.new(.7,.7,.7)
 		v['string2'].Outline = true
 		v['string2'].Size = 16
 		v['string2'].Center = true
 
 		v['string1'].Text = string1
-		v['string1'].Color = color
+		v['string1'].Color = color or Color3.new(.5,.5,.5)
 		v['string1'].Outline = true
 		v['string1'].Center = true
 		v['string1'].Size = 16
 		v['string1'].Position = Vector2.new(pos.x,pos.y-v['string2'].TextBounds.Y+(yp and v['string1'].TextBounds.Y or 0))
 
 		v["tracer"].To = Vector2.new(pos.x,pos.y)
-		v["tracer"].Color = color
+		v["tracer"].Color = color or Color3.new(.5,.5,.5)
  		v['tracer'].From = (togs.Esp.TracerMouse and uis:GetMouseLocation() or Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y - 100))
 
 		v["string1"].Visible = (EspCheckEnabled(v['esptype']) and vis and instance and instance.Parent ~= nil)
 		v['string2'].Visible = (EspCheckEnabled(v['esptype']) and vis and instance and instance.Parent ~= nil)
 		v['tracer'].Visible = (EspCheckEnabled("Tracers") and EspCheckEnabled(v['esptype']) and vis and instance and instance.Parent ~= nil)
+		
+		v["cham"].OutlineTransparency = 1
+		v['cham'].FillTransparency = .5
+		v['cham'].Adornee = (v["esptype"] == "Player Esp" and instance or instance:FindFirstChildOfClass("BasePart"))
+		v["cham"].Parent = sv.CoreGui
+		v['cham'].FillColor = color or Color3.new(.5,.5,.5)
+		v['cham'].Enabled = EspCheckEnabled(v['esptype'])
 	end
 end
 
@@ -750,6 +916,12 @@ connections['PlayerAdded'] = plrs.PlayerAdded:Connect(function(player)
 	task.wait()
 	table.insert(playernames,player.Name)
 	AddUpdate(player)
+	player.Chatted:Connect(function(msg)
+		Chatlog(player.Name,msg)
+		if msg == "I am using piano!" and togs.PPD then
+			lib:Note("Athena Client",player.Name.." is using Piano.")
+		end
+	end)
 end)
 
 connections['PlayerRemoving'] = plrs.PlayerRemoving:Connect(function(player)
@@ -793,6 +965,12 @@ connections["WalkspeedRenderStepped"] = run.RenderStepped:Connect(function()
 	end
 end)
 
+connections['CursorStepped'] = run.Stepped:Connect(function()
+	if togs.Cursor.Toggled then
+		mouse.Icon = togs.Cursor.Id
+	end
+end)
+
 -- sloppy connection code 😴
 
 connections["RifleAmmoChanged"] = lp.PlayerData['Rifle Ammo'].Changed:Connect(function(t)
@@ -820,8 +998,6 @@ connections["SMGAmmoChanged"] = lp.PlayerData['SMG Ammo'].Changed:Connect(functi
 end)
 
 -- end of sloppy connections
-
-local lib = ret:Library()
 
 local Player = lib:Window("Player")
 local Farm = lib:Window("Farming")
@@ -888,6 +1064,27 @@ end)
 
 Player:Toggle("Bypass Spy Checks",togs.AntiSpyCheck,function(t)
 	togs.AntiSpyCheck = t
+end)
+
+local thing = Player:ToggleDropdown("Spin Bot",togs.SpinBot.Toggled,function(t)
+	togs.SpinBot.Toggled = t
+	task.spawn(function()
+		local a
+		while togs.SpinBot.Toggled and task.wait(togs.SpinBot.Rate) do
+			if a then a:Stop() end
+			local c = lp.Character
+			if c then
+				c:PivotTo(c:GetPivot() * CFrame.Angles(0,math.rad(math.random(-180,180)),0))
+			end
+			a = game.Players.LocalPlayer.Character.Humanoid:LoadAnimation(sv.ReplicatedStorage.Animations.WheelAnims[({"Sit","Lay"})[math.random(1,2)]])
+			a:Play()
+		end
+		a:Stop()
+	end)
+end)
+
+thing:Slider("Speed",0,2,togs.SpinBot.Rate,true,function(t)
+	togs.SpinBot.Rate = t
 end)
 
 local thing = Player:SplitFrame()
@@ -973,12 +1170,12 @@ Farm:Toggle("Destroy Printers",togs.DestroyPrints,function(t)
 	togs.DestroyPrints = t
 end)
 
-Farm:Toggle("Event Farm",togs.EventFarm,function(t)
+--[[Farm:Toggle("Event Farm",togs.EventFarm,function(t) -- ok guys its coming next year
 	togs.EventFarm = t
 	if workspace.WorldEvents:FindFirstChild("TheCarnival") then
-		lp.Character:PivotTo()
+		--lp.Character:PivotTo()
 	end
-end)
+end)]]
 
 local thing = Farm:ToggleDropdown("Farm",false,function(t)
 	togs.Farm.Toggled = t
@@ -1087,11 +1284,11 @@ for i,v in next, weather do
 	World:Button(i,function()
 		for i2,v2 in pairs(v) do
 			for i3,v3 in pairs(v2) do
-				game:GetService("Lighting").Condition.Value = i
+				sv.Lighting.Condition.Value = i
 				if i2 == "Lighting" then
-					game:GetService("Lighting")[i3] = v3
+					sv.Lighting[i3] = v3
 				else
-					game:GetService("Lighting")[i2][i3] = v3
+					sv.Lighting[i2][i3] = v3
 				end
 			end
 		end
@@ -1110,6 +1307,14 @@ World:Button("Exploit Sounds",function()
 	end
 end)
 
+World:Button("Play Jukeboxes",function()
+	for i,v in pairs(plrs:GetPlayers()) do
+		if workspace.Buildings:FindFirstChild(v.Name) and workspace.Buildings[v.Name]:FindFirstChild("Jukebox") then
+			sv.ReplicatedStorage.Events.MenuActionEvent:FireServer(24,workspace.Buildings[v.Name].Jukebox,{togs.Audio.Id,togs.Audio.Pitch})
+		end
+	end
+end)
+
 local entspeed = World:ToggleDropdown("Entity Speed",togs.EntitySpeed.Toggled,function(t)
 	togs.EntitySpeed.Toggled = t
 end)
@@ -1124,16 +1329,26 @@ end)
 
 local thing = Render:ToggleDropdown("Cursor",togs.Cursor.Toggled,function(t)
 	togs.Cursor.Toggled = t
+	if not t then
+		mouse.Icon = ""
+	end
 end)
 
 thing:TextBox("Cursor Id",{},function(t)
 	togs.Cursor.Id = t
 end)
 
+Render:Toggle("Disable Bullet Tracers",togs.DBT,function(t)
+	togs.DBT = t
+	local r = getconnections(sv.ReplicatedStorage.Events.BRE.OnClientEvent)[1]
+	r[t and 'Disable' or 'Enable'](r)
+	getrenv()._G.DrawBullet = t and function()end or olddrawbullet
+end)
+
 Render:Toggle("Player Esp",togs.Esp["Player Esp"],function(t)
 	togs.Esp["Player Esp"] = t
 	for i,v in next, plrs:GetPlayers() do
-		if CheckDrawingExists(v,"Player Esp") or not t then continue end
+		if CheckDrawingExists(v,"Player Esp") or not t then RemoveUpdate(v) continue end
 		if v ~= lp then
 			AddUpdate(v)
 		end
@@ -1143,7 +1358,7 @@ end)
 Render:Toggle("Entity Esp",togs.Esp["Entity Esp"],function(t)
 	togs.Esp["Entity Esp"] = t
 	for i,v in next, workspace.Entities:GetChildren() do
-		if CheckDrawingExists(v,"Entity Esp") or not t then continue end
+		if CheckDrawingExists(v,"Entity Esp") or not t then RemoveUpdate(v) continue end
 		if v.Name == "Gun" then
 			AddUpdate(v)
 		end
@@ -1153,7 +1368,7 @@ end)
 Render:Toggle("Shipment Esp",togs.Esp["Shipment Esp"],function(t)
 	togs.Esp["Shipment Esp"] = t
 	for i,v in next, workspace.Entities:GetChildren() do
-		if CheckDrawingExists(v,"Shipment Esp") or not t then continue end
+		if CheckDrawingExists(v,"Shipment Esp") or not t then RemoveUpdate(v) continue end
 		if v.Name:find("Shipment") then
 			AddUpdate(v)
 		end
@@ -1163,7 +1378,7 @@ end)
 Render:Toggle("Printer Esp",togs.Esp["Printer Esp"],function(t)
 	togs.Esp["Printer Esp"] = t
 	for i,v in next, workspace.MoneyPrinters:GetChildren() do
-		if CheckDrawingExists(v,"Printer Esp") or not t then continue end
+		if CheckDrawingExists(v,"Printer Esp") or not t then RemoveUpdate(v) continue end
 		AddUpdate(v)
 	end
 end)
@@ -1350,7 +1565,7 @@ end)
 
 killaura:Button("Whitelist Player",function()
 	if PlayerSelected then
-		local kaw = togs.KillauraWhitelist
+		local kaw = togs.Killaura.Whitelist
 		local t = table.find(kaw,PlayerSelected)
 		if t then
 			table.remove(kaw,t)
@@ -1368,7 +1583,7 @@ end)
 
 healaura:Button("Blacklist Player",function()
 	if PlayerSelected then
-		local kaw = togs.HealauraBlacklist
+		local kaw = togs.Healaura.Whitelist
 		local t = table.find(kaw,PlayerSelected)
 		if t then
 			table.remove(kaw,t)
@@ -1447,7 +1662,7 @@ Util:Button("Copy Node (BETA)",function()
 	end
 end)
 
-Util:Button("Copy Song",function()
+Util:Button("Copy Audio",function()
 	if PlayerSelected and workspace.Buildings:FindFirstChild(PlayerSelected.Name) and workspace.Buildings[PlayerSelected.Name]:FindFirstChild("Jukebox") then
 		writefile(PlayerSelected.Name.."_Audio_"..RandomString(4)..".txt",tostring(workspace.Buildings[PlayerSelected.Name].Jukebox.Speaker.Sound.SoundId):sub(12))
 	end
@@ -1456,6 +1671,163 @@ end)
 Util:Button("Copy Outfit",function()
 	if PlayerSelected then
 		writefile(PlayerSelected.Name.."_Outfit_"..RandomString(4)..".txt",tostring(PlayerSelected.PlayerData.Outfit.Value))
+	end
+end)
+
+Util:Button("Play Audio",function()
+	if PlayerSelected then
+		local p = PlayerSelected
+		if workspace.Buildings:FindFirstChild(p.Name) and workspace.Buildings[p.Name]:FindFirstChild("Jukebox") then
+			sv.ReplicatedStorage.Events.MenuActionEvent:FireServer(24,workspace.Buildings[p.Name].Jukebox,{togs.Audio.Id,togs.Audio.Pitch})
+		end
+	end
+end)
+
+Util:Button("View Data",function()
+	if PlayerSelected then
+		local g = PlayerSelected
+		local function vts(str)
+			local fs = ""
+			for i,v in pairs(str) do
+				fs = fs..", "..v
+			end
+			return fs:sub(3)
+		end
+
+		local DataViewer = Instance.new("ScreenGui")
+		local Main = Instance.new("Frame")
+		local UIGradient = Instance.new("UIGradient")
+		local Top = Instance.new("Frame")
+		local Min = Instance.new("TextButton")
+		local UIGradient_2 = Instance.new("UIGradient")
+		local Commands = Instance.new("TextLabel")
+		local Commands_2 = Instance.new("TextButton")
+		local Name = Instance.new("TextLabel")
+		local t = Instance.new("TextLabel")
+		local ImageLabel = Instance.new("ImageLabel")
+
+		DataViewer.Name = "DataViewer"
+		DataViewer.Parent = sv.CoreGui
+
+		Main.Name = "Main"
+		Main.Parent = DataViewer
+		Main.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Main.BackgroundTransparency = 0.350
+		Main.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Main.BorderSizePixel = 2
+		Main.Position = UDim2.new(0.599159658, 0, 0.544665039, 0)
+		Main.Size = UDim2.new(0, 370, 0, 248)
+
+		UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
+		UIGradient.Rotation = 90
+		UIGradient.Parent = Main
+
+		Top.Name = "Top"
+		Top.Parent = Main
+		Top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Top.BackgroundTransparency = 0.650
+		Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Top.BorderSizePixel = 2
+		Top.Size = UDim2.new(0, 370, 0, 24)
+
+		Min.Name = "Min"
+		Min.Parent = Top
+		Min.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		Min.BorderColor3 = Color3.fromRGB(51, 51, 51)
+		Min.BorderSizePixel = 2
+		Min.Position = UDim2.new(0.934054077, -1, 0.125, 0)
+		Min.Size = UDim2.new(0, 17, 0, 17)
+		Min.Font = Enum.Font.SourceSans
+		Min.LineHeight = 1.150
+		Min.Text = "-"
+		Min.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Min.TextSize = 39.000
+
+		UIGradient_2.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
+		UIGradient_2.Rotation = 90
+		UIGradient_2.Parent = Top
+
+		Commands.Name = "Commands"
+		Commands.Parent = Top
+		Commands.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Commands.BackgroundTransparency = 1.000
+		Commands.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Commands.BorderSizePixel = 0
+		Commands.Position = UDim2.new(0.0179729741, 0, 0, 0)
+		Commands.Size = UDim2.new(0, 95, 0, 24)
+		Commands.Font = Enum.Font.SourceSansBold
+		Commands.Text = "Data Viewer"
+		Commands.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Commands.TextSize = 20.000
+		Commands.TextStrokeTransparency = 0.500
+		Commands.TextXAlignment = Enum.TextXAlignment.Left
+
+		Commands_2.Name = "Commands"
+		Commands_2.Parent = Top
+		Commands_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Commands_2.BackgroundTransparency = 1.000
+		Commands_2.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Commands_2.BorderSizePixel = 0
+		Commands_2.Position = UDim2.new(0.369324327, 0, 0, 0)
+		Commands_2.Size = UDim2.new(0, 95, 0, 24)
+		Commands_2.Font = Enum.Font.SourceSansBold
+		Commands_2.Text = "Save Data"
+		Commands_2.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Commands_2.TextSize = 20.000
+		Commands_2.TextStrokeTransparency = 0.500
+		Commands_2.TextXAlignment = Enum.TextXAlignment.Left
+
+		Name.Name = "Name"
+		Name.Parent = Main
+		Name.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Name.BackgroundTransparency = 1.000
+		Name.Position = UDim2.new(0.145945951, 0, 0.108870968, 0)
+		Name.Size = UDim2.new(0, 315, 0, 42)
+		Name.Font = Enum.Font.SourceSansBold
+		Name.Text = g.Name.."/"..g.DisplayName.."\n"..g.PlayerData.RoleplayName.Value
+		Name.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Name.TextSize = 17.000
+		Name.TextStrokeTransparency = 0.500
+		Name.TextWrapped = true
+		Name.TextXAlignment = Enum.TextXAlignment.Left
+
+		t.Name = "t"
+		t.Parent = Main
+		t.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		t.BackgroundTransparency = 1.000
+		t.Position = UDim2.new(0.0179730393, 0, 0.278225809, 0)
+		t.Size = UDim2.new(0, 354, 0, 172)
+		t.Font = Enum.Font.SourceSansBold
+		t.Text = "Cash: "..tostring(g.PlayerData.Currency.Value).." | ECurrency: "..tostring(g.PlayerData.ECurrency.Value).." | Aureus: "..tostring(g.PlayerData.PCurrency.Value).." | Karma: "..tostring(g.PlayerData.Karma.Value).." | Audio: "..(workspace.Buildings:FindFirstChild(g.Name) and workspace.Buildings[g.Name]:FindFirstChild("Jukebox") and workspace.Buildings[g.Name].Jukebox.Speaker.Sound.SoundId:gsub('rbxassetid://','') or '0').." | Play Time: "..tostring(g.PlayerData.PlayTime.Value).." | Job: "..g.Job.Value.." | Inventory: "..vts(g.PlayerData.Inventory.Value:split(",")).." | Bank: "..vts(g.PlayerData.Bank.Value:split(",")).." | Perms: "..vts(g.PlayerData.BInventory.Value:split(",")).." | Vehicles: "..vts(g.PlayerData.VInventory.Value:split(","))
+		t.TextColor3 = Color3.fromRGB(255, 255, 255)
+		t.TextSize = 14.500
+		t.TextStrokeTransparency = 0.500
+		t.TextWrapped = true
+		t.TextXAlignment = Enum.TextXAlignment.Left
+		t.TextYAlignment = Enum.TextYAlignment.Top
+
+		ImageLabel.Parent = Main
+		ImageLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		ImageLabel.BackgroundTransparency = 1.000
+		ImageLabel.Position = UDim2.new(0.016216211, 0, 0.108870968, 0)
+		ImageLabel.Size = UDim2.new(0, 42, 0, 42)
+		ImageLabel.Image = plrs:GetUserThumbnailAsync(g.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+
+		Min.Activated:Connect(function()
+			DataViewer:Destroy()
+		end)
+
+		Commands_2.Activated:Connect(function()
+			local fs = ""
+			table.foreach(g:GetDescendants(),function(_,v)
+				if v.ClassName:find("Value") then
+					fs = fs..v.Name..": "..tostring(v.Value).."\n"
+				end
+			end)
+			writefile(PlayerSelected.Name.."_PlayerData_"..RandomString(4)..".txt",fs)
+		end)
+
+		draggable(Main)
 	end
 end)
 
@@ -1469,6 +1841,22 @@ end)
 
 Set:TextBox("Players Name","players",function(t)
 	PlayerSelected = GetPlr(t)
+end)
+
+Set:TextBox("Audio",nil,function(t)
+	togs.Audio.Id = t
+end)
+
+Set:Slider("Pitch",.5,2,togs.Audio.Pitch,true,function(t)
+	togs.Audio.Pitch = tostring(t)
+end)
+
+Set:Slider("Aura Loop Time",0,2,togs.Looptime,true,function(t)
+	togs.LoopTime = t
+end)
+
+Set:Toggle("Passive Piano Detection",togs.PPD,function(t)
+	togs.PPD = t
 end)
 
 local thing = Set:ToggleDropdown("Moai Arm Offset",false,function(t)
@@ -1491,29 +1879,36 @@ Set:Dropdown("Moai Arm Lookat",{"Mouse","Nearest","None"},function(t)
 	togs.MoaiArmSettings.Lookat = t
 end)
 
+Set:Button("Open Chat logs",function()
+	CLFrame.Parent.Enabled = true
+end)
+
 task.spawn(function()
-	while task.wait() do
+	while run.RenderStepped:Wait() do
 		for i,v in pairs(espupdates) do
-			pcall(UpdateEsp,v)
+			local _,b = pcall(UpdateEsp,v)
+			if not _ then
+				warn(b)
+			end
 		end
 	end
 end)
 
 task.spawn(function()
-	while task.wait(2/2*2) do
+	while task.wait(1) do
 		SaveData(togs)
 	end
 end)
 
 task.spawn(function()
-	while task.wait(.2) do -- aura stuff
+	while task.wait(togs.LoopTime or .2) do -- aura stuff
 		for i,v in pairs(plrs:GetPlayers()) do
 			if togs.Killaura then
 				local nt,hnt = Hasnt(v.Character)
 				local hg,g = HasGun(lp)
 				if v ~= lp and v.Character and hg and g:GetAttribute("Ammo") ~= 0 and hnt and ffc(v.Character,"Head") then 
 					if ffc(v.Character,"Humanoid") and v.Character.Humanoid.Health ~= 0 and nt == Color3.fromRGB(255,33,33) then 
-						if disfroml(lp,v.Character:GetPivot().p) <= 225 and not table.find(togs.KillauraWhitelist or {},v.Name) then
+						if disfroml(lp,v.Character:GetPivot().p) <= 225 and not table.find(togs.Killaura.Whitelist or {},v.Name) then
 							local ray = raycast(workspace.CurrentCamera,{v.Character:GetPivot().p},{lp.Character,v.Character,workspace.Vehicles})
 							if #ray == 0 then
 								shoot(v.Character.Head:GetPivot().p,g:GetAttribute("Damage"),0,g.Name:find("Laser Musket") and "LMF" or nil,1)
@@ -1526,7 +1921,7 @@ task.spawn(function()
 			if togs.Healaura then
 				local medigun = lp.Character and (lp.Character:FindFirstChild("MediGun") or lp.Character:FindFirstChild("[Doctor] MediGun"))
 				if medigun and v ~= lp and v.Character and ffc(v.Character,"Humanoid") and v.Character.Humanoid.Health ~= 0 then
-					if disfroml(lp,v.Character:GetPivot().p) <= 20 and not table.find(togs.HealauraBlacklist or {},v.Name) then
+					if disfroml(lp,v.Character:GetPivot().p) <= 20 and not table.find(togs.Healaura.Whitelist or {},v.Name) then
 						if v.Character.Humanoid.Health ~= 0 and v.Character.Humanoid.Health ~= v.Character.Humanoid.MaxHealth then
 							for i = 1,35 do
 								sv.ReplicatedStorage.Events.ToolsEvent:FireServer(5,v.Character.Humanoid)
@@ -1568,6 +1963,15 @@ task.spawn(function()
 		end
 	end
 end)
+
+for i,player in pairs(plrs:GetPlayers()) do
+	player.Chatted:Connect(function(msg,rcp)
+		Chatlog(player.Name,msg)
+		if msg == "I am using piano!" and togs.PPD then
+			lib:Note("Athena Client",player.Name.." is using Piano.")
+		end
+	end)
+end
 
 local oldnamecall; oldnamecall = hookmetamethod(game,"__index",function(...)
 	local args = {...}
@@ -1655,7 +2059,7 @@ local oldindex; oldindex = hookmetamethod(game,"__namecall",function(s,...)
         local clos = ClosestToMouse()
         local part = GetRandomPart(clos)
         if clos and part then
-            return part,part.GetPivot(part).p,Vector3.new(0,0,0)
+            return part,part.Position,Vector3.new(0,0,0)
         end
     end
 
@@ -1675,7 +2079,11 @@ local oldindex; oldindex = hookmetamethod(game,"__namecall",function(s,...)
 	if togs.SilentAim.Toggled and not cc and gnm == "Raycast" and cs and cs.Parent == game.ReplicatedStorage.Modules.TS then
 		local clos = ClosestToMouse()
 		local part = GetRandomPart(clos)
-		return {Instance = part,Position = part.Position,Normal = Vector3.new(0,0,0)}
+		return {
+			Instance = part,
+			Position = part.Position,
+			Normal = Vector3.new(0,0,0)
+		}
 	end
 
 	if not cc and gnm == "Destroy" and ns == "Humanoid" then
