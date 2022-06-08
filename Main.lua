@@ -2,7 +2,8 @@
 -- ui might not be accurate cuz exactly recreating it is way to time consuming
 
 local STick = tick()
-local lib = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/GFXTI/d/main/AthenaUi.lua"))():Library()
+local ui, settings = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/GFXTI/d/main/AthenaUi.lua"))()
+local lib = ui:Library()
 local togs = {
     SilentAim = {
         Toggled = false;
@@ -41,14 +42,18 @@ local togs = {
 		Toggled = false;
 		Rate = 26;
 	};
+	KillauraWhitelist = {
+		"";
+	};
+	HealauraWhitelist = {
+		"";
+	};
+	Admins = {
+		""
+	};
 	Killaura = {
-		Whitelist = {};
 		Toggled = false;
 		Type = 1;
-	};
-	Healaura = {
-		Whitelist = {};
-		Toggled = false;
 	};
 	Printers = {
 		Toggled = false;
@@ -75,6 +80,11 @@ local togs = {
 		Id = "";
 		Pitch = "1";
 	};
+	Admin = {
+		SilentCommands = false; -- same as printer void
+		Prefix = "-";
+		Key = Enum.KeyCode.Semicolon;
+	};
     NoSpread = false;
 	InfJump = false;
 	TriggerBot = false;
@@ -94,6 +104,8 @@ local togs = {
 	AdminNotifier = false;
 	LoopTime = .2;
 	PPD = false;
+	StoreAura = false;
+	Healaura = false;
 }
 local PlayerSelected
 local Collecting
@@ -108,7 +120,7 @@ local oldshake = getrenv()._G.CSH
 local shoot = getrenv()._G.FR
 local olddrawbullet = getrenv()._G.DrawBullet
 
-local CLFrame = Instance.new("Frame")
+local CommandsSU = Instance.new("ScreenGui")
 
 -- the things
 
@@ -285,34 +297,29 @@ local espupdates = {}
 local connections = {}
 local playernames = {}
 
-local stepped = run.Stepped
 local function draggable(obj)
-	spawn(function()
-		obj.Active = true
-		local minitial
-		local initial
-		local isdragging
-		obj.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-				minitial = input.Position
-				initial = obj.Position
-				local con
-				con = stepped:Connect(function()
-					local delta = Vector3.new(mouse.X, mouse.Y, 0) - minitial
-					obj.Position = UDim2.new(initial.X.Scale, initial.X.Offset + delta.X, initial.Y.Scale, initial.Y.Offset + delta.Y)
-				end)
-				input.Changed:Connect(function()
-					if input.UserInputState == Enum.UserInputState.End then
-						con:Disconnect()
-					end
-				end)
-			end
-		end)
+	obj.Active = true
+	local minitial
+	local initial
+	local con
+	obj.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			minitial = Vector2.new(input.Position.x,input.Position.Y)
+			initial = obj.Position
+			con = run.Stepped:Connect(function()
+				local delta = Vector2.new(mouse.X, mouse.Y) - minitial
+				obj.Position = UDim2.new(initial.X.Scale,initial.X.Offset+delta.X,initial.Y.Scale,initial.Y.Offset+delta.Y)
+			end)
+		end
+	end)
+	obj.InputEnded:Connect(function(input)
+		if not con or input.UserInputState ~= Enum.UserInputState.End then return end
+		con:Disconnect()
 	end)
 end
 
 local Chatlog do
-	local ChatLogs = Instance.new("ScreenGui")
+	local CLFrame = Instance.new("Frame")
 	local Top = Instance.new("Frame")
 	local Min = Instance.new("TextButton")
 	local UIGradient = Instance.new("UIGradient")
@@ -322,17 +329,15 @@ local Chatlog do
 	local UIListLayout = Instance.new("UIListLayout")
 	local UIPadding = Instance.new("UIPadding")
 
-	ChatLogs.Name = "ChatLogs"
-	ChatLogs.Enabled = false
-	ChatLogs.Parent = sv.CoreGui
-
-	CLFrame.Parent = ChatLogs
+	CLFrame.Parent = CommandsSU
+	CLFrame.Name = "ChatLogs"
 	CLFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	CLFrame.BackgroundTransparency = 0.350
 	CLFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	CLFrame.BorderSizePixel = 2
 	CLFrame.Position = UDim2.new(0.258771926, 0, 0.771712184, 0)
 	CLFrame.Size = UDim2.new(0, 209, 0, 148)
+	CLFrame.Visible = false
 
 	Top.Name = "Top"
 	Top.Parent = CLFrame
@@ -398,7 +403,7 @@ local Chatlog do
 	UIPadding.PaddingLeft = UDim.new(0, 5)
 
 	Min.Activated:Connect(function()
-		ChatLogs.Enabled = false
+		CLFrame.Visible = false
 	end)
 
 	Logs.ChildAdded:Connect(function(item)
@@ -431,6 +436,349 @@ local Chatlog do
 	end
 end
 
+local AddCommand, ChangeAdminPerms, HandleMessage do
+	local Commands = Instance.new("Frame")
+	local UIGradient = Instance.new("UIGradient")
+	local Top = Instance.new("Frame")
+	local Min = Instance.new("TextButton")
+	local UIGradient_2 = Instance.new("UIGradient")
+	local Commands_2 = Instance.new("TextLabel")
+	local CommandList = Instance.new("Frame")
+	local UIGridLayout = Instance.new("UIGridLayout")
+	local UIPadding = Instance.new("UIPadding")
+
+	CommandsSU.Parent = sv.CoreGui
+	CommandsSU.Name = "CommandsSU"
+
+	Commands.Name = "Commands"
+	Commands.Parent = CommandsSU
+	Commands.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Commands.BackgroundTransparency = 0.350
+	Commands.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Commands.BorderSizePixel = 2
+	Commands.Position = UDim2.new(0.0179149806, 0, 0.520934582, 0)
+	Commands.Size = UDim2.new(0, 160, 0, 244)
+	Commands.Visible = false
+
+	UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
+	UIGradient.Rotation = 90
+	UIGradient.Parent = Commands
+
+	Top.Name = "Top"
+	Top.Parent = Commands
+	Top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Top.BackgroundTransparency = 0.650
+	Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Top.BorderSizePixel = 2
+	Top.Size = UDim2.new(0, 160, 0, 24)
+
+	Min.Name = "Min"
+	Min.Parent = Top
+	Min.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	Min.BorderColor3 = Color3.fromRGB(51, 51, 51)
+	Min.BorderSizePixel = 2
+	Min.Position = UDim2.new(0.879999995, -1, 0.125, 0)
+	Min.Size = UDim2.new(0, 17, 0, 17)
+	Min.Font = Enum.Font.SourceSans
+	Min.LineHeight = 1.150
+	Min.Text = "-"
+	Min.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Min.TextSize = 39.000
+
+	UIGradient_2.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
+	UIGradient_2.Rotation = 90
+	UIGradient_2.Parent = Top
+
+	Commands_2.Name = "Commands"
+	Commands_2.Parent = Top
+	Commands_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Commands_2.BackgroundTransparency = 1.000
+	Commands_2.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Commands_2.BorderSizePixel = 0
+	Commands_2.Position = UDim2.new(0.0450000018, 0, 0, 0)
+	Commands_2.Size = UDim2.new(0, 95, 0, 24)
+	Commands_2.Font = Enum.Font.SourceSansBold
+	Commands_2.Text = "Commands"
+	Commands_2.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Commands_2.TextSize = 20.000
+	Commands_2.TextStrokeTransparency = 0.500
+	Commands_2.TextXAlignment = Enum.TextXAlignment.Left
+
+	CommandList.Name = "CommandList"
+	CommandList.Parent = Commands
+	CommandList.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	CommandList.BackgroundTransparency = 1.000
+	CommandList.Position = UDim2.new(0, 0, 0.122950882, 0)
+	CommandList.Size = UDim2.new(0, 160, 0, 213)
+
+	UIGridLayout.Parent = CommandList
+	UIGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	UIGridLayout.CellSize = UDim2.new(0, 154, 0, 20)
+
+	UIPadding.Parent = CommandList
+	UIPadding.PaddingBottom = UDim.new(0, 3)
+	UIPadding.PaddingLeft = UDim.new(0, 3)
+	UIPadding.PaddingRight = UDim.new(0, 3)
+	UIPadding.PaddingTop = UDim.new(0, 3)
+
+	local CommandBar = Instance.new("Frame")
+	local UIGradient = Instance.new("UIGradient")
+	local Text = Instance.new("TextBox")
+	local BackText = Instance.new("TextLabel")
+	local Top = Instance.new("Frame")
+	local UIGradient_2 = Instance.new("UIGradient")
+	local CommandsOpen = Instance.new("TextButton")
+	local PrefixL = Instance.new("TextLabel")
+
+	CommandBar.Name = "CommandBar"
+	CommandBar.Parent = CommandsSU
+	CommandBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	CommandBar.BackgroundTransparency = 0.350
+	CommandBar.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	CommandBar.BorderSizePixel = 2
+	CommandBar.Position = UDim2.new(0.0182509776, 0, 0.830674887, 0)
+	CommandBar.Size = UDim2.new(0, 160, 0, 60)
+
+	UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
+	UIGradient.Rotation = 90
+	UIGradient.Parent = CommandBar
+
+	Text.Name = "Text"
+	Text.Parent = CommandBar
+	Text.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Text.BackgroundTransparency = 1.000
+	Text.BorderColor3 = Color3.fromRGB(27, 42, 53)
+	Text.Position = UDim2.new(0.0421073921, 0, 0.482758582, 0)
+	Text.Size = UDim2.new(0, 148, 0, 31)
+	Text.Font = Enum.Font.SourceSansSemibold
+	Text.PlaceholderText = "Command Bar"
+	Text.Text = ""
+	Text.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Text.TextSize = 18.000
+	Text.TextXAlignment = Enum.TextXAlignment.Left
+
+	BackText.Name = "BackText"
+	BackText.Parent = CommandBar
+	BackText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	BackText.BackgroundTransparency = 1.000
+	BackText.BorderColor3 = Color3.fromRGB(27, 42, 53)
+	BackText.Position = UDim2.new(0.0419998653, 0, 0.483142972, 0)
+	BackText.Size = UDim2.new(0, 148, 0, 30)
+	BackText.Font = Enum.Font.SourceSansSemibold
+	BackText.Text = ""
+	BackText.TextColor3 = Color3.fromRGB(255, 255, 255)
+	BackText.TextSize = 18.000
+	BackText.TextXAlignment = Enum.TextXAlignment.Left
+
+	Top.Name = "Top"
+	Top.Parent = CommandBar
+	Top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Top.BackgroundTransparency = 0.650
+	Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Top.BorderSizePixel = 2
+	Top.Size = UDim2.new(0, 160, 0, 24)
+
+	UIGradient_2.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
+	UIGradient_2.Rotation = 90
+	UIGradient_2.Parent = Top
+
+	CommandsOpen.Name = "Commands"
+	CommandsOpen.Parent = Top
+	CommandsOpen.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	CommandsOpen.BackgroundTransparency = 1.000
+	CommandsOpen.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	CommandsOpen.BorderSizePixel = 0
+	CommandsOpen.Position = UDim2.new(0.0387500748, 0, 0, 0)
+	CommandsOpen.Size = UDim2.new(0, 88, 0, 24)
+	CommandsOpen.Font = Enum.Font.SourceSansBold
+	CommandsOpen.Text = "Commands"
+	CommandsOpen.TextColor3 = Color3.fromRGB(255, 255, 255)
+	CommandsOpen.TextSize = 19.000
+	CommandsOpen.TextStrokeTransparency = 0.500
+	CommandsOpen.TextXAlignment = Enum.TextXAlignment.Left
+
+	PrefixL.Name = "Prefix"
+	PrefixL.Parent = Top
+	PrefixL.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	PrefixL.BackgroundTransparency = 1.000
+	PrefixL.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	PrefixL.BorderSizePixel = 0
+	PrefixL.Position = UDim2.new(0.632500052, 0, 0, 0)
+	PrefixL.Size = UDim2.new(0, 51, 0, 24)
+	PrefixL.Font = Enum.Font.SourceSansBold
+	PrefixL.Text = "Prefix: "..togs.Admin.Prefix
+	PrefixL.TextColor3 = Color3.fromRGB(255, 255, 255)
+	PrefixL.TextSize = 19.000
+	PrefixL.TextStrokeTransparency = 0.500
+	PrefixL.TextXAlignment = Enum.TextXAlignment.Left
+
+	local Frame = Instance.new("Frame")
+	local UIGradient = Instance.new("UIGradient")
+	local TextLabel = Instance.new("TextLabel")
+
+	Frame.Parent = CommandsSU
+	Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Frame.BackgroundTransparency = 0.350
+	Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Frame.BorderSizePixel = 2
+	Frame.Position = UDim2.new(0,0,0,0)
+	Frame.AutomaticSize = Enum.AutomaticSize.XY
+	Frame.Visible = false
+
+	UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
+	UIGradient.Rotation = 90
+	UIGradient.Parent = Frame
+
+	TextLabel.Parent = Frame
+	TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	TextLabel.BackgroundTransparency = 1.000
+	TextLabel.Size = UDim2.new(0, 200, 0, 50)
+	TextLabel.Font = Enum.Font.SourceSansBold
+	TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	TextLabel.TextSize = 20.000
+	TextLabel.TextStrokeTransparency = 0.500
+	TextLabel.TextWrapped = true
+
+	Min.Activated:Connect(function()
+		Commands.Visible = false
+	end)
+
+	CommandsOpen.Activated:Connect(function()
+		Commands.Visible = not Commands.Visible
+	end)
+
+	Text.FocusLost:Connect(function()
+		HandleMessage(Text.Text,lp)
+		Text.Text = ""
+	end)
+
+	draggable(Commands)
+	draggable(CommandBar)
+
+	local Commandstbl = {}
+
+	local function FindCommand(String)
+		local tbl
+		
+		for _,cmd in pairs(Commandstbl) do
+			if cmd["Command"]:lower() == String:lower() then
+				tbl = cmd
+			end
+			
+			for _,alias in pairs(cmd["Aliases"]) do
+				if alias:lower() == String:lower() then
+					tbl = cmd
+				end
+			end
+		end
+		
+		return tbl
+	end
+
+	function AddCommand(Command, Aliases, Info, RequiresArgs, IsUsableByOthers, Function)
+		local Final = {}
+		
+		Final["Command"] = Command
+		Final["Aliases"] = Aliases
+		Final["Function"] = Function
+		Final["RequiresArgs"] = RequiresArgs
+		Final["IsUsableByOthers"] = IsUsableByOthers or false
+
+		local Commandf = Instance.new("Frame")
+		local UIGradient = Instance.new("UIGradient")
+		local Label = Instance.new("TextButton")
+
+		Commandf.Name = "Command"
+		Commandf.Parent = CommandList
+		Commandf.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Commandf.Size = UDim2.new(0, 100, 0, 100)
+
+		UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(86, 87, 85)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(78, 77, 73))}
+		UIGradient.Rotation = 90
+		UIGradient.Parent = Commandf
+
+		Label.Name = "Label"
+		Label.Parent = Commandf
+		Label.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Label.BackgroundTransparency = 1.000
+		Label.Position = UDim2.new(0.0270000007, 1, 0, 0)
+		Label.Size = UDim2.new(0, 148, 0, 20)
+		Label.Font = Enum.Font.SourceSansBold
+		Label.Text = Command
+		Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Label.TextSize = 15.000
+		Label.TextWrapped = true
+		Label.TextXAlignment = Enum.TextXAlignment.Left
+
+		local fstr = Info.."\n\nIs usable by others: "..tostring(IsUsableByOthers).."\nRequires arguments: "..tostring(RequiresArgs)
+		if Aliases[1] then
+			fstr = fstr.."\nAliases: {"
+			for i,v in pairs(Aliases) do
+				fstr = fstr..v..", "
+			end
+
+			fstr = fstr:sub(1,#fstr-2).."}"
+		end
+
+		local con
+		local size = sv.TextService:GetTextSize(fstr,20,Enum.Font.SourceSansBold,Vector2.new(1/0,1/0)) + Vector2.new(2,0)
+
+		Commandf.MouseEnter:Connect(function()
+			con = run.RenderStepped:Connect(function()
+				if not Commands.Visible then con:Disconnect() Frame.Visible = false return end
+				TextLabel.Size = UDim2.new(0,size.X,0,size.Y)
+				TextLabel.Text = fstr
+				Frame.Visible = true
+				Frame.Position = UDim2.new(0, mouse.X+4, 0, mouse.Y)
+			end)
+		end)
+
+		Commandf.MouseLeave:Connect(function()
+			pcall(function(hi)
+				if con ~= nil and con.Connected then
+					con:Disconnect()
+				end
+				unpack(hi)
+			end,{})
+			Frame.Visible = false
+		end)
+		
+		table.insert(Commandstbl,Final)
+	end
+
+	function HandleMessage(msg,plr)
+		if plr == nil or plr == lp or table.find(togs.Admins,plr.Name) then
+			local prefix = tostring(togs.Admin.Prefix)
+			local commandamount = msg:split(prefix)
+			
+			for i,v in pairs(commandamount) do
+				local split = v:split(" ")
+				if FindCommand(split[1]:gsub(prefix,"")) then
+					local args = commandamount[i]:split(" ")
+					local cmdtable = FindCommand(split[1]:gsub(prefix,""))
+					table.remove(args,1)
+					
+					if cmdtable and plr == lp or cmdtable.IsUsableByOthers then
+						task.spawn(cmdtable["Function"],args,plr)
+					end
+				end
+			end
+		end
+	end
+
+	function ChangeAdminPerms(plr)
+		local c = table.find(togs.Admins,plr)
+		
+		if not c then
+			table.insert(togs.Admins,plr)
+			lib:Note("Athena Client","Added "..plr.." to admins.")
+		else
+			table.remove(togs.Admins,c)
+			lib:Note("Athena Client","Removed "..plr.." from admins.")
+		end
+	end
+end
+
 local function RandomString(int)
 	local charset = "QWERTYUIOPASDFGHJKLZXCVBNM1234567890"
 	local fstr = ""
@@ -459,7 +807,7 @@ local function CharacterAdded()
 		end
 	end)
 
-	c:WaitForChild("Humanoid").Changed:Connect(function()
+	c:WaitForChild("Humanoid"):GetPropertyChangedSignal("Health"):Connect(function()
 		if togs.AutoSemiGod.Toggled and togs.AutoSemiGod.Rate >= c.Humanoid.Health then
 			SemiGod()
 		end
@@ -814,6 +1162,7 @@ local function LoadData()
 			end
 		end
 	end
+
 	togs = data
 end
 
@@ -827,6 +1176,35 @@ end
 
 for i,v in pairs(plrs:GetChildren()) do
 	table.insert(playernames,v.Name)
+	v.Chatted:Connect(function(msg,rcp)
+		HandleMessage(msg,v)
+		Chatlog(v.Name,msg)
+		if msg == "I am using piano!" and togs.PPD then
+			lib:Note("Athena Client",v.Name.." is using Piano.")
+		end
+	end)
+end
+
+if isfile("athenacommands.txt") then
+	local cont = loadstring(readfile("athenacommands.txt"))()
+	for i,v in pairs(cont) do
+		AddCommand(v.Command,v.Aliases,v.Info,v.RequiresArgs,v.IsUseableByOthers,v.Function)
+	end
+else
+writefile("athenacommands.txt",[[
+return {
+	{
+		Command = "Print",
+		Aliases = {"p"},
+		Info = "Prints specified arguments",
+		RequiresArgs = true,
+		IsUseableByOthers = true,
+		Function = function(args,plr)
+			print(plr,"printed:",unpack(args))
+		end
+	}
+}
+]])
 end
 
 LoadData()
@@ -834,17 +1212,13 @@ LoadData()
 CharacterAdded(lp.Character)
 connections["LocalPlayerCharacterAdded"] = lp.CharacterAdded:Connect(CharacterAdded)
 
-connections["InputBegan"] = uis.InputBegan:Connect(function(key,m) -- when will i ever use this
+connections["InputBegan"] = uis.InputBegan:Connect(function(key,m)
 	if not m then
-		
+		if key.KeyCode == togs.Admin.Key then
+			task.wait()
+			CommandsSU.CommandBar.Text:CaptureFocus()
+		end
 	end
-end)
-
-connections['DrawingRenderStepped'] = run.RenderStepped:Connect(function(t)
-	local mp = uis:GetMouseLocation()
-	fovcircle.Visible = togs.SilentAim.FovCircle and togs.SilentAim.Toggled
-	fovcircle.Radius = togs.SilentAim.Fov
-	fovcircle.Position = Vector2.new(mp.X,mp.Y)
 end)
 
 connections["WorkspaceAdded"] = workspace.ChildAdded:Connect(function(child)
@@ -854,7 +1228,7 @@ connections["WorkspaceAdded"] = workspace.ChildAdded:Connect(function(child)
 	end
 end)
 
-connections["KeyDown"] = lp:GetMouse().KeyDown:Connect(function(key)
+connections["KeyDown"] = mouse.KeyDown:Connect(function(key)
 	if key:byte() == 32 and togs.InfJump then
 		lp.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 	end
@@ -887,7 +1261,7 @@ connections["PrinterAdded"] = workspace.MoneyPrinters.ChildAdded:Connect(functio
 				task.wait(.05)
 				sv.ReplicatedStorage.Events.ToolsEvent:FireServer(11,item)
 				task.wait(1)
-				lp.Character:PivotTo()
+				lp.Character:PivotTo(opos)
 				Collecting = false
 			end
 		end
@@ -917,6 +1291,7 @@ connections['PlayerAdded'] = plrs.PlayerAdded:Connect(function(player)
 	table.insert(playernames,player.Name)
 	AddUpdate(player)
 	player.Chatted:Connect(function(msg)
+		HandleMessage(msg,player)
 		Chatlog(player.Name,msg)
 		if msg == "I am using piano!" and togs.PPD then
 			lib:Note("Athena Client",player.Name.." is using Piano.")
@@ -929,45 +1304,6 @@ connections['PlayerRemoving'] = plrs.PlayerRemoving:Connect(function(player)
 		if v == player.Name then
 			table.remove(playernames,i)
 		end
-	end
-end)
-
-connections['TriggerBotRenderStepped'] = run.RenderStepped:Connect(function()
-	if togs.TriggerBot and lp.Character and lp.Character:FindFirstChildOfClass("Tool") then
-		local hit = lp:GetMouse().Target
-		local pos = lp:GetMouse()
-		local dis = (lp.Character:GetPivot().p - lp:GetMouse().Hit.p).magnitude
-		if dis <= 200 then
-			if hit ~= nil then
-				if table.find(playernames,hit:GetFullName():split(".")[2]) then
-					mouse1press()
-					mouse1release()
-				end
-			end
-		end
-	end
-end)
-
-connections["NoclipStepped"] = run.Stepped:Connect(function()
-	if togs.Noclip.Toggled and uis:IsKeyDown(togs.Noclip.Key) then
-		for i,v in next, lp.Character:GetDescendants() do
-			if v:IsA("BasePart") then
-				v.CanCollide = false
-			end
-		end
-	end
-end)
-
-connections["WalkspeedRenderStepped"] = run.RenderStepped:Connect(function()
-	if uis:IsKeyDown(togs.Walkspeed.Key) and togs.Walkspeed.Toggled and not uis:GetFocusedTextBox() then
-		local c = lp.Character:GetPivot()
-		lp.Character:PivotTo(c + c.LookVector * togs.Walkspeed.Rate)
-	end
-end)
-
-connections['CursorStepped'] = run.Stepped:Connect(function()
-	if togs.Cursor.Toggled then
-		mouse.Icon = togs.Cursor.Id
 	end
 end)
 
@@ -1091,6 +1427,21 @@ local thing = Player:SplitFrame()
 
 thing:Toggle("NoClip",togs.Noclip.Toggled,function(t)
 	togs.Noclip.Toggled = t
+	local c = connections["NoclipStepped"]
+	if c and c.Connected then
+		c:Disconnect()
+	end
+	if t then
+		connections["NoclipStepped"] = run.Stepped:Connect(function()
+			if togs.Noclip.Toggled and uis:IsKeyDown(togs.Noclip.Key) then
+				for i,v in next, lp.Character:GetDescendants() do
+					if v:IsA("BasePart") then
+						v.CanCollide = false
+					end
+				end
+			end
+		end)
+	end
 end)
 
 thing:Keybind("Key",togs.Noclip.Key,function(t)
@@ -1099,6 +1450,18 @@ end)
 
 local thing = Player:ToggleDropdown("Walkspeed",togs.Walkspeed.Toggled,function(t)
 	togs.Walkspeed.Toggled = t
+	local c = connections["WalkspeedRenderStepped"]
+	if c and c.Connected then
+		c:Disconnect()
+	end
+	if t then
+		connections["WalkspeedRenderStepped"] = run.RenderStepped:Connect(function()
+			if uis:IsKeyDown(togs.Walkspeed.Key) and togs.Walkspeed.Toggled and not uis:GetFocusedTextBox() then
+				local c = lp.Character:GetPivot()
+				lp.Character:PivotTo(c + c.LookVector * togs.Walkspeed.Rate)
+			end
+		end)
+	end
 end)
 
 thing:Keybind("Key",togs.Walkspeed.Key,function(t)
@@ -1297,6 +1660,7 @@ end
 
 World:Toggle("Disable Kill Barriers",togs.DCB,function(t)
 	togs.DCB = t
+	workspace.FallenPartsDestroyHeight = t and -math.huge or 0
 end)
 
 World:Button("Exploit Sounds",function()
@@ -1329,8 +1693,18 @@ end)
 
 local thing = Render:ToggleDropdown("Cursor",togs.Cursor.Toggled,function(t)
 	togs.Cursor.Toggled = t
+	local c = connections['CursorStepped']
+	if c and c.Connected then
+		c:Disconnect()
+	end
 	if not t then
 		mouse.Icon = ""
+	else
+		connections['CursorStepped'] = run.Stepped:Connect(function()
+			if togs.Cursor.Toggled then
+				mouse.Icon = togs.Cursor.Id
+			end
+		end)
 	end
 end)
 
@@ -1393,6 +1767,26 @@ end)
 
 Combat:Toggle("Trigger Bot",togs.TriggerBot,function(t)
 	togs.TriggerBot = t
+	local c = connections['TriggerBotRenderStepped']
+	if c and c.Connected then
+		c:Disconnect()
+	end
+	if t then
+		connections['TriggerBotRenderStepped'] = run.RenderStepped:Connect(function()
+			if lp.Character and lp.Character:FindFirstChildOfClass("Tool") then
+				local hit = mouse.Target
+				local dis = disfroml(lp,mouse.Hit.p)
+				if dis <= 200 then
+					if hit ~= nil then
+						if table.find(playernames,hit:GetFullName():split(".")[2]) then
+							mouse1press()
+							mouse1release()
+						end
+					end
+				end
+			end
+		end)
+	end
 end)
 
 Combat:Toggle("No Camera Shake",togs.NCS,function(t)
@@ -1425,34 +1819,6 @@ Combat:Button("Weapon Multiplier",function()
 		if g:FindFirstChild"LocalScript" then
 			g.LocalScript:Destroy()
 		end
-
-		-- car drag
-
-		--[[cons.cardrag = run.Heartbeat:Connect(function()
-			if mouse.Target ~= nil and mouse.Target:IsDescendantOf(workspace.Vehicles) then
-				if uis:IsKeyDown(Enum.KeyCode.R) and lp.Character:FindFirstChild("🗿") then
-					for i,v in pairs(workspace.Vehicles:GetChildren()) do
-						if v:IsAncestorOf(mouse.Target) then
-							if v.VehicleSeat.Occupant ~= nil then
-								sv.ReplicatedStorage.Events.InteractEvent:FireServer(v.VehicleSeat)
-							end
-
-							for i,v2 in pairs(v:GetDescendants()) do
-								if v2.ClassName:find("Body") then
-									v:Destroy()
-									continue
-								end
-
-								if v2:IsA("BasePart") then
-									v2:PivotTo(mouse.Hit)
-									continue
-								end
-							end
-						end
-					end
-				end
-			end
-		end)]]
 		
 		-- modify shotgun
 		Instance.new("Sound",g.Handle).Name = "Fire"
@@ -1545,6 +1911,18 @@ end)
 
 thing:Toggle("Fov Circle",togs.SilentAim.FovCircle,function(t)
 	togs.SilentAim.FovCircle = t
+	local c = connections['SilentAimFovCircleRenderStepped']
+	if c and c.Connected then
+		c:Disconnect()
+	end
+	if t then
+		connections['SilentAimFovCircleRenderStepped'] = run.RenderStepped:Connect(function()
+			local mp = uis:GetMouseLocation()
+			fovcircle.Visible = togs.SilentAim.FovCircle and togs.SilentAim.Toggled
+			fovcircle.Radius = togs.SilentAim.Fov
+			fovcircle.Position = Vector2.new(mp.X,mp.Y)
+		end)
+	end
 end)
 
 thing:Slider("Fov Size",1,750,togs.SilentAim.Fov,togs.SilentAim.Fov,function(t)
@@ -1559,13 +1937,17 @@ thing:Toggle("Wallcheck",togs.SilentAim.Wallcheck,function(t)
 	togs.SilentAim.Wallcheck = t
 end)
 
-local killaura = Combat:ToggleDropdown("Kill Aura",togs.Killaura,function(t)
+Combat:Toggle("Store Aura",togs.StoreAura,function(t)
+	togs.StoreAura = t
+end)
+
+local killaura = Combat:ToggleDropdown("Kill Aura",togs.Killaura.Toggled,function(t)
 	togs.Killaura = t
 end)
 
 killaura:Button("Whitelist Player",function()
 	if PlayerSelected then
-		local kaw = togs.Killaura.Whitelist
+		local kaw = togs.KillauraWhitelist
 		local t = table.find(kaw,PlayerSelected)
 		if t then
 			table.remove(kaw,t)
@@ -1583,7 +1965,7 @@ end)
 
 healaura:Button("Blacklist Player",function()
 	if PlayerSelected then
-		local kaw = togs.Healaura.Whitelist
+		local kaw = togs.HealauraWhitelist
 		local t = table.find(kaw,PlayerSelected)
 		if t then
 			table.remove(kaw,t)
@@ -1694,7 +2076,6 @@ Util:Button("View Data",function()
 			return fs:sub(3)
 		end
 
-		local DataViewer = Instance.new("ScreenGui")
 		local Main = Instance.new("Frame")
 		local UIGradient = Instance.new("UIGradient")
 		local Top = Instance.new("Frame")
@@ -1706,11 +2087,8 @@ Util:Button("View Data",function()
 		local t = Instance.new("TextLabel")
 		local ImageLabel = Instance.new("ImageLabel")
 
-		DataViewer.Name = "DataViewer"
-		DataViewer.Parent = sv.CoreGui
-
 		Main.Name = "Main"
-		Main.Parent = DataViewer
+		Main.Parent = CommandsSU
 		Main.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		Main.BackgroundTransparency = 0.350
 		Main.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -1814,7 +2192,7 @@ Util:Button("View Data",function()
 		ImageLabel.Image = plrs:GetUserThumbnailAsync(g.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
 
 		Min.Activated:Connect(function()
-			DataViewer:Destroy()
+			Main:Destroy()
 		end)
 
 		Commands_2.Activated:Connect(function()
@@ -1828,6 +2206,12 @@ Util:Button("View Data",function()
 		end)
 
 		draggable(Main)
+	end
+end)
+
+Util:Button("Admin Player",function()
+	if PlayerSelected then
+		ChangeAdminPerms(PlayerSelected.Name)
 	end
 end)
 
@@ -1851,7 +2235,7 @@ Set:Slider("Pitch",.5,2,togs.Audio.Pitch,true,function(t)
 	togs.Audio.Pitch = tostring(t)
 end)
 
-Set:Slider("Aura Loop Time",0,2,togs.Looptime,true,function(t)
+Set:Slider("Aura Loop Time",0,2,togs.LoopTime,true,function(t)
 	togs.LoopTime = t
 end)
 
@@ -1880,7 +2264,26 @@ Set:Dropdown("Moai Arm Lookat",{"Mouse","Nearest","None"},function(t)
 end)
 
 Set:Button("Open Chat logs",function()
-	CLFrame.Parent.Enabled = true
+	CommandsSU.ChatLogs.Visible = true
+end)
+
+local thing = Set:SplitFrame()
+
+thing:TextBox("Prefix",nil,function(t)
+	togs.Admin.Prefix = t:sub(1,1)
+	CommandsSU.CommandBar.Top.Prefix.Text = "Prefix: "..togs.Admin.Prefix
+end)
+
+thing:Keybind("",togs.Admin.Key,function(t)
+	togs.Admin.Key = t
+end)
+
+Set:Toggle("Disable Chat",false,function(t)
+	settings.disablechat = t
+end)
+
+Set:Toggle("Blur",false,function(t)
+	settings.blur = t
 end)
 
 task.spawn(function()
@@ -1903,12 +2306,12 @@ end)
 task.spawn(function()
 	while task.wait(togs.LoopTime or .2) do -- aura stuff
 		for i,v in pairs(plrs:GetPlayers()) do
-			if togs.Killaura then
+			if togs.Killaura.Toggled then
 				local nt,hnt = Hasnt(v.Character)
 				local hg,g = HasGun(lp)
 				if v ~= lp and v.Character and hg and g:GetAttribute("Ammo") ~= 0 and hnt and ffc(v.Character,"Head") then 
 					if ffc(v.Character,"Humanoid") and v.Character.Humanoid.Health ~= 0 and nt == Color3.fromRGB(255,33,33) then 
-						if disfroml(lp,v.Character:GetPivot().p) <= 225 and not table.find(togs.Killaura.Whitelist or {},v.Name) then
+						if disfroml(lp,v.Character:GetPivot().p) <= 225 and not table.find(togs.KillauraWhitelist or {},v.Name) then
 							local ray = raycast(workspace.CurrentCamera,{v.Character:GetPivot().p},{lp.Character,v.Character,workspace.Vehicles})
 							if #ray == 0 then
 								shoot(v.Character.Head:GetPivot().p,g:GetAttribute("Damage"),0,g.Name:find("Laser Musket") and "LMF" or nil,1)
@@ -1921,7 +2324,7 @@ task.spawn(function()
 			if togs.Healaura then
 				local medigun = lp.Character and (lp.Character:FindFirstChild("MediGun") or lp.Character:FindFirstChild("[Doctor] MediGun"))
 				if medigun and v ~= lp and v.Character and ffc(v.Character,"Humanoid") and v.Character.Humanoid.Health ~= 0 then
-					if disfroml(lp,v.Character:GetPivot().p) <= 20 and not table.find(togs.Healaura.Whitelist or {},v.Name) then
+					if disfroml(lp,v.Character:GetPivot().p) <= 20 and not table.find(togs.HealauraWhitelist or {},v.Name) then
 						if v.Character.Humanoid.Health ~= 0 and v.Character.Humanoid.Health ~= v.Character.Humanoid.MaxHealth then
 							for i = 1,35 do
 								sv.ReplicatedStorage.Events.ToolsEvent:FireServer(5,v.Character.Humanoid)
@@ -1929,6 +2332,18 @@ task.spawn(function()
 								sv.ReplicatedStorage.Events.ToolsEvent:FireServer(5,medigun)
 							end
 						end
+					end
+				end
+			end
+		end
+
+		if togs.StoreAura then
+			for i,v in pairs(workspace.Entities:GetChildren()) do
+				if v.Name == "Gun" and disfroml(lp,v:GetPivot().p) <= 15 then
+					if not lp.Flagged.Value and #lp.PlayerData.Inventory.Value:split"," < 12 then
+						sv.ReplicatedStorage.Events.InventoryEvent:FireServer(2,v)
+					else
+						sv.ReplicatedStorage.Events.InteractEvent:FireServer(v)
 					end
 				end
 			end
@@ -1964,15 +2379,6 @@ task.spawn(function()
 	end
 end)
 
-for i,player in pairs(plrs:GetPlayers()) do
-	player.Chatted:Connect(function(msg,rcp)
-		Chatlog(player.Name,msg)
-		if msg == "I am using piano!" and togs.PPD then
-			lib:Note("Athena Client",player.Name.." is using Piano.")
-		end
-	end)
-end
-
 local oldnamecall; oldnamecall = hookmetamethod(game,"__index",function(...)
 	local args = {...}
 	local value = oldnamecall(unpack(args))
@@ -1993,7 +2399,11 @@ local oldnamecall; oldnamecall = hookmetamethod(game,"__index",function(...)
 			return
 		end
 
-		if togs.SilentAim.Toggled and not togs.SilentAim.NoSpread and v == "Hit" and i == lp:GetMouse() and cs.Parent and cs.Parent:IsA("Tool") then
+		if togs.DCB and v == "FallenPartsDestroyHeight" and ns == "workspace" then
+			return -math.huge
+		end
+
+		if togs.SilentAim.Toggled and not togs.SilentAim.NoSpread and v == "Hit" and i == mouse and cs.Parent and cs.Parent:IsA("Tool") then
 			local c = ClosestToMouse()
 			local r = GetRandomPart(c)
 			if c and r then
@@ -2093,6 +2503,6 @@ local oldindex; oldindex = hookmetamethod(game,"__namecall",function(s,...)
     return oldindex(s,...)
 end)
 
-lib:Note("Athena Client","Loaded in "..tostring(math.round(tick() - STick)).." second(s)")
+lib:Note("Athena Client","Press Right Control to open.")
 
 return "Beta"
