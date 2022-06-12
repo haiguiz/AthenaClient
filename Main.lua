@@ -1279,8 +1279,8 @@ connections["InputBegan"] = uis.InputBegan:Connect(function(key,m)
 					end
 		
 					lp.Character:PivotTo(op)
-					Collecting = false]]
-				end
+					Collecting = false
+				end]]
 			end
 		end
 	end
