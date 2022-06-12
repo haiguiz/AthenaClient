@@ -85,6 +85,10 @@ local togs = {
 		Prefix = "-";
 		Key = Enum.KeyCode.Semicolon;
 	};
+	ClickKill = {
+		Toggled = false;
+		AutoFlag = false;
+	};
     NoSpread = false;
 	InfJump = false;
 	TriggerBot = false;
@@ -123,20 +127,20 @@ local olddrawbullet = getrenv()._G.DrawBullet
 local CommandsSU = Instance.new("ScreenGui")
 
 -- the things
-
-local plrs = game.GetService(game,"Players")
+-- uses . instead of : cuz used in namecall hook
+local sv = setmetatable({},{__index = function(s,a) return game.GetService(game,a) end})
+local plrs = sv.Players
 local lp = plrs.LocalPlayer
 local mouse = lp.GetMouse(lp)
-local uis = game.GetService(game,"UserInputService")
+local uis = sv.UserInputService
 local cam = workspace.CurrentCamera
 local raycast = cam.GetPartsObscuringTarget
 local getpiv = workspace.GetPivot
 local wtvp = cam.WorldToViewportPoint
 local ffc = workspace.FindFirstChild
 local disfroml = lp.DistanceFromCharacter
-local run = game:GetService("RunService")
-local hts = game:GetService("HttpService")
-local sv = setmetatable({},{__index = function(s,a) return game:GetService(a) end})
+local run = sv.RunService
+local hts = sv.HttpService
 
 local weather = {}
 
@@ -790,6 +794,10 @@ local function RandomString(int)
 	return fstr
 end
 
+local function WaitForChildRemoved(parent,iname)
+	repeat task.wait() until not parent:FindFirstChild(iname)
+end
+
 local function CharacterAdded()
 	local c = lp.Character
 	task.wait(.5)
@@ -797,14 +805,16 @@ local function CharacterAdded()
 		Instance.new("Model",c:WaitForChild("Util")).Name = "Jetpack"
 	end
 
-	c:WaitForChild("HumanoidRootPart").ChildAdded:Connect(function(i)
-		if tostring(i) == "FlightVelocity" then
-			i:GetPropertyChangedSignal("Velocity"):Connect(function()
-				if togs.EntitySpeed.Toggled and uis:IsKeyDown(togs.EntitySpeed.Key) then
-					i.Velocity = i.Velocity * (togs.EntitySpeed.Rate/20+1)
-				end
-			end)
-		end
+	task.spawn(function()
+		c:WaitForChild("HumanoidRootPart").ChildAdded:Connect(function(i)
+			if tostring(i) == "FlightVelocity" then
+				i:GetPropertyChangedSignal("Velocity"):Connect(function()
+					if togs.EntitySpeed.Toggled and uis:IsKeyDown(togs.EntitySpeed.Key) then
+						i.Velocity = i.Velocity * (togs.EntitySpeed.Rate/20+1)
+					end
+				end)
+			end
+		end)
 	end)
 
 	c:WaitForChild("Humanoid"):GetPropertyChangedSignal("Health"):Connect(function()
@@ -1044,7 +1054,7 @@ local function Hasnt(inst)
 end
 
 local function UpdateEsp(v) -- good luck reading any of this
-	if v['tracer'] ~= nil and v['string1'] ~= nil and v['string2'] ~= nil and v['Instance'] ~= nil then
+	if v['tracer'] ~= nil and v['string1'] ~= nil and v['string2'] ~= nil then
 		local string1 = ""
 		local string2 = ""
 		local color
@@ -1065,7 +1075,7 @@ local function UpdateEsp(v) -- good luck reading any of this
 			end
 		end
 
-		if v["esptype"] == "Shipment Esp" then
+		if v["esptype"] == "Shipment Esp" and v["Instance"]:FindFirstChildWhichIsA("BasePart") then
 			local t = v["Instance"]
 			string1 = t.Name
 			string2 = "Uses: "..tostring(t.Int.Uses.Value).." Locked: "..tostring(t.TrueOwner.Locked.Value)
@@ -1073,14 +1083,14 @@ local function UpdateEsp(v) -- good luck reading any of this
 			color = t:FindFirstChildWhichIsA("BasePart").Color
 		end
 
-		if v["esptype"] == "Entity Esp" then
+		if v["esptype"] == "Entity Esp" and v["Instance"]:FindFirstChildWhichIsA("BasePart") then
 			local t = v['Instance']
 			string1 = t.Int and t.Int.Value or t.Int2.Value
 			instance = v["Instance"]
 			color = v["Instance"]:FindFirstChildWhichIsA("BasePart").Color
 		end
 
-		if v["esptype"] == "Printer Esp" then
+		if v["esptype"] == "Printer Esp" and v["Instance"]:FindFirstChildWhichIsA("BasePart") then
 			local t = v["Instance"]
 			string1 = t.Name
 			string2 = "Uses: "..tostring(t.Int and t.Int.Uses.Value or t.Int2.Uses.Value).." Money: "..tostring(t.Int and t.Int.Money.Value or t.Int2.Money.Value).."\nLocked: "..tostring(t.TrueOwner.Locked.Value)
@@ -1089,7 +1099,9 @@ local function UpdateEsp(v) -- good luck reading any of this
 			yp = true
 		end
 
-		if instance==nil then return end
+		if instance == nil or instance.Parent == nil then
+			return
+		end
 
 		local pos,vis = workspace.CurrentCamera:WorldToViewportPoint(instance:GetPivot().p)
 
@@ -1129,6 +1141,15 @@ local function SemiGod()
 	if nt then
 		nt:Clone().Parent = lp.Character
 		nt:Destroy()
+	end
+end
+
+local function GetPlrFromPart(part)
+	if not part then return end
+	for i,v in pairs(part:GetFullName():split(".")) do
+		if plrs:FindFirstChild(v) then
+			return v
+		end
 	end
 end
 
@@ -1217,6 +1238,50 @@ connections["InputBegan"] = uis.InputBegan:Connect(function(key,m)
 		if key.KeyCode == togs.Admin.Key then
 			task.wait()
 			CommandsSU.CommandBar.Text:CaptureFocus()
+		end
+
+		if key.UserInputType == Enum.UserInputType.MouseButton1 then
+			if togs.ClickKill.Toggled then -- coming next update idrc to finish this
+				--[[local p = GetPlrFromPart(mouse.Target)
+				local item = lp.Character:FindFirstChildOfClass("Tool")
+				local st = 0
+				if item and p and p.Character then
+					if p.Character:FindFirstChild("ForceField") then repeat task.wait() until not p.Character:FindFirstChild("ForceField") end
+					if Collecting then repeat task.wait() until not Collecting end
+					Collecting = true
+					local op = lp.Character:GetPivot()
+					if item:FindFirstChild("Handle") and item.Handle:FindFirstChild("Reload") then
+						if p.Character:FindFirstChild("Humanoid") then
+							local h = p.Character.Humanoid
+							local i = h.Health
+							local dam = item:GetAttribute("Damage")
+							while i-dam > 15 do
+								st = st + 1
+								i = i - dam
+							end
+						end
+					end
+		
+					for i = 1,st do
+						if item.Parent ~= lp.Character then break end
+						lp.Character:PivotTo(p.Character:GetPivot())
+						task.wait(item:GetAttribute("BulletPerSecond"))
+						shoot(p.Character.Head:GetPivot().p,item:GetAttribute("Damage"),0,item.Name:find("Laser Musket") and "LMF" or nil,1)
+						lp.Character:PivotTo(p.Character:GetPivot())
+					end
+		
+					for i = 1,math.ceil(p.Character.Humanoid.Health/15) do
+						if item.Parent ~= lp.Character or not p.Character or not p.Character:FindFirstChild("Humanoid") or p.Character.Humanoid.Health == 0 or BreakKill or not lp.Character then break end
+						lp.Character:PivotTo(p.Character:GetPivot())
+						sv.ReplicatedStorage.Events.MenuActionEvent:FireServer(34,p.Character.Humanoid,p.Character:GetPivot())
+						p.Character:FindFirstChild("Humanoid").HealthChanged:Wait()
+						lp.Character:PivotTo(p.Character:GetPivot())
+					end
+		
+					lp.Character:PivotTo(op)
+					Collecting = false]]
+				end
+			end
 		end
 	end
 end)
@@ -1484,7 +1549,7 @@ local thing = Farm:ToggleDropdown("Printer Farm",togs.Printers.Toggled,function(
 		local node = workspace.Buildings:FindFirstChild(lp.Name) and workspace.Buildings[lp.Name]
 		local nodepiv = workspace.Buildings:FindFirstChild(lp.Name) and workspace.Buildings[lp.Name].Node:GetPivot()
 		if not workspace.Buildings:FindFirstChild(lp.Name) then
-			local k = lp.Character:GetPivot().p
+			local k = lp.Character:GetPivot()
 			be:FireServer(1, "Node", CFrame.new(k.X,600,k.Z, 0, 0, 1, 0, 1, -0, -1, 0, 0))
 			node = workspace.Buildings:WaitForChild(lp.Name)
 			nodepiv = node:WaitForChild("Node"):GetPivot()
@@ -2278,11 +2343,11 @@ thing:Keybind("",togs.Admin.Key,function(t)
 	togs.Admin.Key = t
 end)
 
-Set:Toggle("Disable Chat",false,function(t)
+Set:Toggle("Disable Chat",true,function(t)
 	settings.disablechat = t
 end)
 
-Set:Toggle("Blur",false,function(t)
+Set:Toggle("Blur",true,function(t)
 	settings.blur = t
 end)
 
@@ -2356,22 +2421,21 @@ task.spawn(function()
 		if togs.AureusFarm then
 			for _,__ in pairs(workspace.Buildings:GetChildren()) do
 				for i,v in pairs(__:GetChildren()) do
-					if v.Name == "Scavenge Station" and disfroml(lp,v:GetPivot().p) <= 10 then
-						Collecting = true
-						sv.ReplicatedStorage.Events.InteractEvent:FireServer(v)
-						task.wait(.5)
+					if v.Name == "Scavenge Station" and disfroml(lp,v:GetPivot().p) <= 10 and os.time() - lp.PlayerData.DScavenge.Value > 0 then -- appearently theres 2 different menuactionevents but one is spelt wrong (smart edd)
 						sv.ReplicatedStorage.Events.MenuAcitonEvent:FireServer(1,v)
-						local it = workspace.Drones:WaitForChild(lp.Name)
-						local ds = workspace:WaitForChild("DroneShipment"):GetPivot()
-						it:PivotTo(ds + ds.UpVector * 2)
-						task.wait(.1)
-						sv.ReplicatedStorage.Events.MenuAcitonEvent:FireServer(3)
+						local it = workspace.Drones:WaitForChild(lp.Name,1/0)
+						local ds = workspace:WaitForChild("DroneShipment",1/0):GetPivot()
+						it:PivotTo(ds + ds.UpVector * 1.5)
+						repeat
+							task.wait(.1)
+							sv.ReplicatedStorage.Events.MenuAcitonEvent:FireServer(3)
+						until not workspace:FindFirstChild("DroneShipment")
+						WaitForChildRemoved(workspace,"DroneShipment")
 						it:PivotTo(v:GetPivot() + v:GetPivot().UpVector * 2)
-						task.wait(.1)
-						sv.ReplicatedStorage.Events.MenuAcitonEvent:FireServer(4)
-						task.wait(.5)
-						sv.ReplicatedStorage.Events.InteractEvent:FireServer(v)
-						Collecting = false
+						repeat
+							task.wait(.1)
+							sv.ReplicatedStorage.Events.MenuAcitonEvent:FireServer(4)
+						until not workspace.Drones:FindFirstChild(lp.Name)
 					end
 				end
 			end
