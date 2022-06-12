@@ -798,32 +798,6 @@ local function WaitForChildRemoved(parent,iname)
 	repeat task.wait() until not parent:FindFirstChild(iname)
 end
 
-local function CharacterAdded()
-	local c = lp.Character
-	task.wait(.5)
-	if togs.AutoInvisJet then
-		Instance.new("Model",c:WaitForChild("Util")).Name = "Jetpack"
-	end
-
-	task.spawn(function()
-		c:WaitForChild("HumanoidRootPart").ChildAdded:Connect(function(i)
-			if tostring(i) == "FlightVelocity" then
-				i:GetPropertyChangedSignal("Velocity"):Connect(function()
-					if togs.EntitySpeed.Toggled and uis:IsKeyDown(togs.EntitySpeed.Key) then
-						i.Velocity = i.Velocity * (togs.EntitySpeed.Rate/20+1)
-					end
-				end)
-			end
-		end)
-	end)
-
-	c:WaitForChild("Humanoid"):GetPropertyChangedSignal("Health"):Connect(function()
-		if togs.AutoSemiGod.Toggled and togs.AutoSemiGod.Rate >= c.Humanoid.Health then
-			SemiGod()
-		end
-	end)
-end
-
 local function GetPlr(str)
 	for i,v in next, plrs:GetPlayers() do
 		if v.Name:lower():find(str:lower()) or v.DisplayName:lower():find(str:lower()) then
@@ -1193,6 +1167,32 @@ local function CheckDrawingExists(check,type)
 			return true
 		end
 	end
+end
+
+local function CharacterAdded()
+	local c = lp.Character
+	task.wait(.5)
+	if togs.AutoInvisJet then
+		Instance.new("Model",c:WaitForChild("Util")).Name = "Jetpack"
+	end
+
+	task.spawn(function()
+		c:WaitForChild("HumanoidRootPart").ChildAdded:Connect(function(i)
+			if tostring(i) == "FlightVelocity" then
+				i:GetPropertyChangedSignal("Velocity"):Connect(function()
+					if togs.EntitySpeed.Toggled and uis:IsKeyDown(togs.EntitySpeed.Key) then
+						i.Velocity = i.Velocity * (togs.EntitySpeed.Rate/20+1)
+					end
+				end)
+			end
+		end)
+	end)
+
+	c:WaitForChild("Humanoid"):GetPropertyChangedSignal("Health"):Connect(function()
+		if togs.AutoSemiGod.Toggled and togs.AutoSemiGod.Rate >= c.Humanoid.Health then
+			SemiGod()
+		end
+	end)
 end
 
 for i,v in pairs(plrs:GetChildren()) do
@@ -2141,6 +2141,8 @@ Util:Button("View Data",function()
 			return fs:sub(3)
 		end
 
+		local text = "Cash: "..tostring(g.PlayerData.Currency.Value).." | ECurrency: "..tostring(g.PlayerData.ECurrency.Value).." | Aureus: "..tostring(g.PlayerData.PCurrency.Value).." | Karma: "..tostring(g.PlayerData.Karma.Value).." | Audio: "..(workspace.Buildings:FindFirstChild(g.Name) and workspace.Buildings[g.Name]:FindFirstChild("Jukebox") and workspace.Buildings[g.Name].Jukebox.Speaker.Sound.SoundId:gsub('rbxassetid://','') or '0').." | Play Time (s): "..tostring(g.PlayerData.PlayTime.Value).." | Job: "..g.Job.Value.." | Inventory: "..vts(g.PlayerData.Inventory.Value:split(",")).." | Bank: "..vts(g.PlayerData.Bank.Value:split(",")).." | Perms: "..vts(g.PlayerData.BInventory.Value:split(",")).." | Vehicles: "..vts(g.PlayerData.VInventory.Value:split(","))
+		local framesize = sv.TextService:GetTextSize(text,16,Enum.Font.SourceSansBold,Vector2.new(354,500))
 		local Main = Instance.new("Frame")
 		local UIGradient = Instance.new("UIGradient")
 		local Top = Instance.new("Frame")
@@ -2159,7 +2161,7 @@ Util:Button("View Data",function()
 		Main.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		Main.BorderSizePixel = 2
 		Main.Position = UDim2.new(0.599159658, 0, 0.544665039, 0)
-		Main.Size = UDim2.new(0, 370, 0, 248)
+		Main.Size = UDim2.new(0, 370, 0, 80+framesize.Y)
 
 		UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
 		UIGradient.Rotation = 90
@@ -2238,12 +2240,12 @@ Util:Button("View Data",function()
 		t.Parent = Main
 		t.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		t.BackgroundTransparency = 1.000
-		t.Position = UDim2.new(0.0179730393, 0, 0.278225809, 0)
-		t.Size = UDim2.new(0, 354, 0, 172)
+		t.Position = UDim2.new(0.0179730393, 0, 0, 63)
+		t.Size = UDim2.new(0, 354, 0, framesize.Y)
 		t.Font = Enum.Font.SourceSansBold
 		t.Text = "Cash: "..tostring(g.PlayerData.Currency.Value).." | ECurrency: "..tostring(g.PlayerData.ECurrency.Value).." | Aureus: "..tostring(g.PlayerData.PCurrency.Value).." | Karma: "..tostring(g.PlayerData.Karma.Value).." | Audio: "..(workspace.Buildings:FindFirstChild(g.Name) and workspace.Buildings[g.Name]:FindFirstChild("Jukebox") and workspace.Buildings[g.Name].Jukebox.Speaker.Sound.SoundId:gsub('rbxassetid://','') or '0').." | Play Time: "..tostring(g.PlayerData.PlayTime.Value).." | Job: "..g.Job.Value.." | Inventory: "..vts(g.PlayerData.Inventory.Value:split(",")).." | Bank: "..vts(g.PlayerData.Bank.Value:split(",")).." | Perms: "..vts(g.PlayerData.BInventory.Value:split(",")).." | Vehicles: "..vts(g.PlayerData.VInventory.Value:split(","))
 		t.TextColor3 = Color3.fromRGB(255, 255, 255)
-		t.TextSize = 14.500
+		t.TextSize = 16
 		t.TextStrokeTransparency = 0.500
 		t.TextWrapped = true
 		t.TextXAlignment = Enum.TextXAlignment.Left
@@ -2417,7 +2419,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-	while task.wait(2) do -- misc shit
+	while task.wait(2) do -- aureus autofarm
 		if togs.AureusFarm then
 			for _,__ in pairs(workspace.Buildings:GetChildren()) do
 				for i,v in pairs(__:GetChildren()) do
@@ -2430,7 +2432,6 @@ task.spawn(function()
 							task.wait(.1)
 							sv.ReplicatedStorage.Events.MenuAcitonEvent:FireServer(3)
 						until not workspace:FindFirstChild("DroneShipment")
-						WaitForChildRemoved(workspace,"DroneShipment")
 						it:PivotTo(v:GetPivot() + v:GetPivot().UpVector * 2)
 						repeat
 							task.wait(.1)
