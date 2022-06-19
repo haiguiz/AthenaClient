@@ -1,8 +1,8 @@
 -- open sourced because i do not care.
 -- ui might not be accurate cuz exactly recreating it is way to time consuming
-
-local STick = tick()
-local ui, settings = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/GFXTI/d/main/AthenaUi.lua"))()
+if shared.AthenaLoaded then return 0 end
+shared.AthenaLoaded = true
+local ui, settings = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/GFXTI/AthenaClient/main/MainUi.lua"))()
 local lib = ui:Library()
 local togs = {
     SilentAim = {
@@ -1456,13 +1456,6 @@ thing:Slider("Health",1,150,togs.AutoSemiGod.Rate,false,function(t)
 	end
 end)
 
-Player:Toggle("Anti Afk",togs.AntiAfk,function(t)
-	togs.AntiAfk = t
-	table.foreach(getconnections(lp.Idled),function(s,v)
-		v[t and "Disable" or "Enable"](v)
-	end)
-end)
-
 Player:Toggle("Bypass Spy Checks",togs.AntiSpyCheck,function(t)
 	togs.AntiSpyCheck = t
 end)
@@ -2007,7 +2000,7 @@ Combat:Toggle("Store Aura",togs.StoreAura,function(t)
 end)
 
 local killaura = Combat:ToggleDropdown("Kill Aura",togs.Killaura.Toggled,function(t)
-	togs.Killaura = t
+	togs.Killaura.Toggled = t
 end)
 
 killaura:Button("Whitelist Player",function()
@@ -2570,4 +2563,4 @@ end)
 
 lib:Note("Athena Client","Press Right Control to open.")
 
-return "Beta"
+return 1
