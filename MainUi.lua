@@ -137,7 +137,8 @@ function ret:Library(Name)
 	uis.InputBegan:Connect(function(m3,m2)
 		if m3.KeyCode == Enum.KeyCode.RightControl and not m2 then
 			settings.vis = not settings.vis
-			for i,v in pairs(aui:GetChildren()) do 
+			for i,v in pairs(aui:GetChildren()) do
+				task.wait(.03)
 				if v.Name:find("Window") then
 					if settings.vis then
 						v.Visible = true
