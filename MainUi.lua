@@ -349,7 +349,7 @@ function ret:Library(Name)
 			if b then pcall(task.spawn, f, b) end
 
 			TextButton.MouseButton1Down:Connect(function()
-				f(not tog)
+				 pcall(task.spawn, f, not tog)
 				tog = not tog
 				UIGradient.Color = ((tog and onc) or (not tog and ofc))
 			end)
@@ -1005,7 +1005,7 @@ function ret:Library(Name)
 				if b then pcall(task.spawn, f, b) end
 	
 				TextButton.MouseButton1Down:Connect(function()
-					f(not tog)
+					pcall(task.spawn, f, not tog)
 					tog = not tog
 					UIGradient.Color = ((tog and onc) or (not tog and ofc))
 				end)
