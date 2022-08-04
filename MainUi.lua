@@ -138,7 +138,6 @@ function ret:Library(Name)
 		if m3.KeyCode == Enum.KeyCode.RightControl and not m2 then
 			settings.vis = not settings.vis
 			for i,v in pairs(aui:GetChildren()) do
-				task.wait(.03)
 				if v.Name:find("Window") then
 					if settings.vis then
 						v.Visible = true
@@ -169,10 +168,10 @@ function ret:Library(Name)
         end
 
         if Error then
-			ErrorSound:Play()
-		else
-			NormalSound:Play()
-		end
+		ErrorSound:Play()
+	else
+		NormalSound:Play()
+	end
 
         Note.Frame.BackgroundColor3 = ((Error and ErrorColor) or (not Error and NormalColor))
         Note.Parent = Notifications
@@ -347,7 +346,7 @@ function ret:Library(Name)
 			UIGradient.Rotation = 90
 			UIGradient.Parent = Toggle
 			
-			if b then f(b) end
+			if b then pcall(task.spawn, f, b) end
 
 			TextButton.MouseButton1Down:Connect(function()
 				f(not tog)
@@ -424,7 +423,7 @@ function ret:Library(Name)
 				if not m2 then
 					if not selecting then
 						if m.KeyCode == k then
-							f(k)
+							pcall(task.spawn, f, k)
 						end
 					end
 				end
@@ -554,7 +553,7 @@ function ret:Library(Name)
 						end
 
 						SliderFrame.Text = tostring(n)..": "..tostring(vtn)
-						f(vtn)
+						pcall(task.spawn, f, vtn)
         			end)
                 end
             end
@@ -643,11 +642,11 @@ function ret:Library(Name)
 
 			TextBox.FocusLost:Connect(function()
 				if uis:IsKeyDown(Enum.KeyCode.RightShift) or uis:IsKeyDown(Enum.KeyCode.LeftShift) then
-					f(TextLabel.Text)
+					pcall(task.spawn, f, TextLabel.Text)
 					TextBox.Text = fs
 					TextLabel.Text = ""
 				else
-					f(TextBox.Text)
+					pcall(task.spawn, f, TextBox.Text)
 					TextLabel.Text = ""
 				end
 			end)
@@ -814,7 +813,7 @@ function ret:Library(Name)
 					DFrame.Visible = false
 					ImageButton.Rotation = 0
 					UIGradient_2.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(86, 87, 85)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(78, 77, 73))}
-					f(thing)
+					pcall(task.spawn, f, thing)
 				end)
 			end
 
@@ -915,12 +914,12 @@ function ret:Library(Name)
 			UIGradient_2.Parent = Dropdown
 	
 			TextLabel.MouseButton1Down:Connect(function()
-				fu(not togg)
+				pcall(task.spawn, fu, not tog)
 				togg = not togg
 				UIGradient_2.Color = ((togg and onc) or (not togg and ofc))
 			end)
 
-			if de then fu(de) end
+			if de then pcall(task.spawn, fu, de) end
 
 			local function getsize()
 				local m = 4
@@ -1003,7 +1002,7 @@ function ret:Library(Name)
 				UIGradient.Rotation = 90
 				UIGradient.Parent = Toggle
 				
-				if b then f(b) end
+				if b then pcall(task.spawn, f, b) end
 	
 				TextButton.MouseButton1Down:Connect(function()
 					f(not tog)
@@ -1078,7 +1077,7 @@ function ret:Library(Name)
 					if not m2 then
 						if not selecting then
 							if m.KeyCode == k then
-								f(k)
+								pcall(task.spawn, f, k) 
 							end
 						end
 					end
@@ -1174,7 +1173,7 @@ function ret:Library(Name)
 							end
 
 							SliderFrame.Text = tostring(n)..": "..tostring(vtn)
-							f(vtn)
+							pcall(task.spawn, f, vtn) 
 						end)
 					end
 				end
@@ -1262,11 +1261,11 @@ function ret:Library(Name)
 	
 				TextBox.FocusLost:Connect(function()
 					if uis:IsKeyDown(Enum.KeyCode.RightShift) or uis:IsKeyDown(Enum.KeyCode.LeftShift) then
-						f(TextLabel.Text)
+						pcall(task.spawn, f, TextLabel.Text)
 						TextBox.Text = fs
 						TextLabel.Text = ""
 					else
-						f(TextBox.Text)
+						pcall(task.spawn, f, TextBox.Text)
 						TextLabel.Text = ""
 					end
 				end)
@@ -1365,10 +1364,10 @@ function ret:Library(Name)
 					UIGradient.Rotation = 90
 					UIGradient.Parent = Toggle
 					
-					if b then f(b) end
+					if b then pcall(task.spawn, f, b)  end
 		
 					TextButton.MouseButton1Down:Connect(function()
-						f(not tog)
+						pcall(task.spawn, f, not tog) 
 						tog = not tog
 						UIGradient.Color = ((tog and onc) or (not tog and ofc))
 					end)
@@ -1446,7 +1445,7 @@ function ret:Library(Name)
 						if not m2 then
 							if not selecting then
 								if m.KeyCode == k then
-									f(k)
+									pcall(task.spawn, f, k)
 								end
 							end
 						end
@@ -1545,7 +1544,7 @@ function ret:Library(Name)
 								end
 	
 								SliderFrame.Text = tostring(n)..": "..tostring(vtn)
-								f(vtn)
+								pcall(task.spawn, f, vtn) 
 							end)
 						end
 					end
@@ -1636,11 +1635,11 @@ function ret:Library(Name)
 		
 					TextBox.FocusLost:Connect(function()
 						if uis:IsKeyDown(Enum.KeyCode.RightShift) or uis:IsKeyDown(Enum.KeyCode.LeftShift) then
-							f(TextLabel.Text)
+							pcall(task.spawn, f, TextLabel.Text)
 							TextBox.Text = fs
 							TextLabel.Text = ""
 						else
-							f(TextBox.Text)
+							pcall(task.spawn, f, TextBox.Text)
 							TextLabel.Text = ""
 						end
 					end)
