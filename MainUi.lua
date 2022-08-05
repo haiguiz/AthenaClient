@@ -914,7 +914,7 @@ function ret:Library(Name)
 			UIGradient_2.Parent = Dropdown
 	
 			TextLabel.MouseButton1Down:Connect(function()
-				pcall(task.spawn, fu, not tog)
+				pcall(task.spawn, fu, not togg)
 				togg = not togg
 				UIGradient_2.Color = ((togg and onc) or (not togg and ofc))
 			end)
