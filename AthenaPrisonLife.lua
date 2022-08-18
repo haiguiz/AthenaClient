@@ -3,9 +3,9 @@
 
 local ui, settings = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/GFXTI/AthenaClient/main/MainUi.lua"))()
 local lib = ui:Library()
-local combat = lib:Window("Combat")
-local player = lib:Window("Player")
-local misc   = lib:Window("Misc")
+local combat  = lib:Window("Combat")
+local player  = lib:Window("Player")
+local misc    = lib:Window("Misc")
 
 local sv = setmetatable({}, {__index = function(_, a) return game.GetService(game, a) end})
 local lp = sv.Players.LocalPlayer
@@ -27,6 +27,9 @@ local map = {}
 local shields = {}
 local loopkilltable = {}
 local whitelist = {}
+local drawingobjects = {}
+local allowedtools = {}
+local workspacedrawingobjects = Instance.new("Model", workspace)
 
 local togs = {
     GunMods = {
@@ -73,6 +76,18 @@ local togs = {
         R = 255;
         G = 255;
         B = 255;
+    };
+    Noclip = {
+        Toggled = false;
+        Enabled = false;
+        Key = Enum.KeyCode.X;
+    };
+    Drawing = {
+        Toggled = false;
+        Gun = "AK-47";
+        Delete = false;
+        Refresh = 0.2;
+        InstaKill = false;
     };
     AntiArmorSpam = false;
     AntiShield = false;
@@ -124,6 +139,28 @@ local function getgun(order)
     for i,v in pairs(order) do
         remotes.Item:InvokeServer(workspace.Prison_ITEMS.giver[v].ITEMPICKUP)
         repeat task.wait() until lp.Backpack:FindFirstChild(v) or lp.Character:FindFirstChild(v)
+    end
+end
+
+local function ffc(part, find, recursive) -- roblox seems to fuck up their funcs so i have to recreate them
+    for i,v in pairs(part:GetChildren()) do
+        if tostring(part) == find then
+            return v
+        end
+    end
+
+    if recursive then
+        for i,v in pairs(part:GetChildren()) do
+            ffc(v, find, recursive)
+        end
+    end
+end
+
+local function find(table, item)
+    for i,v in pairs(table) do
+        if v == item then
+            return i
+        end
     end
 end
 
@@ -192,6 +229,34 @@ local function kill(tru, weapon)
     end
 end
 
+local function bring(plr, tool, cframe) -- thanks fate for helpin a bit
+    if not plr or not tool or not cframe then return end
+    if not lp.Character then lp.CharacterAdded:Wait() end
+    local oldpos = lp.Character:GetPivot()
+    if type(tool) == "string" then
+        getgun{tool}
+        tool = lp.Backpack:WaitForChild(tool)
+    end
+
+    cam.CameraSubject = lp.Character
+    lp.Character.Humanoid:Clone().Parent = lp.Character
+    task.wait()
+    lp.Character.Humanoid:Destroy()
+    tool.Parent = lp.Character
+    local i = 0
+    while task.wait(.05) do
+        i += 1
+        lp.Character:PivotTo(cframe)
+        plr.Character:PivotTo(cframe)
+        if i < 300 or tool.Parent ~= lp.Character then
+            break
+        end
+    end
+
+    remotes.Load:InvokeServer()
+    lp.CharacterAdded:Wait():PivotTo(oldpos)
+end
+
 local function GetPlayer(a)
     if type(a) == "string" then
         a = a:lower()
@@ -212,44 +277,75 @@ end
 
 local function OnCharacterAdded(char)
     task.wait()
-    local hum, clientenv = char:WaitForChild("Humanoid"), getsenv(char:WaitForChild("ClientInputHandler"))
-    repeat task.wait() until not lp.Character or hum.Health == 0 or getconnections(remotes.Taze.OnClientEvent)[1] and getconnections(hum.Changed)[1]
+    local hum, clientenv, rs, bp = char:WaitForChild("Humanoid")
 
-    if not lp.Character or hum.Health == 0 then
-        return
-    end
+    repeat task.wait() until getconnections(remotes.Taze.OnClientEvent)[1] and getconnections(hum.Changed)[1]
+    clientenv = getsenv(char:WaitForChild("ClientInputHandler"))
 
     local taze, jump = getconnections(remotes.Taze.OnClientEvent)[1], getconnections(hum.Changed)[1]
     taze[togs.AntiTaze and "Disable" or "Enable"](taze)
-    
+
     for i,v in pairs(debug.getupvalues(jump.Function)) do
         if type(v) ~= "number" or v == 5 then continue end
         debug.setupvalue(jump.Function, i, togs.InfiniteStamina and math.huge or 12)
     end
 
-    local rs; rs = sv.RunService.RenderStepped:Connect(function()
+    rs = sv.RunService.RenderStepped:Connect(function()
         if togs.FastPunch then
             clientenv.cs.isRunning = false
             clientenv.cs.isFighting = false
         end
     end)
 
+    bp = lp.DescendantAdded:Connect(function(item) -- descendentadded because roblox is really fucking garbage and replaces backpacks
+        if tostring(item.Parent) ~= "Backpack" then return end
+        print(item)
+        allowedtools[#allowedtools + 1] = item
+        local a = table.find({"AK-47", "M4A1", "M9", "Remington 870", "Taser"}, item.Name) and ffc(item, "GunStates")
+        if a and togs.GunMods.Toggled then
+            local mod = require(a)
+            mod.AutoFire = togs.GunMods.Automatic or mod.AutoFire
+            mod.FireRate = togs.GunMods.CustomFireate and togs.GunMods.FireRate or mod.FireRate
+            mod.Range = togs.GunMods.CustomRange and togs.GunMods.Range or mod.Range
+        end
+    end)
+
+    if togs.GunSpawn then
+        getgun(togs.GunOrder)
+    end
+
+    if not lp.Character or hum.Health == 0 then
+        return
+    end
+
+    local ca; ca = char.ChildAdded:Connect(function(item)
+        if item:IsA("Tool") and not find(allowedtools, item) then
+            task.wait()
+            item.Parent = lp.Backpack
+            item:Destroy()
+            for i = 1, 10 do
+                task.wait()
+                lp.Character.HumanoidRootPart.Velocity = Vector3.zero
+            end
+        end
+    end)
+
     local hd; hd = hum.Died:Connect(function()
-        hd:Disconnect()
-        rs:Disconnect()
+        pcall(function()
+            hd:Disconnect()
+            rs:Disconnect()
+            bp:Disconnect()
+            ca:Disconnect()
+        end)
+
         if togs.AutoRespawn.Toggled then
             local tool = char:FindFirstChildOfClass("Tool")
             local isgun = table.find({"M4A1", "M9", "AK-47", "Remington 870"}, tool and tool.Name or "")
             respawn()
-            if togs.GunSpawn then
-                print()
-                getgun(togs.GunOrder)
-            end
 
             if togs.AutoRespawn.EquipOldWeapon then
                 local newtool = isgun and tool.Name
                 if newtool then
-                    print()
                     getgun(togs.GunOrder)
                     local item = lp.Backpack:WaitForChild(newtool, 10)
                     item.Parent = lp.Character
@@ -449,7 +545,7 @@ combat:Button("Get swat items", function()
 
     remotes.Item:InvokeServer(workspace.Prison_ITEMS.clothes:FindFirstChild("Riot Police").ITEMPICKUP)
     remotes.Item:InvokeServer(workspace.Prison_ITEMS.giver:FindFirstChild("Riot Shield").ITEMPICKUP)
-    
+
     if oldteam then
         team(oldteam)
     end
@@ -529,12 +625,73 @@ player:Toggle("Infinite stamina", togs.InfiniteStamina, function(a)
     end
 end)
 
+local thing = player:ToggleDropdown("Noclip", togs.Noclip.Toggled, function(a)
+    togs.Noclip.Toggled = a
+end)
+
+thing:Keybind("Noclip Key", togs.Noclip.Key, function(a)
+    togs.Noclip.Key = a
+    togs.Noclip.Enabled = not togs.Noclip.Enabled
+end)
+
 misc:Button("Crash V1", function()
     loadfile("CrashV1.lua")()
 end)
 
 misc:Toggle("Anti armor spam", togs.AntiArmorSpam, function(a)
     togs.AntiArmorSpam = a
+end)
+
+local selected
+misc:TextBox("Player", "players", function(a)
+    selected = GetPlayer(a)
+end)
+
+misc:Button("Add/Remove whitelist", function()
+    if not selected then return end
+    local found = table.find(whitelist, selected.Name)
+    if found then
+        table.remove(whitelist, found)
+    else
+        table.insert(whitelist, selected.Name)
+    end
+end)
+
+misc:Button("Bring (broken)", function()
+    if not selected or not selected.Character or not lp.Character then return end
+    getgun{"AK-47"}
+    bring(selected, lp.Backpack:WaitForChild("AK-47"), lp.Character:GetPivot())
+end)
+
+misc:Button("Kill", function()
+    if not selected or not selected.Character or not lp.Character then return end
+    repeat task.wait() until not selected.Character or not selected.Character:FindFirstChild("ForceField")
+    kill({selected})
+end)
+
+local thing = misc:ToggleDropdown("Drawing", togs.Drawing.Toggled, function(a)
+    togs.Drawing.Toggled = a
+end)
+
+thing:Toggle("Delete mode", togs.Drawing.Delete, function(a)
+    togs.Drawing.Delete = a
+end)
+
+thing:Slider("Refresh rate", 0.01, 2, togs.Drawing.Refresh, true, function(a)
+    togs.Drawing.Refresh = a
+end)
+
+thing:Button("Clear", function()
+    drawingobjects = {}
+    workspacedrawingobjects:ClearAllChildren()
+end)
+
+thing:Toggle("Instant kill", togs.Drawing.InstaKill, function(a)
+    togs.Drawing.InstaKill = a
+end)
+
+misc:Dropdown("Drawing Gun", {"M9", "Remington 870", "M4A1", "AK-47"}, function(a)
+    togs.Drawing.Gun = a
 end)
 
 local namecall; namecall = hookmetamethod(game, "__namecall", function(s, ...)
@@ -583,7 +740,7 @@ local namecall; namecall = hookmetamethod(game, "__namecall", function(s, ...)
                     if togs.GunMods.InfiniteAmmo then
                         remotes.Reload.FireServer(remotes.Reload, args[2])
                         local gunstates = require(args[2].GunStates)
-                        gunstates.CurrentAmmo = gunstates.MaxAmmo
+                        gunstates.CurrentAmmo = gunstates.MaxAmmo + 1
                     end
 
                     if togs.GunMods.InvisBullets then
@@ -639,7 +796,7 @@ remotes.Replicate.OnClientEvent:Connect(function(bullets)
 
             if v.Hit and v.Hit:IsDescendantOf(lp.Character) then
                 for i,v2 in pairs(sv.Players:GetPlayers()) do
-                    if v2 ~= lp and not table.find(whitelist, v2.Name) and v2.Character and v2.Character:FindFirstChild("Humanoid") and 1 ~= 0 and v2.Character.Humanoid.Health ~= 0 and not v2.Character:FindFirstChild("ForceField") then
+                    if v2 ~= lp and not table.find(whitelist, v2.Name) and v2.Character and v2.Character:FindFirstChild("Humanoid") and 1 ~= 0 then
                         local tool = v2.Character:FindFirstChildOfClass("Tool")
                         if tool and table.find({"AK-47", "M4A1", "M9", "Remington 870", "Taser"}, tool.Name) then
                             local dbraymuzzle = (v.RayObject.Origin - tool.Muzzle.CFrame.p).magnitude
@@ -652,23 +809,68 @@ remotes.Replicate.OnClientEvent:Connect(function(bullets)
             end
 
             if plr then
-                kill({plr})
+                task.spawn(kill, {plr})
             end
         end
     end
 end)
 
-for i,v in pairs(workspace:GetChildren()) do
-    if not sv.Players:GetPlayerFromCharacter(v) then
-        table.insert(map, v)
-    end
-end
+local isdrawing, object
+lp:GetMouse().Button1Down:Connect(function()
+    if togs.Drawing.Toggled then
+        local hit, pos = lp:GetMouse().Target, lp:GetMouse().Hit
 
-for i,v in pairs(sv.Players:GetPlayers()) do
-    if v ~= lp then
-        PlayerAdded(v)
+        if togs.Drawing.Delete then
+            if hit.Name == "DrawingPart" then
+                hit:Destroy()
+                table.remove(drawingobjects, table.find(drawingobjects, hit))
+            end
+
+            return
+        end
+
+        isdrawing = true
+        object = Instance.new("Part", workspacedrawingobjects)
+        object.Name = "DrawingPart"
+        object.Material = Enum.Material.Neon
+        object.BrickColor = BrickColor.Yellow()
+        object.CanCollide = false
+        object.Anchored = true
+        object.Size = Vector3.new(.2, .2, .2)
+        object.CFrame = pos
+        drawingobjects[object] = {Origin = pos.p, End = pos.p}
     end
-end
+end)
+
+lp:GetMouse().Move:Connect(function()
+    if isdrawing and object and drawingobjects[object] then
+        local pos, origin = lp:GetMouse().Hit, drawingobjects[object].Origin
+
+        object.CFrame = CFrame.new(drawingobjects[object].Origin, pos.p) * CFrame.new(0, 0, -(pos.p - origin).magnitude * .5)
+        object.Size = Vector3.new(.2, .2, (pos.p - origin).magnitude)
+        drawingobjects[object] = {Origin = origin, End = pos.p}
+    end
+end)
+
+lp:GetMouse().Button1Up:Connect(function()
+    isdrawing = false
+    object = nil
+end)
+
+sv.RunService.RenderStepped:Connect(function()
+    if togs.Noclip.Toggled and togs.Noclip.Enabled then
+        if not lp.Character then return end
+        for i,v in pairs(lp.Character:GetChildren()) do
+            if not v:IsA("BasePart") then continue end
+            v.CanCollide = false
+        end
+    end
+end)
+
+sv.Players.PlayerAdded:Connect(PlayerAdded)
+
+OnCharacterAdded(lp.Character)
+lp.CharacterAdded:Connect(OnCharacterAdded)
 
 task.spawn(function()
     while task.wait(.1) do
@@ -684,9 +886,45 @@ task.spawn(function()
                 end
             end
 
-            if kt[1] ~= nil then
-                kill(kt)
+            if kt[1] then
+                task.spawn(kill, kt)
             end
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(togs.Drawing.Refresh) do
+        local tool = lp.Character and lp.Character:FindFirstChild(togs.Drawing.Gun)
+        if tool then
+            local args = {}
+            for i,v in pairs(drawingobjects) do
+                local distance = (v.Origin - v.End).magnitude
+                local Hit = workspace:FindPartOnRay(Ray.new(v.Origin, (v.End - v.Origin).unit * distance), workspacedrawingobjects)
+                if Hit then
+                    local ancestor = Hit:FindFirstAncestorOfClass("Model")
+                    local plr = ancestor and sv.Players:GetPlayerFromCharacter(ancestor)
+                    if plr then
+                        if table.find(whitelist, plr.Name) then
+                            Hit = nil
+                        end
+
+                        if Hit and togs.Drawing.InstaKill then
+                            kill({plr})
+                        end
+                    end
+                end
+
+                table.insert(args, {
+                    ["RayObject"] = Ray.new(v.Origin, v.End),
+                    ["Distance"] = distance,
+                    ["Cframe"] = CFrame.new(v.Origin, v.End) * CFrame.new(0, 0, -distance * .5),
+                    ["Hit"] = Hit
+                })
+            end
+
+            remotes.Shoot:FireServer(args, tool)
+            remotes.Reload:FireServer(tool)
         end
     end
 end)
@@ -697,18 +935,14 @@ task.spawn(function()
     end
 end)
 
-sv.Players.PlayerAdded:Connect(PlayerAdded)
-
-lp.Backpack.ChildAdded:Connect(function(item)
-    print()
-    local a = item:FindFirstChild("GunStates")
-    if a and togs.GunMods.Toggled then
-        local mod = require(a)
-        mod.AutoFire = togs.GunMods.Automatic or mod.AutoFire
-        mod.FireRate = togs.GunMods.CustomFireate and togs.GunMods.FireRate or mod.FireRate
-        mod.Range = togs.GunMods.CustomRange and togs.GunMods.Range or mod.Range
+for i,v in pairs(workspace:GetChildren()) do
+    if not sv.Players:GetPlayerFromCharacter(v) then
+        table.insert(map, v)
     end
-end)
+end
 
-OnCharacterAdded(lp.Character)
-lp.CharacterAdded:Connect(OnCharacterAdded)
+for i,v in pairs(sv.Players:GetPlayers()) do
+    if v ~= lp then
+        PlayerAdded(v)
+    end
+end
