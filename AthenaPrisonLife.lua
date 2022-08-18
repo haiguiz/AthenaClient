@@ -164,6 +164,10 @@ local function find(table, item)
     end
 end
 
+local function ProperRay(From, To, ...)
+    return workspace:FindPartOnRayWithIgnoreList(Ray.new(From, (To - From).unit * (From - To).magnitude), ...)
+end
+
 local function findgun()
     for i,v in pairs(lp.Character:GetChildren() and lp.Backpack:GetChildren()) do
         if v:IsA("Tool") and table.find({"M4A1", "M9", "AK-47", "Remington 870"}, v.Name) then
@@ -896,11 +900,12 @@ end)
 task.spawn(function()
     while task.wait(togs.Drawing.Refresh) do
         local tool = lp.Character and lp.Character:FindFirstChild(togs.Drawing.Gun)
+        
         if tool then
             local args = {}
             for i,v in pairs(drawingobjects) do
                 local distance = (v.Origin - v.End).magnitude
-                local Hit = workspace:FindPartOnRay(Ray.new(v.Origin, (v.End - v.Origin).unit * distance), workspacedrawingobjects)
+                local Hit = ProperRay(v.Origin, v.End, {workspacedrawingobjects})
                 if Hit then
                     local ancestor = Hit:FindFirstAncestorOfClass("Model")
                     local plr = ancestor and sv.Players:GetPlayerFromCharacter(ancestor)
