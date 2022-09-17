@@ -206,7 +206,7 @@ function ret:Library(Name)
 		Window1.BackgroundTransparency = 1
 		Window1.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		Window1.BorderSizePixel = 2
-		Window1.Position = UDim2.new(-0.08,170*m, 0.0417177901, 0)
+		Window1.Position = UDim2.new(0,10 + (170*m), 0.0417177901, 0)
 		Window1.Size = UDim2.new(0, 160, 0, 274)
 		Window1.Active = false
 		Window1.Visible = false
