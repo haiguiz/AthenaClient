@@ -188,7 +188,6 @@ function ret:Library(Name)
 
 	function ui:Window(rbrbrb)
 		local self = {}
-		m = m + 1
 
 		local Window1 = Instance.new("Frame")
 		local UIGradient = Instance.new("UIGradient")
@@ -1649,6 +1648,7 @@ function ret:Library(Name)
 			return self2
 		end
 		resize()
+		m = m + 1
 		return self
 	end
 	return ui
