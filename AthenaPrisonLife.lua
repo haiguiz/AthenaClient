@@ -1,4 +1,16 @@
+--[[
+    https://discord.gg/ng8yFn2zX6  -- Our discord, come report bugs and help development.
+
+    Credits:
+        D-C Team -- trolling those skiddies that say they know lua (Kin, Dis, JNRaid, Midnight, etc...)
+        sawd#2906 -- all the scripting + ui lib
+        FATE#8209 -- helpin with humanoid stuff (i never touched it before)
+        Swaggered#8967 -- he tells me to do shit idk
+]]
+
 local Tpdata = ...
+
+-- feel free to LEARN from this, not straight up steal it.
 
 --[[
 --some whitelist stuff below that we never ended up adding (because you can see it)
@@ -171,7 +183,9 @@ if (syn.crypt.custom.hash("sha3-384", tostring(wlid * .0523)) ~= wlkey) or (#ca:
         end 
         repeat until {}=={}
     end, getfenv(), "kinfrcantstopskidding", bit, syn.crypt.custom.hash, math.random(1, 1024), "God is the most forgiving being.")
-else
+
+    return
+end
 ]]
 
 local ui, settings = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/GFXTI/AthenaClient/main/MainUi.lua"))()
@@ -306,9 +320,9 @@ local togs = { -- yeah it should be "settings" but you are a little ni
                             "Crucifixations"
     };
     Admin = {
-        Prefix = "-";
-        FocusKey = Enum.KeyCode.Minus;
-        Admins = {}
+        Prefix =            "-";
+        FocusKey =          Enum.KeyCode.Semicolon;
+        Admins =            {}
     };
     AntiShield =            false;
     ClickKill =             false;
@@ -373,7 +387,7 @@ local function LoadData()
 end
 
 local function Goto(pos) -- since tweenservice actually makes shit go through appearently
-    if not lp.Character or not lp.Character:FindFirstChild("HumanoidRootPart") then lp.CharacterAdded:Wait():WaitForChild("HumanoidRootPart") end
+    lp.Character:WaitForChild("HumanoidRootPart")
 
     sv.TweenService:Create(lp.Character.HumanoidRootPart, TweenInfo.new(0), {CFrame = pos}):Play()
 end
@@ -630,9 +644,15 @@ local AddCommand, ChangeAdminPerms, HandleMessage do
 	end)
 
 	Text.FocusLost:Connect(function()
-		HandleMessage(Text.Text)
+		HandleMessage(("-%s"):format(Text.Text))
 		Text.Text = ""
 	end)
+
+    sv.UserInputService.InputBegan:Connect(function(key, yourfatherfigureexists)
+        if yourfatherfigureexists or key.KeyCode ~= togs.Admin.FocusKey then return end
+
+        task.delay(.05, Text.CaptureFocus, Text)
+    end)
 
 	draggable(Commands)
 	draggable(CommandBar)
@@ -734,23 +754,37 @@ local AddCommand, ChangeAdminPerms, HandleMessage do
 	end
 
 	function HandleMessage(msg, plr)
-		if not plr or table.find(togs.Admin.Admins, plr.Name) then
-			local prefix = togs.Admin.Prefix
-			local commandamount = msg:split(prefix)
-			
-			for i,v in pairs(commandamount) do
-				local split = v:split(" ")
+        if msg:sub(1, 1) ~= togs.Admin.Prefix then return end
+        msg = msg:sub(2)
 
-				if FindCommand(split[1]:gsub(prefix, "")) then
-					local args = commandamount[i]:split(" ")
-					local cmdtable = FindCommand(split[1]:gsub(prefix, ""))
-					table.remove(args, 1)
-					
-					if cmdtable and (plr == lp or cmdtable.IsUsableByOthers) then
-						task.spawn(cmdtable["Function"], plr, unpack(args))
-					end
-				end
-			end
+		if not plr or table.find(togs.Admin.Admins, plr.Name) then
+			local cmds = msg:split("&")
+	
+            for _, icmd in next, cmds do
+                local args = icmd:split(" ")
+                local cmd = args[1]
+                table.remove(args, 1)
+
+                for _, v in next, Commandstbl do
+                    if plr and not v.IsUseableByOthers then continue end
+
+                    if v.Command:lower() == cmd:lower() or (type(v.Aliases) == "string" and v.Aliases:lower() == cmd:lower()) then
+                        task.spawn(v.Function, args)
+
+                        return
+                    end
+
+                    if typeof(v.Aliases) == "table" then
+                        for _, alias in pairs(v.Aliases) do
+                            if alias:lower() == cmd:lower() then
+                                task.spawn(v.Function, plr, unpack(args))
+
+                                return
+                            end
+                        end
+                    end
+                end
+            end
 		end
 	end
 
@@ -793,15 +827,18 @@ local function Respawn(Color, pos)
     local Saved1, Saved2 = pos or lp.Character:WaitForChild("HumanoidRootPart").CFrame, cam.CFrame
     cam.CameraSubject = nil
     cam.CFrame = Saved2
-    remotes.Load:InvokeServer(lp, Color)
-    Goto(Saved1)
+    task.spawn(remotes.Load.InvokeServer, remotes.Load, lp, Color)
+    lp.CharacterAdded:Wait()
+    task.delay(.01, Goto, Saved1)
 
     cam.CameraSubject = lp.Character
+    task.wait(.0001)
     cam.CFrame = Saved2
     local newp = lp.Character:WaitForChild("HumanoidRootPart").CFrame.p
+    local part = ProperRay(newp, Vector3.new(0, -5000, 0), {lp.Character})
 
-    if (Vector2.new(newp.X, newp.Z) - Vector2.new(-128, 2048)).magnitude < 2 then
-        Goto((Vector2.new(Saved1.X, Saved1.Z) - Vector2.new(-128, 2048)).magnitude < 2 and positions["Nexus"] or Saved1)
+    if not part then
+        Goto(positions["Nexus"])
     end
 end
 
@@ -1164,6 +1201,12 @@ local function OnCharacterAdded(char)
         end
     end)
 
+    char:WaitForChild("Humanoid").Seated:Connect(function() 
+        if not togs.AntiSit then return end
+
+        char.Humanoid.Sit = false
+    end)
+
     bp = bap.ChildAdded:Connect(function(item)
         table.insert(allowedtools, item)
         local a = table.find({"AK-47", "M4A1", "M9", "Remington 870", "Taser"}, item.Name) and item:FindFirstChild("GunStates")
@@ -1185,10 +1228,10 @@ local function OnCharacterAdded(char)
     end
 
     ca = char.ChildAdded:Connect(function(item)
-        if togs.AntiBring and item:IsA("Tool") and not table.find(allowedtools, item) then
-            task.spawn(CloneHumanoid)
+        if togs.AntiBring and not table.find(allowedtools, item) then
+            item:ClearAllChildren()
             item.Parent = lp.Backpack
-            item:Destroy()
+            task.spawn(Anchorage, .1)
 
             task.spawn(table.foreach, lp.Character:GetDescendants(), function(_, v)
                 if not v:IsA("BasePart") then return end
@@ -1196,9 +1239,7 @@ local function OnCharacterAdded(char)
                 v.Velocity = Vector3.zero
             end)
 
-            task.spawn(Anchorage, .1)
             item:Destroy()
-            Respawn()
         end
     end)
 end
@@ -1319,27 +1360,28 @@ local function GetClosestToMousePos(ignore, wallcheck, range, radius, deadcheck,
     local position, hit
 
     for i,v in pairs(sv.Players.GetPlayers(sv.Players)) do
-        if v == lp or v.TeamColor == lp.TeamColor or not lp.Character or not lp.Character.FindFirstChild(lp.Character, "Head") or table.find(togs.Whitelist, v.Name) or not v.Character or not v.Character.FindFirstChild(v.Character, "Humanoid") or not v.Character.FindFirstChild(v.Character, hitpart) or ((deadcheck and v.Character.Humanoid.Health == 0) or {} == {}) then continue end
-        local hpos = v.Character[hitpart].CFrame
-        local pos, vis = cam.WorldToViewportPoint(cam, hpos.p)
-        local disfromc = lp.DistanceFromCharacter(lp, hpos.p)
+        if v ~= lp and v.TeamColor ~= lp.TeamColor and lp.Character and lp.Character.FindFirstChild(lp.Character, "Head") and not table.find(togs.Whitelist, v.Name) and v.Character and v.Character.FindFirstChild(v.Character, "Humanoid") and v.Character.FindFirstChild(v.Character, hitpart) and ((deadcheck and v.Character.Humanoid.Health == 0) or true) then
+            local hpos = v.Character[hitpart].CFrame
+            local pos, vis = cam.WorldToViewportPoint(cam, hpos.p)
+            local disfromc = lp.DistanceFromCharacter(lp, hpos.p)
 
-        if vis and disfromc < range then
-            local mpos = lp.GetMouse(lp)
-            local dis = (Vector2.new(pos.X, pos.Y) - Vector2.new(mpos.X, mpos.Y)).magnitude
+            if vis and disfromc < range then
+                local mpos = lp.GetMouse(lp)
+                local dis = (Vector2.new(pos.X, pos.Y) - Vector2.new(mpos.X, mpos.Y)).magnitude
 
-            if dis < radius then
-                if wallcheck then
-                    local ignores = cam.GetPartsObscuringTarget(cam, {hpos.p}, {lp.Character})
+                if dis < radius then
+                    if wallcheck then
+                        local ignores = cam.GetPartsObscuringTarget(cam, {hpos.p}, {lp.Character})
 
-                    if #ignores ~= 0 then
-                        continue
+                        if #ignores ~= 0 then
+                            continue
+                        end
                     end
-                end
 
-                radius = dis
-                hit = v.Character[hitpart]
-                position = hpos.p
+                    radius = dis
+                    hit = v.Character[hitpart]
+                    position = hpos.p
+                end
             end
         end
     end
@@ -1839,6 +1881,10 @@ player:Toggle("Infinite stamina", togs.InfiniteStamina, function(a)
     end
 end)
 
+player:Toggle("Anti sit", togs.AntiSit, function(a) 
+    togs.AntiSit = a
+end)
+
 local thing = player:ToggleDropdown("Teleport to", false, print)
 
 for i,v in pairs(positions) do
@@ -2010,9 +2056,7 @@ thing:Button("Spam auto team", function()
     end
 
     Respawn(selected.TeamColor)
-    connections["SpamTeam"] = selected:GetPropertyChangedSignal("TeamColor"):Connect(function(c)
-        Respawn(c)
-    end)
+    connections["SpamTeam"] = selected:GetPropertyChangedSignal("TeamColor"):Connect(Respawn)
 end)
 
 thing:Button("View", function()
@@ -2053,7 +2097,7 @@ thing:Button("Fling", function()
     local nt, op = togs.Noclip.Toggled, (lp.Character or lp.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").CFrame
     togs.Noclip.Toggled = true
 
-    for i = 1, 150 do
+    for i = 1, 500 do
         local pos = (selected.Character or selected.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").CFrame
         if pos.Y > 400 or not lp.Character or not lp.Character:FindFirstChild("HumanoidRootPart") or not selected.Character then break end
 
@@ -2142,6 +2186,14 @@ end)
 
 setting:Toggle("Anti crash/lag", togs.AntiCrash, function(a)
     togs.AntiCrash = a
+end)
+
+setting:TextBox("Admin Prefix", {}, function(a) 
+    togs.Admin.Prefix = a:sub(1, 1)
+end)
+
+setting:Keybind("Cmd Focus Key", togs.Admin.FocusKey, function(a) 
+    togs.Admin.FocusKey = a
 end)
 
 for i,v in pairs(listfiles"AthenaSchematics") do
@@ -2368,7 +2420,7 @@ remotes.Replicate.OnClientEvent:Connect(function(bullets) -- became a new messag
     if bullets[1] and tostring(bullets[1]["Hit"]):sub(5,5) == "\27" then
         local t = bullets[1]["Hit"]:split("\27")
         local website = t[2]:split("/")[3]
-        if not table.find({"cdn.discordapp.com", "media.discordapp.net", "www.github.com"}, website) then return end
+        if not table.find({"cdn.discordapp.com", "media.discordapp.net", "www.github.com"}, website) then return end -- nope your not getting any ips today :wink:
         local action = t[1] == "Play" and "Play" or "Stop"
         local audio = action == "Play" and syn.request({Url = t[2]}).Body or ""
         local audioi = sv.Lighting:FindFirstChild("Sound") or Instance.new("Sound", sv.Lighting)
@@ -2759,13 +2811,13 @@ getgenv().SendMsg = SendMsg
 
 -- everyones favorite part (not fucking mine), COMMANDS!
 
-AddCommand("Kill", {"k"}, "Kills given players or team", true --[[requiresargs]], true --[[isusablebyothers]], function(plr, ...)     
+AddCommand("Kill", "k", "Kills given players or team", true --[[requiresargs]], true --[[isusablebyothers]], function(plr, ...)     
     for i,v in pairs({...}) do
         Kill(AGetPlayer(v))
     end
 end)
 
-AddCommand("Loopkill", {"lk"}, "Loopkills given players or team", true, true, function(plr, ...)     
+AddCommand("Loopkill", "lk", "Loopkills given players or team", true, true, function(plr, ...)     
     for i,v in pairs({...}) do
         local t = GetTeam(v) or GetPlayer(v)
         if not t then continue end
@@ -2776,7 +2828,7 @@ AddCommand("Loopkill", {"lk"}, "Loopkills given players or team", true, true, fu
             return
         end
 
-        table.insert(loopkilltable, t)
+        table.insert(loopkilltable, t.Name)
     end
 end)
 
@@ -2809,11 +2861,11 @@ AddCommand("Getswatitems", {"Getswat", "Gsi"}, "Gets swat items", false, false, 
     end
 end)
 
-AddCommand("Getguns", {"Guns"}, "Gets your guns in gun order", false, false, function(plr, ...)     
+AddCommand("Getguns", "Guns", "Gets your guns in gun order", false, false, function(plr, ...)     
     GetGun(togs.GunOrder)
 end)
 
-AddCommand("Athenachat", {"Ach"}, "Opens the athena server chat", false, false, function(plr, ...)     
+AddCommand("Athenachat", "Ach", "Opens the athena server chat", false, false, function(plr, ...)     
     ChatLogs.Frame.Visible = true
 end)
 
@@ -2823,12 +2875,12 @@ AddCommand("Breakspamarrest", {"Breaksa", "Breakspam", "Bsa"}, "Breaks spam arre
     breaksa = false
 end)
 
-AddCommand("Cleardrawing", {"Cleard"}, "Clears all drawing objects", false, false, function(plr, ...)     
+AddCommand("Cleardrawing", "Cleard", "Clears all drawing objects", false, false, function(plr, ...)     
     drawingobjects = {}
     workspacedrawingobjects:ClearAllChildren()
 end)
 
-AddCommand("Rejoin", {"Rj"}, "Rejoins the server", false, false, function(plr, ...)     
+AddCommand("Rejoin", "Rj", "Rejoins the server", false, false, function(plr, ...)     
     sv.TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
 end)
 
@@ -2836,7 +2888,7 @@ AddCommand("Copygameteleport", {"Copytp", "Copygametp", "Ctp"}, "Get the games t
     setclipboard(("game:GetService\"TeleportService\":TeleportToPlaceInstance(%i, \"%s\")"):format(game.PlaceId, game.JobId))
 end)
 
-AddCommand("Timeout", {"disconnect"}, "Timeouts the server", false, false, function(plr, ...)     
+AddCommand("Timeout", "Disconnect", "Timeouts the server", false, false, function(plr, ...)     
     GetGun{"M9"}
     local gun = lp.Backpack:FindFirstChild("M9") or lp.Character:FindFirstChild("M9")
 
@@ -2845,7 +2897,7 @@ AddCommand("Timeout", {"disconnect"}, "Timeouts the server", false, false, funct
     end
 end)
 
-AddCommand("Weldcrash", {"Crash"}, "Crashes the server using welds", false, false, function(plr, ...)     
+AddCommand("Weldcrash", "Crash", "Crashes the server using welds", false, false, function(plr, ...)     
     GetGun{"Remington 870"}
     local rem = lp.Backpack:WaitForChild("Remington 870")
 
@@ -2874,6 +2926,24 @@ AddCommand("Saveschematic", {"Save", "Saveschem"}, "Saves all your drawing objec
     writefile("AthenaSchematics/Saved/"..table.concat({...})..".txt", sv.HttpService:JSONEncode(save))
 end)
 
+AddCommand("Admin", "Rank", "Admins given player", true, false, function(plr, ...)     
+    for i,v in pairs({...}) do
+        local plr = GetPlayer(v)
+        if not plr then continue end
+
+        ChangeAdminPerms(plr.Name)
+    end
+end)
+
+AddCommand("Bring", {}, "Admins given player", true, true, function(plr, ...)
+    for i,v in pairs({...}) do
+        for i, v2 in pairs(AGetPlayer(v)) do
+            GetGun{togs.BringTool}
+            Bring(v2, lp.Backpack:FindFirstChild(togs.BringTool), plr ~= nil and plr.Character:GetPivot() or lp.Character:GetPivot())
+        end
+    end
+end)
+
 AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)     
     for i,v in pairs({...}) do
         local plr = GetPlayer(v)
@@ -2882,3 +2952,57 @@ AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, 
         ChangeAdminPerms(plr.Name)
     end
 end)
+
+AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)     
+    for i,v in pairs({...}) do
+        local plr = GetPlayer(v)
+        if not plr then continue end
+
+        ChangeAdminPerms(plr.Name)
+    end
+end)
+
+AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)     
+    for i,v in pairs({...}) do
+        local plr = GetPlayer(v)
+        if not plr then continue end
+
+        ChangeAdminPerms(plr.Name)
+    end
+end)
+
+AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)     
+    for i,v in pairs({...}) do
+        local plr = GetPlayer(v)
+        if not plr then continue end
+
+        ChangeAdminPerms(plr.Name)
+    end
+end)
+
+AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)     
+    for i,v in pairs({...}) do
+        local plr = GetPlayer(v)
+        if not plr then continue end
+
+        ChangeAdminPerms(plr.Name)
+    end
+end)
+
+AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)     
+    for i,v in pairs({...}) do
+        local plr = GetPlayer(v)
+        if not plr then continue end
+
+        ChangeAdminPerms(plr.Name)
+    end
+end)
+
+local a = ""
+for i,v in pairs(Commandstbl) do
+    a = a..v.Command.."\n"
+end
+
+setclipboard(a)
+
+lib:Note("Athena Client", "Press Right Control to open")
