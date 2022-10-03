@@ -2998,11 +2998,4 @@ AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, 
     end
 end)
 
-local a = ""
-for i,v in pairs(Commandstbl) do
-    a = a..v.Command.."\n"
-end
-
-setclipboard(a)
-
 lib:Note("Athena Client", "Press Right Control to open")
