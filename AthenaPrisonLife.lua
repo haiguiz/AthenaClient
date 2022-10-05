@@ -195,7 +195,7 @@ local sv =           setmetatable({}, {__index = function(_, a) return game.GetS
 local lp = sv.Players.LocalPlayer
 local breaksa, m9, staying, staypos, cs, punchfunc, selected, viewing
 local chatticks, allowedtools, brickcolors, drawingobjects, loopkilltable, map, shields, athenausers, connections, giventhorns, givenantitouch, givenoneshot, givenkillaura, Commandstbl, oldctrl = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {w = 0, s = 0, a = 0, d = 0}
-local cam, ChatLogs, workspacedrawingobjects, arresttick = workspace.CurrentCamera, Instance.new("ScreenGui", sv.CoreGui), Instance.new("Model", workspace), tick()
+local cam, ChatLogs, workspacedrawingobjects, arresttick, ptick = workspace.CurrentCamera, Instance.new("ScreenGui", sv.CoreGui), Instance.new("Model", workspace), tick(), tick()
 local ex, exv = identifyexecutor()
 local ftrue, ffalse = exv:find("v2") and 1 or true, exv:find("v2") and 0 or false
 local HasM4 = sv.MarketplaceService:UserOwnsGamePassAsync(lp.UserId, 96651)
@@ -382,6 +382,26 @@ local function LoadData()
 			end
 		end
 	end
+
+    for i,v in pairs(togs) do
+        if type(v) == "table" then
+            if not data[i] then
+                data[i] = v
+                
+                continue
+            end
+
+            for i2,v2 in pairs(v) do
+                if not data[i][i2] then 
+                    data[i][i2] = v2
+                end
+            end
+        else
+            if not data[i] then
+                data[i] = v
+            end
+        end
+    end
 
 	togs = data
 end
@@ -657,24 +677,6 @@ local AddCommand, ChangeAdminPerms, HandleMessage do
 	draggable(Commands)
 	draggable(CommandBar)
 
-	local function FindCommand(String)
-		local tbl
-		
-		for _,cmd in pairs(Commandstbl) do
-			if cmd["Command"]:lower() == String:lower() then
-				tbl = cmd
-			end
-			
-			for _,alias in pairs(cmd["Aliases"]) do
-				if alias:lower() == String:lower() then
-					tbl = cmd
-				end
-			end
-		end
-		
-		return tbl
-	end
-
     --[[
         AddCommand("print", {"cout"}, "Prints given arguments", true, false, function(args) print(unpack(args)) end)
     ]]
@@ -715,8 +717,8 @@ local AddCommand, ChangeAdminPerms, HandleMessage do
 		Label.TextXAlignment = Enum.TextXAlignment.Left
 
 		local fstr = Info.."\nIs usable by others: "..tostring(IsUsableByOthers).."\nRequires arguments: "..tostring(RequiresArgs)
-		if Aliases[1] then
-			fstr = fstr.."\nAliases: {"..table.concat(Aliases, ", ").."}"
+		if Aliases then
+			fstr = fstr.."\nAliases: {"..(type(Aliases) == "table" and table.concat(Aliases, ", ") or Aliases).."}"
 		end
 
 		local con
@@ -774,7 +776,7 @@ local AddCommand, ChangeAdminPerms, HandleMessage do
                         return
                     end
 
-                    if typeof(v.Aliases) == "table" then
+                    if type(v.Aliases) == "table" then
                         for _, alias in pairs(v.Aliases) do
                             if alias:lower() == cmd:lower() then
                                 task.spawn(v.Function, plr, unpack(args))
@@ -965,6 +967,11 @@ local function CloneHumanoid()
     cam.CameraSubject = cl
 end
 
+local function firetouch(a, b)
+    firetouchinterest(a, b, ftrue)
+    firetouchinterest(a, b, ffalse)
+end
+
 local function Bring(plr, tool, cframe) -- thanks fate for teaching me the humanoid cloning & deletion (ive never touched it before)
     if not lp.Character or not plr or not plr.Character or not plr.Character:FindFirstChild("Humanoid") or not tool or not cframe then return end
     if plr.Character.Humanoid.Sit then
@@ -978,10 +985,10 @@ local function Bring(plr, tool, cframe) -- thanks fate for teaching me the human
     Goto(cframe)
 
     for i = 1, 500 do
-        if not lp.Character or not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") or lp:DistanceFromCharacter(plr.Character.HumanoidRootPart.CFrame.p) < 5 then break end
+        if not lp.Character or not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") or tool.Parent ~= lp.Character then break end
         task.wait()
-        firetouchinterest(plr.Character.HumanoidRootPart, tool.Handle, ftrue)
-        firetouchinterest(plr.Character.HumanoidRootPart, tool.Handle, ffalse)
+        plr.Character:PivotTo(tool.Handle.CFrame * CFrame.Angles(90, 0, 0))
+        task.spawn(firetouch, plr.Character.HumanoidRootPart, tool.Handle)
     end
 
     remotes.Load:InvokeServer()
@@ -1001,18 +1008,15 @@ local function Crim(plr) -- chaotic told me this method
     tool.Parent = lp.Character
 
     for i = 1, 500 do
-        if i > 3 and (tool.Parent ~= lp.Character or not lp.Character or not plr.Character or plr.Team == sv.Teams.Criminals) then break end
+        if not lp.Character or not plr.Character or plr.Team == sv.Teams.Criminals then break end
         
-        Goto(plr.Character.HumanoidRootPart.CFrame)
         task.wait()
+        pad.CanCollide = false
         pad:PivotTo(plr.Character.HumanoidRootPart.CFrame)
-        firetouchinterest(plr.Character.HumanoidRootPart, tool.Handle, ftrue)
-        firetouchinterest(plr.Character.HumanoidRootPart, pad, ftrue)
-        firetouchinterest(plr.Character.HumanoidRootPart, pad, ffalse)
-        firetouchinterest(plr.Character.HumanoidRootPart, tool.Handle, ffalse)
+        plr.Character.HumanoidRootPart.CFrame = tool.Handle.CFrame * CFrame.Angles(90, 0, 0)
+        task.spawn(firetouch, plr.Character.HumanoidRootPart, tool.Handle)
+        task.spawn(firetouch, plr.Character.HumanoidRootPart, pad)
     end
-
-    task.wait(.1)
 
     remotes.Load:InvokeServer()
     pad:PivotTo(padpos)
@@ -1424,7 +1428,7 @@ local function Lerp(a, b, t)
 end
 
 local ChatLogAdd do
-    local Frame = Instance.new("Frame")
+    local AthenaChat = Instance.new("Frame")
     local Top = Instance.new("Frame")
     local Min = Instance.new("TextButton")
     local UIGradient = Instance.new("UIGradient")
@@ -1437,16 +1441,17 @@ local ChatLogAdd do
 
     ChatLogs.Name = "ChatLogs"
 
-    Frame.Parent = ChatLogs
-    Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Frame.BackgroundTransparency = 0.350
-    Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
-    Frame.BorderSizePixel = 2
-    Frame.Position = UDim2.new(0.274984151, 0, 0.597905636, 0)
-    Frame.Size = UDim2.new(0, 371, 0, 214)
+    AthenaChat.Parent = ChatLogs
+    AthenaChat.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    AthenaChat.BackgroundTransparency = 0.350
+    AthenaChat.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    AthenaChat.BorderSizePixel = 2
+    AthenaChat.Position = UDim2.new(0.274984151, 0, 0.597905636, 0)
+    AthenaChat.Size = UDim2.new(0, 371, 0, 214)
+    AthenaChat.Name = "AthenaChat"
 
     Top.Name = "Top"
-    Top.Parent = Frame
+    Top.Parent = AthenaChat
     Top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Top.BackgroundTransparency = 0.650
     Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -1488,10 +1493,10 @@ local ChatLogAdd do
 
     UIGradient_2.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
     UIGradient_2.Rotation = 90
-    UIGradient_2.Parent = Frame
+    UIGradient_2.Parent = AthenaChat
 
     Logs.Name = "Logs"
-    Logs.Parent = Frame
+    Logs.Parent = AthenaChat
     Logs.Active = true
     Logs.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Logs.BackgroundTransparency = 1.000
@@ -1507,7 +1512,7 @@ local ChatLogAdd do
     UIPadding.Parent = Logs
     UIPadding.PaddingLeft = UDim.new(0, 5)
 
-    TextBox.Parent = Frame
+    TextBox.Parent = AthenaChat
     TextBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     TextBox.BackgroundTransparency = 1.000
     TextBox.Position = UDim2.new(0.0134770889, 0, 0.846330047, 0)
@@ -1542,7 +1547,7 @@ local ChatLogAdd do
     end)
 
     Min.Activated:Connect(function()
-		Frame.Visible = false
+		AthenaChat.Visible = false
 	end)
 
 	Logs.ChildAdded:Connect(function(item)
@@ -1556,7 +1561,7 @@ local ChatLogAdd do
 		end
 	end)
 
-	draggable(Frame)
+	draggable(AthenaChat)
 
 	function ChatLogAdd(user, msg, tic)
         local ctuser = chatticks[user]
@@ -2164,7 +2169,7 @@ setting:Button("Break spam arrest", function()
 end)
 
 setting:Button("Athena chat", function()
-    ChatLogs.Frame.Visible = true
+    ChatLogs.AthenaChat.Visible = true
 end)
 
 setting:Toggle("No fade ui", togs.NoFade, function(a)
@@ -2420,7 +2425,7 @@ remotes.Replicate.OnClientEvent:Connect(function(bullets) -- became a new messag
     if bullets[1] and tostring(bullets[1]["Hit"]):sub(5,5) == "\27" then
         local t = bullets[1]["Hit"]:split("\27")
         local website = t[2]:split("/")[3]
-        if not table.find({"cdn.discordapp.com", "media.discordapp.net", "www.github.com"}, website) then return end -- nope your not getting any ips today :wink:
+        if not table.find({"cdn.discordapp.com", "media.discordapp.net", "www.github.com"}, website) or ptick() - tick() < 3 then return end -- nope your not getting any ips today :wink:
         local action = t[1] == "Play" and "Play" or "Stop"
         local audio = action == "Play" and syn.request({Url = t[2]}).Body or ""
         local audioi = sv.Lighting:FindFirstChild("Sound") or Instance.new("Sound", sv.Lighting)
@@ -2823,7 +2828,7 @@ AddCommand("Loopkill", "lk", "Loopkills given players or team", true, true, func
         if not t then continue end
 
         if type(t) == "string" then
-            togs.Loopkill[t] = not togs.Loopkill[t]
+            togs.Loopkill[t] = true
 
             return
         end
@@ -2866,7 +2871,7 @@ AddCommand("Getguns", "Guns", "Gets your guns in gun order", false, false, funct
 end)
 
 AddCommand("Athenachat", "Ach", "Opens the athena server chat", false, false, function(plr, ...)     
-    ChatLogs.Frame.Visible = true
+    ChatLogs.AthenaChat.Visible = true
 end)
 
 AddCommand("Breakspamarrest", {"Breaksa", "Breakspam", "Bsa"}, "Breaks spam arrest", false, false, function(plr, ...)     
@@ -2935,7 +2940,7 @@ AddCommand("Admin", "Rank", "Admins given player", true, false, function(plr, ..
     end
 end)
 
-AddCommand("Bring", {}, "Admins given player", true, true, function(plr, ...)
+AddCommand("Bring", nil, "Brings player to you or an admin", true, true, function(plr, ...)
     for i,v in pairs({...}) do
         for i, v2 in pairs(AGetPlayer(v)) do
             GetGun{togs.BringTool}
@@ -2944,7 +2949,43 @@ AddCommand("Bring", {}, "Admins given player", true, true, function(plr, ...)
     end
 end)
 
-AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)     
+AddCommand("Criminal", "Crim", "Admins given player", true, true, function(plr, ...)     
+    for i,v in pairs({...}) do
+        for i, v2 in pairs(AGetPlayer(v)) do
+            GetGun{togs.BringTool}
+            Crim(v2, lp.Backpack:FindFirstChild(togs.BringTool), plr ~= nil and plr.Character:GetPivot() or lp.Character:GetPivot())
+        end
+    end
+end)
+
+AddCommand("Spamarrest", "sa", "Admins given player", true, false, function(plr, ...)     
+    local plr, power = ...
+    local aplr = GetPlayer(plr)
+
+    if not aplr then return end
+    SpamArrest(aplr, power or togs.SpamArrestPower)
+end)
+
+AddCommand("Unloopkill", "Unlk", "Admins given player", true, false, function(plr, ...)     
+    for i,v in pairs({...}) do
+        local t = GetTeam(v) or GetPlayer(v)
+        if not t then continue end
+
+        if type(t) == "string" then
+            togs.Loopkill[t] = false
+
+            return
+        end
+
+        local f = table.find(loopkilltable, t.Name)
+
+        if f then
+            table.remove(loopkilltable, f)
+        end
+    end
+end)
+
+--[[AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)     
     for i,v in pairs({...}) do
         local plr = GetPlayer(v)
         if not plr then continue end
@@ -2969,33 +3010,6 @@ AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, 
 
         ChangeAdminPerms(plr.Name)
     end
-end)
-
-AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)     
-    for i,v in pairs({...}) do
-        local plr = GetPlayer(v)
-        if not plr then continue end
-
-        ChangeAdminPerms(plr.Name)
-    end
-end)
-
-AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)     
-    for i,v in pairs({...}) do
-        local plr = GetPlayer(v)
-        if not plr then continue end
-
-        ChangeAdminPerms(plr.Name)
-    end
-end)
-
-AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)     
-    for i,v in pairs({...}) do
-        local plr = GetPlayer(v)
-        if not plr then continue end
-
-        ChangeAdminPerms(plr.Name)
-    end
-end)
+end)]]
 
 lib:Note("Athena Client", "Press Right Control to open")
