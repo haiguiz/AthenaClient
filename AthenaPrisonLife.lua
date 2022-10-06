@@ -995,7 +995,7 @@ local function Bring(plr, tool, cframe) -- thanks fate for teaching me the human
     Goto(saved)
 end
 
-local function Crim(plr) -- chaotic told me this method
+local function Crim(plr) -- chaotic told about firetouchinterest
     if not plr or not plr.Character or not lp.Character then return end
     local oldnt = togs.Noclip.Toggled
     togs.Noclip.Toggled = true
