@@ -6,123 +6,38 @@
         sawd#2906 -- all the scripting + ui lib
         FATE#8209 -- helpin with humanoid stuff (i never touched it before)
         Swaggered#8967 -- he tells me to do shit idk
+
+    TODO:
+        Loader
+        Fix crim flinging you
+        Fix admin commands
+        Fix crim instabillity issues 
+        Use less local variables (200 variables)
 ]]
 
 local Tpdata = ...
 
+local LoaderUpdate do
+    local Loads = {
+        [1] = "Functions";
+        [2] = "Pre ui calls";
+        [3] = "Ui setup";
+        [4] = "Connections";
+        [5] = "Loops";
+        [6] = "Post ui calls"
+    }
+    local i = 0
+
+    local function LoaderUpdate()
+        i += 1
+        -- yea finish when i get home i dont feel like making a whole ass ui at school
+    end
+end
+
 -- feel free to LEARN from this, not straight up steal it.
 
 --[[
---some whitelist stuff below that we never ended up adding (because you can see it)
-local Whitelist = Instance.new("ScreenGui")
-local CommandBar = Instance.new("Frame")
-local UIGradient = Instance.new("UIGradient")
-local Top = Instance.new("Frame")
-local UIGradient_2 = Instance.new("UIGradient")
-local Commands = Instance.new("TextLabel")
-local Button = Instance.new("Frame")
-local UIGradient_3 = Instance.new("UIGradient")
-local Label = Instance.new("TextButton")
-local Textbox = Instance.new("Frame")
-local UIGradient_4 = Instance.new("UIGradient")
-local TextBox = Instance.new("TextBox")
-
-Whitelist.Name = "Whitelist"
-Whitelist.Parent = game:GetService("CoreGui")
-Whitelist.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-CommandBar.Name = "CommandBar"
-CommandBar.Parent = Whitelist
-CommandBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-CommandBar.BackgroundTransparency = 0.350
-CommandBar.BorderColor3 = Color3.fromRGB(0, 0, 0)
-CommandBar.BorderSizePixel = 2
-CommandBar.Position = UDim2.new(0.370768964, 0, 0.43532604, 0)
-CommandBar.Size = UDim2.new(0, 323, 0, 104)
-
-UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
-UIGradient.Rotation = 90
-UIGradient.Parent = CommandBar
-
-Top.Name = "Top"
-Top.Parent = CommandBar
-Top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-Top.BackgroundTransparency = 0.650
-Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
-Top.BorderSizePixel = 2
-Top.Size = UDim2.new(0, 323, 0, 24)
-
-UIGradient_2.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
-UIGradient_2.Rotation = 90
-UIGradient_2.Parent = Top
-
-Commands.Name = "Commands"
-Commands.Parent = Top
-Commands.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-Commands.BackgroundTransparency = 1.000
-Commands.BorderColor3 = Color3.fromRGB(0, 0, 0)
-Commands.BorderSizePixel = 0
-Commands.Position = UDim2.new(0.0264241509, 0, 0, 0)
-Commands.Size = UDim2.new(0, 95, 0, 24)
-Commands.Font = Enum.Font.SourceSansBold
-Commands.Text = "Athena Client Verification"
-Commands.TextColor3 = Color3.fromRGB(255, 255, 255)
-Commands.TextSize = 20.000
-Commands.TextStrokeTransparency = 0.500
-Commands.TextXAlignment = Enum.TextXAlignment.Left
-
-Button.Name = "Button"
-Button.Parent = CommandBar
-Button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-Button.Position = UDim2.new(0.210526317, 0, 0.759615362, 0)
-Button.Size = UDim2.new(0, 187, 0, 20)
-
-UIGradient_3.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(86, 87, 85)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(78, 77, 73))}
-UIGradient_3.Rotation = 90
-UIGradient_3.Parent = Button
-
-Label.Name = "Label"
-Label.Parent = Button
-Label.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-Label.BackgroundTransparency = 1.000
-Label.Position = UDim2.new(0.0270000603, 1, 0, 0)
-Label.Size = UDim2.new(0, 180, 0, 20)
-Label.Font = Enum.Font.SourceSansBold
-Label.Text = "Submit key you jew"
-Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-Label.TextSize = 15.000
-Label.TextWrapped = true
-Label.TextXAlignment = Enum.TextXAlignment.Left
-
-Textbox.Name = "Textbox"
-Textbox.Parent = CommandBar
-Textbox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-Textbox.BorderColor3 = Color3.fromRGB(23, 25, 52)
-Textbox.Position = UDim2.new(0, 21, 0, 42)
-Textbox.Size = UDim2.new(0, 281, 0, 20)
-
-UIGradient_4.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(86, 87, 85)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(78, 77, 73))}
-UIGradient_4.Rotation = 90
-UIGradient_4.Parent = Textbox
-
-TextBox.Parent = Textbox
-TextBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-TextBox.BackgroundTransparency = 1.000
-TextBox.Position = UDim2.new(0.0267857462, 0, 0, 0)
-TextBox.Size = UDim2.new(0, 272, 0, 20)
-TextBox.ZIndex = 2
-TextBox.Font = Enum.Font.SourceSansBold
-TextBox.PlaceholderText = "Eneter key if you're not a faggot"
-TextBox.Text = ""
-TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-TextBox.TextSize = 14.000
-TextBox.TextStrokeTransparency = 0.500
-TextBox.TextXAlignment = Enum.TextXAlignment.Left
-
-Label.Activated:Wait()
 local wlkey = TextBox.Text
-task.wait(math.random(1, 2))
-Whitelist:Destroy()
 local lp = game.Players.LocalPlayer
 local mbrlpid = game.Players.GetUserIdFromNameAsync(game.Players, lp.Name)
 local ca = lp.CharacterAppearance
@@ -995,7 +910,7 @@ local function Bring(plr, tool, cframe) -- thanks fate for teaching me the human
     Goto(saved)
 end
 
-local function Crim(plr) -- chaotic told about firetouchinterest
+local function Crim(plr) -- chaotic told about firetouchinterest with crimpad
     if not plr or not plr.Character or not lp.Character then return end
     local oldnt = togs.Noclip.Toggled
     togs.Noclip.Toggled = true
