@@ -15,6 +15,8 @@
         Use less local variables (200 variables)
 ]]
 
+-- feel free to LEARN from this, not straight up steal it.
+
 local Tpdata = ...
 
 local LoaderUpdate do
