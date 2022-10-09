@@ -1,12 +1,11 @@
+local DEBUGGING_MODE = false
 --[[
     https://discord.gg/ng8yFn2zX6  -- Our discord, come report bugs and help development.
-
     Credits:
         D-C Team -- trolling those skiddies that say they know lua (Kin, Dis, JNRaid, Midnight, etc...)
         sawd#2906 -- all the scripting + ui lib
         FATE#8209 -- helpin with humanoid stuff (i never touched it before)
         Swaggered#8967 -- he tells me to do shit idk
-
     TODO:
         Loader
         Fix crim flinging you
@@ -48,7 +47,6 @@ local wlids = {
     -- your ids times .0523
 }
 local env = getfenv()
-
 local function find(f)
     for i,v in pairs(wlids) do
         if v == f then
@@ -56,7 +54,6 @@ local function find(f)
         end
     end
 end
-
 task.delay(.01, function()
     pcall(function()
         for i = 1, math.random(4682, 6571) do
@@ -64,7 +61,6 @@ task.delay(.01, function()
         end
     end)
 end)
-
 task.spawn(function()
     local tic = tick()
     syn.request({Url = "https://httpbin.org/get"})
@@ -73,20 +69,16 @@ task.spawn(function()
         while true do end
     end
 end)
-
 task.spawn(function()
     if #getgc() < 1000 then
         while true do end
     end
 end)
-
 task.wait(math.random(.001, .01))
-
 if (syn.crypt.custom.hash("sha3-384", tostring(wlid * .0523)) ~= wlkey) or (#ca:split("=") ~= 3 or wlid ~= mbrlpid or wlid ~= lp.UserId or not find(wlid * 7812.6541)) then
     for i = 1, 50 do
         task.spawn(syn.request, {Url = "https://httpbin.org/get"})
     end
-
     task.delay(1, function(env, t, bit, hash, int, ...) 
         while #unpack({env, "faggopts"}) and select("#", ...) > 2 or (function() return hash("md5", "splash literally skidded over half his shit from scorp blue lmfao"), setmetatable(table.pack(string.split(syn.crypt.random(int), "")), {__index = function() return "dis gonna steal wrath again and claim that he made it!!!" end}) end)() ~= ("ok vapin, whats a yield"):reverse() do
             if t then
@@ -95,12 +87,10 @@ if (syn.crypt.custom.hash("sha3-384", tostring(wlid * .0523)) ~= wlkey) or (#ca:
                     return spawn
                 end)()
             end
-
             repeat syn.crypt.hmac(syn.crypt.base64.encode(t), t:sub(1, #t - 8)) until "you get some maidens" ~= false
         end 
         repeat until {}=={}
     end, getfenv(), "kinfrcantstopskidding", bit, syn.crypt.custom.hash, math.random(1, 1024), "God is the most forgiving being.")
-
     return
 end
 ]]
@@ -891,6 +881,8 @@ end
 
 local function Bring(plr, tool, cframe) -- thanks fate for teaching me the humanoid cloning & deletion (ive never touched it before)
     if not lp.Character or not plr or not plr.Character or not plr.Character:FindFirstChild("Humanoid") or not tool or not cframe then return end
+    local oldab = togs.Antibring
+    togs.Antibring = false
     if plr.Character.Humanoid.Sit then
         Kill({plr})
         repeat until not task.wait() or plr.Character
@@ -904,37 +896,42 @@ local function Bring(plr, tool, cframe) -- thanks fate for teaching me the human
     for i = 1, 500 do
         if not lp.Character or not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") or tool.Parent ~= lp.Character then break end
         task.wait()
-        plr.Character:PivotTo(tool.Handle.CFrame * CFrame.Angles(90, 0, 0))
-        task.spawn(firetouch, plr.Character.HumanoidRootPart, tool.Handle)
+        plr.Character.HumanoidRootPart.CFrame = tool.Handle.CFrame * CFrame.Angles(90, 0, 0)
+        lp.Character.HumanoidRootPart.Anchored = true
+        task.spawn(firetouch, tool.Handle, plr.Character.HumanoidRootPart)
     end
 
+    togs.Antibring = oldab
     remotes.Load:InvokeServer()
     Goto(saved)
 end
 
-local function Crim(plr) -- chaotic told about firetouchinterest with crimpad
+local function Crim(plr) -- chaotic told me this method
     if not plr or not plr.Character or not lp.Character then return end
     local oldnt = togs.Noclip.Toggled
     togs.Noclip.Toggled = true
     local pad = workspace["Criminals Spawn"].SpawnLocation
-    local padpos, oldpos = pad.CFrame, lp.Character.HumanoidRootPart.CFrame
+    local padpos, oldpos, oldab = pad.CFrame, lp.Character.HumanoidRootPart.CFrame, togs.Antibring
+    togs.Antibring = false
 
     GetGun{togs.BringTool}
     local tool = lp.Backpack:WaitForChild(togs.BringTool)
     CloneHumanoid()
     tool.Parent = lp.Character
+    pad.CanCollide = false
 
     for i = 1, 500 do
         if not lp.Character or not plr.Character or plr.Team == sv.Teams.Criminals then break end
         
         task.wait()
-        pad.CanCollide = false
         pad:PivotTo(plr.Character.HumanoidRootPart.CFrame)
+        lp.Character.HumanoidRootPart.Anchored = true
         plr.Character.HumanoidRootPart.CFrame = tool.Handle.CFrame * CFrame.Angles(90, 0, 0)
         task.spawn(firetouch, plr.Character.HumanoidRootPart, tool.Handle)
-        task.spawn(firetouch, plr.Character.HumanoidRootPart, pad)
+        firetouchinterest(plr.Character.HumanoidRootPart, pad, ftrue)
     end
-
+    
+    togs.Antibring = oldab
     remotes.Load:InvokeServer()
     pad:PivotTo(padpos)
     Goto(oldpos)
@@ -1151,7 +1148,6 @@ local function OnCharacterAdded(char)
     ca = char.ChildAdded:Connect(function(item)
         if togs.AntiBring and not table.find(allowedtools, item) then
             item:ClearAllChildren()
-            item.Parent = lp.Backpack
             task.spawn(Anchorage, .1)
 
             task.spawn(table.foreach, lp.Character:GetDescendants(), function(_, v)
@@ -1160,7 +1156,7 @@ local function OnCharacterAdded(char)
                 v.Velocity = Vector3.zero
             end)
 
-            item:Destroy()
+            task.delay(.001, pcall, item.Destroy, item)
         end
     end)
 end
@@ -1829,8 +1825,47 @@ player:Toggle("Noclip", togs.Noclip.Toggled, function(a)
 end)
 
 player:Button("Rejoin", function()
+    if not DEBUGGING_MODE then
+        syn.queue_on_teleport(("loadstring(game:HttpGet("", true))({Color = %s, Position = %s, GivenThorns = %s, GivenOneShot = %s, GivenKillAura = %s, Selected = %s, LoopkillTable = %s, DrawingObjects = \"%s\"})"):format(
+            ("BrickColor.new(%s)"):format(lp.TeamColor.Name),
+            ("{%s}"):format(tostring(lp.Character:GetPivot())),
+            ("{%s}"):format(table.concat(givenoneshot, ",")),
+            ("{%s}"):format(table.concat(givenoneshot, ",")),
+            ("{%s}"):format(table.concat(givenkillaura, ",")),
+            tostring(selected),
+            ("{%s}"):format(table.concat(loopkilltable, ",")),
+            sv.HttpService:JSONEncode(drawingobjects)
+        ))
+    end
+
     sv.TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
 end)
+
+if Tpdata then
+    Respawn(Tpdata.Color, Tpdata.Position)
+
+    giventhorns = Tpdata.GivenThorns
+    givenoneshot = Tpdata.GivenOneShot
+    givenantitouch = Tpdata.GivenAntiTouch
+    givenkillaura = Tpdata.GivenKillAura
+    selected = sv.Players:FindFirstChild(Tpdata.Selected)
+    loopkilltable = Tpdata.LoopkillTable
+
+    for i,v in pairs(sv.HttpService:JSONDecode(Tpdata.DrawingObjects)) do
+        local mag = (v.Start - v.End).magnitude
+        local object = Instance.new("Part", workspacedrawingobjects)
+
+        object.Name = "DrawingPart"
+        object.Material = Enum.Material.Neon
+        object.BrickColor = BrickColor.Yellow()
+        object.CanCollide = false
+        object.Anchored = true
+        object.Transparency = .5
+        object.Size = Vector3.new(.2, .2, mag)
+        object.CFrame = CFrame.new(v.Start, v.End) * CFrame.new(0, 0, -mag * .5)
+        drawingobjects[object] = {Origin = v.Start, End = v.End}
+    end
+end
 
 player:Button("Copy join", function()
     setclipboard(("game:GetService\"TeleportService\":TeleportToPlaceInstance(%i, \"%s\")"):format(game.PlaceId, game.JobId))
@@ -2065,6 +2100,17 @@ thing:Button("Kill", function()
     repeat task.wait() until not selected.Character or not selected.Character:FindFirstChild("ForceField")
 
     Kill{selected}
+end)
+
+thing:Button("Give current item", function() 
+    if not selected or not selected.Character or not lp.Character then return end
+
+    if not lp.Character:FindFirstChildOfClass("Tool") then
+        lib:Note("Athena Client", "Please equip an item to give.", true)
+        return
+    end
+
+    Bring(selected, lp.Character:FindFirstChildOfClass("Tool"), lp.Character:GetPivot())
 end)
 
 setting:Dropdown("Drawing gun", {"M9", "Remington 870", "M4A1", "AK-47"}, function(a)
@@ -2704,16 +2750,16 @@ SendMsg({
 })
 
 if Tpdata then
-    Respawn(Tpdata.Color, Tpdata.Position)
+    Respawn(BrickColor.new(Tpdata.Color).Color, Tpdata.Position)
 
-    giventhorns = Tpdata.GivenThorns
-    givenoneshot = Tpdata.GivenOneShot
-    givenantitouch = Tpdata.GivenAntiTouch
-    givenkillaura = Tpdata.GivenKillAura
-    selected = Tpdata.Selected
-    loopkilltable = Tpdata.LoopkillTable
+    giventhorns = Tpdata.GivenThorns:split(",")
+    givenoneshot = Tpdata.GivenOneShot:split(",")
+    givenantitouch = Tpdata.GivenAntiTouch:split(",")
+    givenkillaura = Tpdata.GivenKillAura:split(",")
+    selected = sv.Players:FindFirstChild(Tpdata.Selected)
+    loopkilltable = Tpdata.LoopkillTable:split(",")
 
-    for i,v in pairs(Tpdata.DrawingObjects) do
+    for i,v in pairs(sv.HttpService:JSONDecode(Tpdata.DrawingObjects)) do
         local mag = (v.Start - v.End).magnitude
         local object = Instance.new("Part", workspacedrawingobjects)
 
