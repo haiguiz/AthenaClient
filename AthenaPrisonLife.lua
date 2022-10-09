@@ -1841,32 +1841,6 @@ player:Button("Rejoin", function()
     sv.TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
 end)
 
-if Tpdata then
-    Respawn(Tpdata.Color, Tpdata.Position)
-
-    giventhorns = Tpdata.GivenThorns
-    givenoneshot = Tpdata.GivenOneShot
-    givenantitouch = Tpdata.GivenAntiTouch
-    givenkillaura = Tpdata.GivenKillAura
-    selected = sv.Players:FindFirstChild(Tpdata.Selected)
-    loopkilltable = Tpdata.LoopkillTable
-
-    for i,v in pairs(sv.HttpService:JSONDecode(Tpdata.DrawingObjects)) do
-        local mag = (v.Start - v.End).magnitude
-        local object = Instance.new("Part", workspacedrawingobjects)
-
-        object.Name = "DrawingPart"
-        object.Material = Enum.Material.Neon
-        object.BrickColor = BrickColor.Yellow()
-        object.CanCollide = false
-        object.Anchored = true
-        object.Transparency = .5
-        object.Size = Vector3.new(.2, .2, mag)
-        object.CFrame = CFrame.new(v.Start, v.End) * CFrame.new(0, 0, -mag * .5)
-        drawingobjects[object] = {Origin = v.Start, End = v.End}
-    end
-end
-
 player:Button("Copy join", function()
     setclipboard(("game:GetService\"TeleportService\":TeleportToPlaceInstance(%i, \"%s\")"):format(game.PlaceId, game.JobId))
 end)
@@ -2750,14 +2724,14 @@ SendMsg({
 })
 
 if Tpdata then
-    Respawn(BrickColor.new(Tpdata.Color).Color, Tpdata.Position)
+    Respawn(Tpdata.Color, Tpdata.Position)
 
-    giventhorns = Tpdata.GivenThorns:split(",")
-    givenoneshot = Tpdata.GivenOneShot:split(",")
-    givenantitouch = Tpdata.GivenAntiTouch:split(",")
-    givenkillaura = Tpdata.GivenKillAura:split(",")
+    giventhorns = Tpdata.GivenThorns
+    givenoneshot = Tpdata.GivenOneShot
+    givenantitouch = Tpdata.GivenAntiTouch
+    givenkillaura = Tpdata.GivenKillAura
     selected = sv.Players:FindFirstChild(Tpdata.Selected)
-    loopkilltable = Tpdata.LoopkillTable:split(",")
+    loopkilltable = Tpdata.LoopkillTable
 
     for i,v in pairs(sv.HttpService:JSONDecode(Tpdata.DrawingObjects)) do
         local mag = (v.Start - v.End).magnitude
