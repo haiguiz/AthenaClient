@@ -1,4 +1,3 @@
-local DEBUGGING_MODE = false
 --[[
     https://discord.gg/ng8yFn2zX6  -- Our discord, come report bugs and help development.
     Credits:
@@ -1826,9 +1825,9 @@ end)
 
 player:Button("Rejoin", function()
     if not DEBUGGING_MODE then
-        syn.queue_on_teleport(("loadstring(game:HttpGet("", true))({Color = %s, Position = %s, GivenThorns = %s, GivenOneShot = %s, GivenKillAura = %s, Selected = %s, LoopkillTable = %s, DrawingObjects = \"%s\"})"):format(
-            ("BrickColor.new(%s)"):format(lp.TeamColor.Name),
-            ("{%s}"):format(tostring(lp.Character:GetPivot())),
+        syn.queue_on_teleport(("game.Loaded:Wait()\nloadstring(game:HttpGet(\"https://raw.githubusercontent.com/GFXTI/AthenaClient/main/AthenaPrisonLife.lua\", true), \"Main\")({Color = %s, Position = %s, GivenThorns = %s, GivenOneShot = %s, GivenKillAura = %s, Selected = %s, LoopkillTable = %s, DrawingObjects = \"%s\"})"):format(
+            ("BrickColor.new(\"%s\")"):format(lp.TeamColor.Name),
+            ("CFrame.new(%s)"):format(tostring(lp.Character:GetPivot())),
             ("{%s}"):format(table.concat(givenoneshot, ",")),
             ("{%s}"):format(table.concat(givenoneshot, ",")),
             ("{%s}"):format(table.concat(givenkillaura, ",")),
