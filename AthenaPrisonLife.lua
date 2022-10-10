@@ -1,3 +1,5 @@
+local StarterPlayer = game:GetService("StarterPlayer")
+local DEBUGGING_MODE = false
 --[[
     https://discord.gg/ng8yFn2zX6  -- Our discord, come report bugs and help development.
     Credits:
@@ -7,9 +9,9 @@
         Swaggered#8967 -- he tells me to do shit idk
     TODO:
         Loader
-        Fix crim flinging you
+        Fix crim flinging you: Def done
         Fix admin commands
-        Fix crim instabillity issues 
+        Fix crim instabillity issues: Kinda done? Could still use more fixing tho  
         Use less local variables (200 variables)
 ]]
 
@@ -894,6 +896,7 @@ local function Bring(plr, tool, cframe) -- thanks fate for teaching me the human
 
     for i = 1, 500 do
         if not lp.Character or not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") or tool.Parent ~= lp.Character then break end
+        
         task.wait()
         plr.Character.HumanoidRootPart.CFrame = tool.Handle.CFrame * CFrame.Angles(90, 0, 0)
         lp.Character.HumanoidRootPart.Anchored = true
@@ -920,14 +923,19 @@ local function Crim(plr) -- chaotic told me this method
     pad.CanCollide = false
 
     for i = 1, 500 do
-        if not lp.Character or not plr.Character or plr.Team == sv.Teams.Criminals then break end
+        if not lp.Character or not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") or tool.Parent ~= lp.Character then break end
         
         task.wait()
-        pad:PivotTo(plr.Character.HumanoidRootPart.CFrame)
-        lp.Character.HumanoidRootPart.Anchored = true
         plr.Character.HumanoidRootPart.CFrame = tool.Handle.CFrame * CFrame.Angles(90, 0, 0)
-        task.spawn(firetouch, plr.Character.HumanoidRootPart, tool.Handle)
-        firetouchinterest(plr.Character.HumanoidRootPart, pad, ftrue)
+        lp.Character.HumanoidRootPart.Anchored = true
+        task.spawn(firetouch, tool.Handle, plr.Character.HumanoidRootPart)
+    end
+
+    for i = 1, 500 do
+        if plr.Team == sv.Teams.Criminals then break end
+
+        task.wait()
+        task.spawn(firetouch, pad, plr.Character.HumanoidRootPart)
     end
     
     togs.Antibring = oldab
@@ -1321,11 +1329,11 @@ local function SpamArrest(plr, power)
         Stay(pp.p + Vector3.new(0, 5, 0))
 
         for i = 1,power do
-            task.spawn(function()
+            coroutine.wrap(function() -- coroutine is faster than spawn by like .00004 seconds so whatev
                 if remotes.Arrest:InvokeServer(plr.Character.Head) then
                     arrests += 1
                 end
-            end)
+            end)()
         end
     end
 
@@ -1662,7 +1670,7 @@ combat:Toggle("Spam punch", togs.SpamPunch, function(a)
     if a then
         while task.wait() and togs.SpamPunch do
             if sv.UserInputService:IsKeyDown(Enum.KeyCode.F) and not sv.UserInputService:GetFocusedTextBox() and punchfunc then
-                task.spawn(punchfunc)
+                coroutine.resume(coroutine.create(punchfunc))
             end
         end
     end
@@ -2322,12 +2330,6 @@ workspace.Remote.arrestPlayer.OnClientEvent:Connect(function()
     Respawn(oldc, positions["Nexus"])
 end)
 
-lp:GetPropertyChangedSignal("Team"):Connect(function()
-    if lp.Team == sv.Teams.Criminals and togs.AntiCriminal then
-        Respawn(BrickColor.random(), lp.Character:GetPivot())
-    end
-end)
-
 remotes.Replicate.OnClientEvent:Connect(function(bullets) -- became a new message handler
     local plr = bullets[1] and bullets[1]["https://discord.gg/ng8yFn2zX6"]
     if plr and plr:IsA("Player") and not table.find(athenausers, plr.Name) then
@@ -2530,6 +2532,20 @@ sv.ReplicatedStorage.DefaultChatSystemChatEvents.OnMessageDoneFiltering.OnClient
         for i,v in pairs(msgs) do
             sv.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(v, ("To %s"):format(msgdata.FromSpeaker))
             task.wait(.5)
+        end
+    end
+end)
+
+task.spawn(function() 
+    while task.wait() do
+        if lp.Team == sv.Teams.Criminals and togs.AntiCriminal then
+            local oldar = togs.AutoRespawn.Toggled
+
+            togs.AutoRespawn.Toggled = false
+            lp.Character:WaitForChild("Humanoid").Health = 0
+            togs.AutoRespawn.Toggled = oldar
+            lp.CharacterAdded:Wait()
+            task.delay(.0001, Respawn, BrickColor.random(), positions["Nexus"])
         end
     end
 end)
