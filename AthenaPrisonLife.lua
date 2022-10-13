@@ -1,5 +1,3 @@
-local StarterPlayer = game:GetService("StarterPlayer")
-local DEBUGGING_MODE = false
 --[[
     https://discord.gg/ng8yFn2zX6  -- Our discord, come report bugs and help development.
     Credits:
@@ -8,9 +6,9 @@ local DEBUGGING_MODE = false
         FATE#8209 -- helpin with humanoid stuff (i never touched it before)
         Swaggered#8967 -- he tells me to do shit idk
     TODO:
-        Loader
+        Loader: Done (even made it in drawing which pretty coo)
         Fix crim flinging you: Def done
-        Fix admin commands
+        Fix admin commands: fuck you no
         Fix crim instabillity issues: Kinda done? Could still use more fixing tho  
         Use less local variables (200 variables)
 ]]
@@ -19,20 +17,209 @@ local DEBUGGING_MODE = false
 
 local Tpdata = ...
 
-local LoaderUpdate do
+local LoaderUpdate do -- drawing looks like 5x better on syn v3
     local Loads = {
         [1] = "Functions";
-        [2] = "Pre ui calls";
-        [3] = "Ui setup";
-        [4] = "Connections";
-        [5] = "Loops";
-        [6] = "Post ui calls"
+        [2] = "Ui setup";
+        [3] = "Connections";
+        [4] = "Loops";
+        [5] = "Finished loading"
     }
     local i = 0
 
-    local function LoaderUpdate()
+    local size, ex, exv = workspace.CurrentCamera.ViewportSize, identifyexecutor()
+    local isv2 = exv:find("v2")
+
+    local function OutlinedBox(props)
+        local d = setmetatable({}, {
+            __index = function(t, k)
+                return props[k]
+            end,
+            
+            __newindex = function(t, k, v)
+                if #k == 1 then
+                    v.Visible = true
+                    v.ZIndex = props.ZIndex or 0
+                    v.Color = props.OutlineColor or Color3.new()
+                    v.Thickness = props.Thickness or 2
+                    
+                    rawset(t, k, v)
+                    
+                    return
+                end
+                
+                props[k] = v
+                
+                if k == "Color" then
+                    for i,v2 in next, t do
+                        if #i ~= 1 then continue end
+                        
+                        v2.Color = v
+                    end
+                end
+                
+                t.Resize(t, props.Pos, props.Size)
+            end
+        })
+
+        rawset(d, "Remove", function()
+            table.foreach(d, function(_, v) 
+                pcall(function()
+                    v:Remove()
+                end)    
+            end)
+        end)
+        
+        rawset(d, "Resize", function(t, pos, size)
+            t.T.From = pos
+            t.T.To   = pos + Vector2.new(size.X, 0)
+            t.B.From = pos - Vector2.new(0, size.Y)
+            t.B.To   = pos + Vector2.new(size.X, -size.Y)
+            t.L.From = pos
+            t.L.To   = pos - Vector2.new(0, size.Y)
+            t.R.From = pos + Vector2.new(size.X, 0)
+            t.R.To   = pos + Vector2.new(size.X, -size.Y)
+            t.M.Size = size
+            t.M.Position = pos - Vector2.new(0, size.Y)
+        end)
+
+        d["T"] = Drawing.new("Line")
+        d["B"] = Drawing.new("Line")
+        d["L"] = Drawing.new("Line")
+        d["R"] = Drawing.new("Line")
+        rawset(d, "M", Drawing.new("Square"))
+
+        d.M.Visible = true
+        d.M.ZIndex = (props.ZIndex) and props.ZIndex - 1 or -1
+        d.M.Color = props.Color or Color3.new()
+        d.M.Filled = true
+        d.M.Transparency = props.Visibility or 1
+        
+        d.Resize(d, props.Pos, props.Size)
+
+        return d
+    end
+
+    local function Text(props)
+        local d = setmetatable({}, {
+            __index = function(t, k)
+                return props[k]
+            end,
+            
+            __newindex = function(t, k, v)
+                if #k == 1 then
+                    v.Visible = true
+                    v.ZIndex = props.ZIndex or 0
+                    v.Color = props.Color or Color3.new()
+                    v.Center = true
+                    v.Text = props.Text or ""
+                    v.Outline = true
+                    v.Size = props.Size and props.Size + (isv2 and 2 or 0) or 18
+                    v.Font = props.Font or Drawing.Fonts.System
+                    
+                    rawset(t, k, v)
+                    
+                    return
+                end
+                
+                props[k] = v
+                
+                t.Edit(t, props)
+            end
+        })
+
+        rawset(d, "Remove", function()
+            d.T:Remove()
+        end)
+        
+        rawset(d, "Edit", function(props)
+            d.T.ZIndex = props.ZIndex or d.T.ZIndex
+            d.T.Color = props.Color or d.T.Color
+            d.T.Text = props.Text or d.T.Text
+            d.T.Size = props.Size and props.Size + (isv2 and 2 or 0) or d.T.Size
+            d.T.Position = props.Pos or d.T.Position
+        end)
+        
+        d["T"]     = Drawing.new("Text")
+        d.T.Position = props.Pos or Vector2.new()
+        
+        return d
+    end
+
+    local draws = OutlinedBox({
+        OutlineColor = Color3.new(), -- outline color
+        Color = Color3.fromRGB(38, 38, 38), -- box color
+        Thickness = 2, -- outline thickness
+        Visibility = .5, -- Opacity / Transparency / Visibility
+        Size = Vector2.new(300, 100), -- size
+        Pos = Vector2.new(size.X / 2 - 150, -100), -- pos
+        ZIndex = 0 -- Zindex
+    })
+
+    local LoadText = Text({
+        Text = "Athena Loader",
+        Pos = Vector2.new(size.X / 2, -190),
+        Size = 18,
+        Font = Drawing.Fonts.System,
+        Color = Color3.fromRGB(33, 57, 129),
+        ZIndex = 2,
+    })
+
+    local LoadInfoText = Text({
+        Text = "Loading functions",
+        Pos = Vector2.new(size.X / 2, -125),
+        Size = 15,
+        Font = Drawing.Fonts.System,
+        Color = Color3.new(1, 1, 1),
+        ZIndex = 2,
+    })
+
+    task.spawn(function()
+        local y = (math.round(size.Y / 2) / 4) - (-100)
+        
+        coroutine.wrap(function() 
+            for i = 1, y do
+                task.wait()
+                LoadText.Pos += Vector2.new(0, 3)
+                LoadInfoText.Pos += Vector2.new(0, 3)
+            end
+        end)()
+        
+        for i = 1, y do
+            task.wait()
+            draws.Pos += Vector2.new(0, 3)
+        end
+    end)
+
+    task.wait(2)
+
+    local draws2 = OutlinedBox({
+        OutlineColor = Color3.new(), -- outline color
+        Color = Color3.fromRGB(33, 57, 129), -- box color
+        Thickness = 2, -- outline thickness
+        Visibility = 1, -- Opacity / Transparency / Visibility
+        Size = Vector2.new(30, 30), -- size
+        Pos = Vector2.new(size.X / 2 - 130, math.round(size.Y / 2) + 30), -- pos
+        ZIndex = 0 -- Zindex
+    })
+
+    function LoaderUpdate()
         i += 1
-        -- yea finish when i get home i dont feel like making a whole ass ui at school
+
+        LoadInfoText.Text = Loads[i]
+
+        for _ = 1, 45 do
+            task.wait()
+            draws2.Size += Vector2.new(1, 0)
+        end
+        
+        if i > 4 then
+            task.wait(1)
+            draws2.Remove()
+            draws.Remove()
+            LoadInfoText.Remove()
+            LoadText.Remove()
+        end
     end
 end
 
@@ -240,7 +427,7 @@ local togs = { -- yeah it should be "settings" but you are a little ni
     InfiniteStamina =       false;
     Thorns =                false;
     SpamArrestAura =        false;
-    Anitbring =             false;
+    AntiBring =             false;
     AntiCrash =             false;
     AntiArrest =            false;
     AntiCriminal =          false;
@@ -251,6 +438,8 @@ local togs = { -- yeah it should be "settings" but you are a little ni
     SpamArrestPower =       10;
     BringTool =             "Hammer";
 }
+
+task.spawn(LoaderUpdate)
 
 local function SaveData(ba) 
 	local b = ba
@@ -739,15 +928,13 @@ local function Respawn(Color, pos)
     cam.CFrame = Saved2
     task.spawn(remotes.Load.InvokeServer, remotes.Load, lp, Color)
     lp.CharacterAdded:Wait()
-    task.delay(.01, Goto, Saved1)
-
-    cam.CameraSubject = lp.Character
-    task.wait(.0001)
+    task.delay(.05, Goto, Saved1)
+    cam:GetPropertyChangedSignal("CFrame"):Wait()
     cam.CFrame = Saved2
     local newp = lp.Character:WaitForChild("HumanoidRootPart").CFrame.p
     local part = ProperRay(newp, Vector3.new(0, -5000, 0), {lp.Character})
 
-    if not part then
+    if not part or (Vector2.new(newp.X, newp.Z) - Vector2.new(-128, 2048)).magnitude < 2 then
         Goto(positions["Nexus"])
     end
 end
@@ -882,8 +1069,8 @@ end
 
 local function Bring(plr, tool, cframe) -- thanks fate for teaching me the humanoid cloning & deletion (ive never touched it before)
     if not lp.Character or not plr or not plr.Character or not plr.Character:FindFirstChild("Humanoid") or not tool or not cframe then return end
-    local oldab = togs.Antibring
-    togs.Antibring = false
+    local oldab = togs.AntiBring
+    togs.AntiBring = false
     if plr.Character.Humanoid.Sit then
         Kill({plr})
         repeat until not task.wait() or plr.Character
@@ -903,7 +1090,7 @@ local function Bring(plr, tool, cframe) -- thanks fate for teaching me the human
         task.spawn(firetouch, tool.Handle, plr.Character.HumanoidRootPart)
     end
 
-    togs.Antibring = oldab
+    togs.AntiBring = oldab
     remotes.Load:InvokeServer()
     Goto(saved)
 end
@@ -913,8 +1100,8 @@ local function Crim(plr) -- chaotic told me this method
     local oldnt = togs.Noclip.Toggled
     togs.Noclip.Toggled = true
     local pad = workspace["Criminals Spawn"].SpawnLocation
-    local padpos, oldpos, oldab = pad.CFrame, lp.Character.HumanoidRootPart.CFrame, togs.Antibring
-    togs.Antibring = false
+    local padpos, oldpos, oldab = pad.CFrame, lp.Character.HumanoidRootPart.CFrame, togs.AntiBring
+    togs.AntiBring = false
 
     GetGun{togs.BringTool}
     local tool = lp.Backpack:WaitForChild(togs.BringTool)
@@ -932,18 +1119,18 @@ local function Crim(plr) -- chaotic told me this method
     end
 
     for i = 1, 500 do
-        if plr.Team == sv.Teams.Criminals then break end
+        if not lp.Character or not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") or plr.Team == sv.Teams.Criminals then break end
 
         task.wait()
         task.spawn(firetouch, pad, plr.Character.HumanoidRootPart)
     end
     
-    togs.Antibring = oldab
     remotes.Load:InvokeServer()
     pad:PivotTo(padpos)
     Goto(oldpos)
 
     togs.Noclip.Toggled = oldnt
+    togs.AntiBring = oldab
 end
 
 local function GetPlayer(a)
@@ -1042,7 +1229,7 @@ end
 local function OnCharacterAdded(char)
     task.wait()
 
-    local hum, bap, rs, ca, hd, bp = char:WaitForChild("Humanoid"), lp:WaitForChild("Backpack")
+    local hum, rs, ca, hd, bp = char:WaitForChild("Humanoid")
 
     if togs.Godmode then
         CloneHumanoid()
@@ -1051,6 +1238,45 @@ local function OnCharacterAdded(char)
             Respawn(nil, char:WaitForChild("HumanoidRootPart").CFrame)
         end)
     end
+
+    coroutine.wrap(function()
+        local bap = lp:WaitForChild("Backpack")
+
+        bp = bap.ChildAdded:Connect(function(item)
+            table.insert(allowedtools, item)
+            local a = table.find({"AK-47", "M4A1", "M9", "Remington 870", "Taser"}, item.Name) and item:FindFirstChild("GunStates")
+
+            if a and togs.GunMods.Toggled then
+                local mod = require(a)
+                mod.AutoFire = togs.GunMods.Automatic or mod.AutoFire
+                mod.FireRate = togs.GunMods.CustomFireate and togs.GunMods.FireRate or mod.FireRate
+                mod.Range = togs.GunMods.CustomRange and togs.GunMods.Range or mod.Range
+            end
+        end)
+
+        ca = char.ChildAdded:Connect(function(item)
+            if togs.AntiBring and not table.find(allowedtools, item) then
+                item:ClearAllChildren()
+                task.spawn(Anchorage, .1)
+
+                task.spawn(table.foreach, lp.Character:GetDescendants(), function(_, v)
+                    if not v:IsA("BasePart") then return end
+
+                    v.Velocity = Vector3.zero
+                end)
+
+                task.delay(.001, pcall, item.Destroy, item)
+            end
+        end)
+
+        for i,v in pairs(bap:GetChildren()) do
+            table.insert(allowedtools, v)
+        end
+
+        if togs.GunSpawn then
+            GetGun(togs.GunOrder)
+        end
+    end)()
 
     hd = hum.Died:Connect(function()
         pcall(function()
@@ -1130,41 +1356,6 @@ local function OnCharacterAdded(char)
         if not togs.AntiSit then return end
 
         char.Humanoid.Sit = false
-    end)
-
-    bp = bap.ChildAdded:Connect(function(item)
-        table.insert(allowedtools, item)
-        local a = table.find({"AK-47", "M4A1", "M9", "Remington 870", "Taser"}, item.Name) and item:FindFirstChild("GunStates")
-
-        if a and togs.GunMods.Toggled then
-            local mod = require(a)
-            mod.AutoFire = togs.GunMods.Automatic or mod.AutoFire
-            mod.FireRate = togs.GunMods.CustomFireate and togs.GunMods.FireRate or mod.FireRate
-            mod.Range = togs.GunMods.CustomRange and togs.GunMods.Range or mod.Range
-        end
-    end)
-
-    for i,v in pairs(bap:GetChildren()) do
-        table.insert(allowedtools, v)
-    end
-
-    if togs.GunSpawn then
-        GetGun(togs.GunOrder)
-    end
-
-    ca = char.ChildAdded:Connect(function(item)
-        if togs.AntiBring and not table.find(allowedtools, item) then
-            item:ClearAllChildren()
-            task.spawn(Anchorage, .1)
-
-            task.spawn(table.foreach, lp.Character:GetDescendants(), function(_, v)
-                if not v:IsA("BasePart") then return end
-
-                v.Velocity = Vector3.zero
-            end)
-
-            task.delay(.001, pcall, item.Destroy, item)
-        end
     end)
 end
 
@@ -1514,6 +1705,8 @@ end
 LoadData()
 
 for i = 1,127 do table.insert(brickcolors, BrickColor.palette(i).Name) end
+
+task.spawn(LoaderUpdate)
 
 local thing = combat:ToggleDropdown("Gun mods", togs.GunMods.Toggled, function(a)
     togs.GunMods.Toggled = a
@@ -2176,6 +2369,8 @@ for i,v in pairs(listfiles"AthenaSchematics") do
     end 
 end
 
+task.spawn(LoaderUpdate)
+
 local namecall; namecall = hookmetamethod(game, "__namecall", function(s, ...)
     local args = {...}
     local method = getnamecallmethod()
@@ -2322,8 +2517,8 @@ end
 workspace.Remote.arrestPlayer.OnClientEvent:Connect(function()
     if not togs.AntiArrest or not lp.Character or not lp.Character:FindFirstChild("Humanoid") then return end
 
-    local oldc, oldar = lp.TeamColor, togs.AutoRespawn
-    togs.AutoRespawn = false
+    local oldc, oldar = lp.TeamColor, togs.AutoRespawn.Toggled
+    togs.AutoRespawn.Toggled = false
     lp.Character:WaitForChild("Humanoid").Health = 0
     togs.AutoRespawn = oldar
     lp.CharacterAdded:Wait()
@@ -2388,7 +2583,7 @@ remotes.Replicate.OnClientEvent:Connect(function(bullets) -- became a new messag
             if v2 ~= lp and v2.Character and v2.Character:FindFirstChild("Humanoid") then
                 local tool = v2.Character:FindFirstChildOfClass("Tool")
 
-                if tool and table.find({"AK-47", "M4A1", "M9", "Remington 870", "Taser"}, tool.Name) then
+                if tool and table.find({"AK-47", "M4A1", "M9", "Remington 870", "Taser"}, tool.Name) and tool:FindFirstChild("Muzzle") then
                     local dbraymuzzle = (v.RayObject.Origin - tool.Muzzle.CFrame.p).magnitude
 
                     if dbraymuzzle < dis then
@@ -2409,13 +2604,13 @@ remotes.Replicate.OnClientEvent:Connect(function(bullets) -- became a new messag
     for i,v in pairs(shots) do
         if not v.Hit or not v.Player then continue end
         
-        if ((table.find(giventhorns, v.Hit.Name)) or (togs.Thorns and v.Hit == lp)) and not table.find(togs.Whitelist, v.Player.Name) then
+        if ((table.find(giventhorns, v.Hit.Name)) or (togs.Thorns and v.Hit == lp)) and not table.find(togs.Whitelist, v.Player.Name) and v.Hit.TeamColor ~= v.Player.TeamColor then
             Kill{v.Player}
 
             return
         end
 
-        if table.find(givenoneshot, v.Player.Name) and not table.find(togs.Whitelist, v.Hit.Name) then
+        if table.find(givenoneshot, v.Player.Name) and not table.find(togs.Whitelist, v.Hit.Name) and v.Hit.TeamColor ~= v.Player.TeamColor then
             Kill{v.Hit}
         end
     end
@@ -2535,6 +2730,8 @@ sv.ReplicatedStorage.DefaultChatSystemChatEvents.OnMessageDoneFiltering.OnClient
         end
     end
 end)
+
+task.spawn(LoaderUpdate)
 
 task.spawn(function() 
     while task.wait() do
@@ -2964,4 +3161,5 @@ AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, 
     end
 end)]]
 
+task.spawn(LoaderUpdate)
 lib:Note("Athena Client", "Press Right Control to open")
