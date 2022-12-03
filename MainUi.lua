@@ -614,6 +614,8 @@ function ret:Library(Name)
 					local text = TextBox.Text
 					if typeof(find) == "string" and find:lower() == "players" and TextBox.Text ~= "" then
 						for i,v in pairs(game:GetService("Players"):GetPlayers()) do
+                            if v == game:GetService("Players").LocalPlayer then continue end
+
 							if v.Name:lower():find(text:lower()) then
 								TextLabel.Text = TextBox.Text..v.Name:sub(#TextBox.Text+1)
 								fs = v.Name
@@ -1233,6 +1235,8 @@ function ret:Library(Name)
 						local text = TextBox.Text
 						if typeof(find) == "string" and find:lower() == "players" and TextBox.Text ~= "" then
 							for i,v in pairs(game:GetService("Players"):GetPlayers()) do
+                                if v == game:GetService("Players").LocalPlayer then continue end
+
 								if v.Name:lower():find(text:lower()) then
 									TextLabel.Text = TextBox.Text..v.Name:sub(#TextBox.Text+1)
 									fs = v.Name
@@ -1607,6 +1611,8 @@ function ret:Library(Name)
 							local text = TextBox.Text
 							if typeof(find) == "string" and find:lower() == "players" and TextBox.Text ~= "" then
 								for i,v in pairs(game:GetService("Players"):GetPlayers()) do
+                                    if v == game:GetService("Players").LocalPlayer then continue end
+
 									if v.Name:lower():find(text:lower()) then
 										TextLabel.Text = TextBox.Text..v.Name:sub(#TextBox.Text+1)
 										fs = v.Name
