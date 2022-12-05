@@ -6,6 +6,7 @@
         sawd#2906 -- all the scripting + ui lib
         FATE#8209 -- helpin with humanoid stuff (i never touched it before)
         Swaggered#8967 -- he tells me to do shit idk
+	    dm me (sawd) if u want credit here
     TODO:
         fuckin no clue
 ]]
@@ -73,13 +74,13 @@ if (syn.crypt.custom.hash("sha3-384", tostring(wlid * .0523)) ~= wlkey) or (#ca:
 end
 ]]
 
-local ui, settings = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/GFXTI/AthenaClient/main/MainUi.lua"))()
+local ui, settings = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/GFXTI/AthenaClient/main/MainUi.lua", true))()
 local lib =          ui:Library()
 local combat, world, player, misc, setting, schem = lib:Window("Combat"), lib:Window("World"), lib:Window("Player"), lib:Window("Players"), lib:Window("Settings"), lib:Window("Schematics")
 local sv =           setmetatable({}, {__index = function(_, a) return game.GetService(game, a) end})
 local lp = sv.Players.LocalPlayer
 local breaksa, m9, staying, staypos, cs, punchfunc, selected, viewing
-local chatticks, allowedtools, brickcolors, drawingobjects, loopkilltable, map, shields, athenausers, connections, giventhorns, givenantitouch, givenoneshot, givenkillaura, Commandstbl, notes, oldctrl = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {w = 0, s = 0, a = 0, d = 0}
+local chatticks, allowedtools, brickcolors, drawingobjects, loopkilltable, map, shields, athenausers, connections, giventhorns, givenantitouch, givenoneshot, givenkillaura, Commandstbl, notes, givenantipunch, oldctrl = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {w = 0, s = 0, a = 0, d = 0}
 local cam, ChatLogs, workspacedrawingobjects, arresttick, ptick = workspace.CurrentCamera, Instance.new("ScreenGui", sv.CoreGui), Instance.new("Model", workspace), tick(), tick()
 local ex, exv = identifyexecutor()
 local isv2 = exv:find("v2")
@@ -165,6 +166,7 @@ local togs = { -- yeah it should be "settings" but you are a little ni
     AutoRespawn = {
         Toggled =           false;
         EquipOldWeapon =    false;
+        ForceField =        false;
     };
     CustomTeam = {
         R =                 255;
@@ -197,7 +199,7 @@ local togs = { -- yeah it should be "settings" but you are a little ni
         HitPart =           "Head";
     };
     Whitelist = { -- sum friends
-                            "FabreezeAddict",
+                            "MrGFXTI",
                             "Shadows_Overlord",
                             "PpScoped",
                             "romefalls",
@@ -222,6 +224,7 @@ local togs = { -- yeah it should be "settings" but you are a little ni
     AntiCrash =             false;
     AntiArrest =            false;
     AntiCriminal =          false;
+    AntiPunch =             false;
     NoFade =                false;
     AntiTouch =             false;
     SpamPunch =             false;
@@ -438,6 +441,8 @@ local function Lerp(a, b, t)
 end
 
 local LoaderUpdate do -- drawing looks like 5x better on syn v3
+    if exv:find("v2") then LoaderUpdate = function() end return end
+
     local Loads = {
         [1] = "Ui setup";
         [2] = "Connections";
@@ -598,8 +603,12 @@ local function Note(txt, err)
             task.wait()
             ins.Main.Size = Vector2.new(Lerp(x, 0, Ease(i)), ins.Main.Size.Y)
         end
-        
+
         table.remove(notes, table.find(notes, ins))
+        for i,v in pairs(notes) do
+            game:GetService("TweenService"):Create(v.Mainv, TweenInfo.new(.5, Enum.EasingStyle.Quad), {Value = V2toV3(v.Main.Pos + Vector2.new(0, 44))}):Play()
+            game:GetService("TweenService"):Create(v.Textv, TweenInfo.new(.5, Enum.EasingStyle.Quad), {Value = V2toV3(v.Text.Pos + Vector2.new(0, 44))}):Play()
+        end
         tc:Disconnect()
         mc:Disconnect()
         ins.Main.Remove()
@@ -864,7 +873,7 @@ local AddCommand, ChangeAdminPerms, HandleMessage do
 	end)
 
 	Text.FocusLost:Connect(function()
-		HandleMessage(("-%s"):format(Text.Text))
+		HandleMessage(("%s%s"):format(togs.Admin.Prefix, Text.Text))
 		Text.Text = ""
 	end)
 
@@ -881,14 +890,14 @@ local AddCommand, ChangeAdminPerms, HandleMessage do
         AddCommand("print", {"cout"}, "Prints given arguments", true, false, function(args) print(unpack(args)) end)
     ]]
 
-	function AddCommand(Command, Aliases, Info, RequiresArgs, IsUsableByOthers, Function)
+	function AddCommand(Command, Aliases, Info, RequiresArgs, IsUseableByOthers, Function)
 		local Final = {}
 		
 		Final["Command"] = Command
 		Final["Aliases"] = Aliases
 		Final["Function"] = Function
 		Final["RequiresArgs"] = RequiresArgs
-		Final["IsUsableByOthers"] = IsUsableByOthers or false
+		Final["IsUseableByOthers"] = IsUseableByOthers
 
 		local Commandf = Instance.new("Frame")
 		local UIGradient = Instance.new("UIGradient")
@@ -916,7 +925,7 @@ local AddCommand, ChangeAdminPerms, HandleMessage do
 		Label.TextWrapped = true
 		Label.TextXAlignment = Enum.TextXAlignment.Left
 
-		local fstr = Info.."\nIs usable by others: "..tostring(IsUsableByOthers).."\nRequires arguments: "..tostring(RequiresArgs)
+		local fstr = Info.."\nIs usable by others: "..tostring(IsUseableByOthers).."\nRequires arguments: "..tostring(RequiresArgs)
 		if Aliases then
 			fstr = fstr.."\nAliases: {"..(type(Aliases) == "table" and table.concat(Aliases, ", ") or Aliases).."}"
 		end
@@ -927,10 +936,10 @@ local AddCommand, ChangeAdminPerms, HandleMessage do
 		Commandf.MouseEnter:Connect(function()
             local mouse = lp:GetMouse()
 			con = sv.RunService.RenderStepped:Connect(function()
-				if not Commands.Visible then 
+				if not Commands.Visible then
                     con:Disconnect()
-                    Frame.Visible = false 
-                    return 
+                    Frame.Visible = false
+                    return
                 end
 
 				TextLabel.Size = UDim2.new(0, size.X, 0, size.Y)
@@ -951,7 +960,7 @@ local AddCommand, ChangeAdminPerms, HandleMessage do
 
 			Frame.Visible = false
 		end)
-		
+
 		table.insert(Commandstbl, Final)
 	end
 
@@ -959,19 +968,19 @@ local AddCommand, ChangeAdminPerms, HandleMessage do
         if msg:sub(1, 1) ~= togs.Admin.Prefix then return end
         msg = msg:sub(2)
 
-		if not plr or table.find(togs.Admin.Admins, plr.Name) then
+		if not plr or table.find(togs.Admin.Admins, plr) then
 			local cmds = msg:split("&")
-	
+
             for _, icmd in next, cmds do
                 local args = icmd:split(" ")
                 local cmd = args[1]
                 table.remove(args, 1)
 
                 for _, v in next, Commandstbl do
-                    if plr and not v.IsUseableByOthers then continue end
+                    if (plr and not v.IsUseableByOthers) then continue end
 
                     if v.Command:lower() == cmd:lower() or (type(v.Aliases) == "string" and v.Aliases:lower() == cmd:lower()) then
-                        task.spawn(v.Function, args)
+                        task.spawn(v.Function, plr, unpack(args))
 
                         return
                     end
@@ -995,7 +1004,7 @@ local AddCommand, ChangeAdminPerms, HandleMessage do
 		
 		if not c then
 			table.insert(togs.Admin.Admins, plr)
-            sv.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(("/w %s You have been given admin! Use \"cmds\" or \"help\" to bring up a commands list."):format(plr), "All")
+            sv.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(("/w %s You have been given admin! Use \"%scmds\" or \"%shelp\" to bring up a commands list."):format(plr, togs.Admin.Prefix, togs.Admin.Prefix), "All")
 			Note(("Added %s to admins."):format(plr))
 		else
 			table.remove(togs.Admin.Admins, c)
@@ -1003,6 +1012,261 @@ local AddCommand, ChangeAdminPerms, HandleMessage do
 			Note(("Removed %s from admins."):format(plr))
 		end
 	end
+end
+
+local Log do
+    local BoxAthena = Instance.new("Frame")
+    local UIGradient = Instance.new("UIGradient")
+    local Top = Instance.new("Frame")
+    local UIGradient_2 = Instance.new("UIGradient")
+    local Commands = Instance.new("TextLabel")
+    local Min = Instance.new("TextButton")
+    local frm = Instance.new("Frame")
+    local ScrollingFrame = Instance.new("ScrollingFrame")
+    local UIGridLayout = Instance.new("UIGridLayout")
+    local UIPadding = Instance.new("UIPadding")
+
+    BoxAthena.Name = "ExploiterDetect"
+    BoxAthena.Parent = ChatLogs
+    BoxAthena.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    BoxAthena.BackgroundTransparency = 0.350
+    BoxAthena.BorderSizePixel = 2
+    BoxAthena.Position = UDim2.new(0.5, 0, 0.595761478, 0)
+    BoxAthena.Size = UDim2.new(0, 514, 0, 274)
+    BoxAthena.Visible = false
+
+    UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
+    UIGradient.Rotation = 90
+    UIGradient.Parent = BoxAthena
+
+    Top.Name = "Top"
+    Top.Parent = BoxAthena
+    Top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Top.BackgroundTransparency = 0.650
+    Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Top.BorderSizePixel = 2
+    Top.Size = UDim2.new(0, 514, 0, 24)
+
+    UIGradient_2.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
+    UIGradient_2.Rotation = 90
+    UIGradient_2.Parent = Top
+
+    Commands.Name = "Commands"
+    Commands.Parent = Top
+    Commands.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Commands.BackgroundTransparency = 1.000
+    Commands.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Commands.BorderSizePixel = 0
+    Commands.Position = UDim2.new(0.0170279779, 0, 0, 0)
+    Commands.Size = UDim2.new(0, 150, 0, 24)
+    Commands.Font = Enum.Font.SourceSansBold
+    Commands.Text = "Exploiter Detection"
+    Commands.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Commands.TextSize = 20.000
+    Commands.TextStrokeTransparency = 0.500
+    Commands.TextXAlignment = Enum.TextXAlignment.Left
+
+    Min.Name = "Min"
+    Min.Parent = Top
+    Min.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    Min.BorderColor3 = Color3.fromRGB(51, 51, 51)
+    Min.BorderSizePixel = 2
+    Min.Position = UDim2.new(0.955875456, -1, 0.125, 0)
+    Min.Size = UDim2.new(0, 17, 0, 17)
+    Min.Font = Enum.Font.SourceSans
+    Min.LineHeight = 1.150
+    Min.Text = "-"
+    Min.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Min.TextSize = 39.000
+
+    frm.Name = "frm"
+    frm.Parent = BoxAthena
+    frm.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    frm.BackgroundTransparency = 1.000
+    frm.BorderColor3 = Color3.fromRGB(27, 42, 53)
+    frm.Position = UDim2.new(0, 0, 0.0875912383, 0)
+    frm.Size = UDim2.new(0, 389, 0, 250)
+
+    ScrollingFrame.Parent = frm
+    ScrollingFrame.Active = true
+    ScrollingFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ScrollingFrame.BackgroundTransparency = 1.000
+    ScrollingFrame.Size = UDim2.new(0, 180, 0, 250)
+    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 1, 0)
+    ScrollingFrame.ScrollBarThickness = 0
+
+    UIGridLayout.Parent = ScrollingFrame
+    UIGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    UIGridLayout.CellSize = UDim2.new(0, 176, 0, 20)
+
+    UIPadding.Parent = ScrollingFrame
+    UIPadding.PaddingBottom = UDim.new(0, 2)
+    UIPadding.PaddingLeft = UDim.new(0, 2)
+    UIPadding.PaddingRight = UDim.new(0, 2)
+    UIPadding.PaddingTop = UDim.new(0, 8)
+
+    local exploiterlogs = {}
+
+    function Log(plr, reason)
+        local newtbl = {}
+
+        if exploiterlogs[plr.Name] then
+            newtbl = exploiterlogs[plr.Name]
+        end
+
+        if table.find(newtbl, reason) then return end
+
+        table.insert(newtbl, reason)
+        exploiterlogs[plr.Name] = newtbl
+    end
+
+    local function UpdateLogs()
+        for i,v in pairs(exploiterlogs) do
+            if BoxAthena:FindFirstChild(i) then
+                BoxAthena[i].Info.Text = table.concat(v, "\n")
+                
+                continue
+            end
+
+            if togs.EDN then 
+                Note(("Exploit detection caught %s!"):format(i))
+            end
+
+            local ExFrame = Instance.new("Frame")
+            local Name = Instance.new("TextLabel")
+            local Avatar = Instance.new("ImageLabel")
+            local Info = Instance.new("TextLabel")
+
+            local Button = Instance.new("Frame")
+            local UIGradient1 = Instance.new("UIGradient")
+            local UIListLayout = Instance.new("UIListLayout")
+            local TextButton = Instance.new("TextButton")
+
+            Button.Name = i
+            Button.Parent = ScrollingFrame
+            Button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Button.BackgroundTransparency = 0.200
+            Button.BorderColor3 = Color3.fromRGB(23, 25, 52)
+            Button.Position = UDim2.new(-0.020833334, 0, 0.00840336177, 0)
+            Button.Size = UDim2.new(0, 153, 0, 20)
+
+            UIGradient1.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(86, 87, 85)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(78, 77, 73))}
+            UIGradient1.Rotation = 90
+            UIGradient1.Parent = Button
+
+            UIListLayout.Parent = Button
+            UIListLayout.FillDirection = Enum.FillDirection.Horizontal
+            UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+            TextButton.Parent = Button
+            TextButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            TextButton.BackgroundTransparency = 1.000
+            TextButton.Size = UDim2.new(1, 0, 1, 0)
+            TextButton.Font = Enum.Font.SourceSansBold
+            TextButton.Text = i
+            TextButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            
+            TextButton.TextSize = 20.000
+            TextButton.TextStrokeTransparency = 0.500
+
+            ExFrame.Name = i
+            ExFrame.Parent = BoxAthena
+            ExFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            ExFrame.BackgroundTransparency = 1.000
+            ExFrame.Position = UDim2.new(0.357976645, 0, 0.0875912383, 0)
+            ExFrame.Size = UDim2.new(0, 330, 0, 250)
+            ExFrame.Visible = false
+
+            Name.Name = "Name"
+            Name.Parent = ExFrame
+            Name.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Name.BackgroundTransparency = 1.000
+            Name.BorderColor3 = Color3.fromRGB(27, 42, 53)
+            Name.Position = UDim2.new(0.375514328, 0, 0.0320000015, 0)
+            Name.Size = UDim2.new(0, 205, 0, 64)
+            Name.Font = Enum.Font.SourceSansBold
+            Name.Text = ("%s\n(%s)"):format(i, sv.Players:FindFirstChild(i) and sv.Players[i].DisplayName or "Unknown")
+            Name.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Name.TextSize = 20.000
+            Name.TextStrokeTransparency = 0.500
+
+            Avatar.Name = "Avatar"
+            Avatar.Parent = ExFrame
+            Avatar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Avatar.BackgroundTransparency = 1.000
+            Avatar.Position = UDim2.new(0.121463276, 0, 0.0320000015, 0)
+            Avatar.Size = UDim2.new(0, 64, 0, 64)
+            Avatar.Image = sv.Players:GetUserThumbnailAsync(sv.Players:GetUserIdFromNameAsync(i), Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+
+            Info.Name = "Info"
+            Info.Parent = ExFrame
+            Info.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Info.BackgroundTransparency = 1.000
+            Info.BorderColor3 = Color3.fromRGB(27, 42, 53)
+            Info.Position = UDim2.new(0.0424079672, 0, 0.324000001, 0)
+            Info.Size = UDim2.new(0, 314, 0, 169)
+            Info.Font = Enum.Font.SourceSansBold
+            Info.TextWrapped = true
+            Info.Text = table.concat(v, "\n")
+            Info.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Info.TextSize = 20.000
+            Info.TextStrokeTransparency = 0.500
+            Info.TextXAlignment = Enum.TextXAlignment.Left
+            Info.TextYAlignment = Enum.TextYAlignment.Top
+
+            TextButton.Activated:Connect(function()
+                for i2,v2 in pairs(BoxAthena:GetChildren()) do
+                    if not table.find({"frm", "Top"}, v2.Name) and v2:IsA("Frame") then
+                        v2.Visible = false
+                    end
+                end
+
+                BoxAthena[i].Visible = true
+            end)
+        end
+    end
+    
+    Min.Activated:Connect(function()
+        BoxAthena.Visible = false
+    end)
+
+    draggable(BoxAthena)
+
+    task.spawn(function()
+        while task.wait(2) do
+            for i,v in pairs(sv.Players:GetPlayers()) do
+                if v == game.Players.LocalPlayer then continue end
+
+                if v.Character and v.Character:FindFirstChild("Humanoid") then
+                    if v.Character.Humanoid:GetState() == Enum.HumanoidStateType.PlatformStanding then
+                        Log(v, "Flying")
+                    end
+                end
+
+                if v.TeamColor == BrickColor.new("Really black") then
+                    Log(v, "Septex or XTheMasterX admin (Could be somethin else)")
+                end
+
+                if ((v:FindFirstChild("Backpack") and v.Backpack:FindFirstChild("AK-47")) or (v.Character and v.Character:FindFirstChild("AK-47"))) and table.find({game.Teams.Inmates, game.Teams.Neutral}, v.Team) then
+                    Log(v, "Gun spawn (or brung with AK-47)")
+                end
+
+                if v.Team == game.Teams.Neutral and (v.Character and v.Character:GetPivot().y or 0) > 45 then
+                    Log(v, "Default Neutral team (possibly server lag)")
+                end
+
+                if v.Character and v.Character:FindFirstChild("HumanoidRootPart") and not v.Character:FindFirstChild("Torso") then
+                    Log(v, "Invisible Fling")
+                end
+
+                if v.Character and not v.Character:FindFirstChild("Humanoid") and not v.Character:FindFirstChild("ForceField") then
+                    Log(v, "God mode or bringing (Could have just spawned in)")
+                end
+            end
+
+            UpdateLogs()
+        end
+    end)
 end
 
 local function ProperRay(From, To, ...)
@@ -1035,20 +1299,16 @@ local function Respawn(Color, pos)
     cam:GetPropertyChangedSignal("CFrame"):Wait()
     cam.CFrame = Saved2
     local newp = lp.Character:WaitForChild("HumanoidRootPart").CFrame.p
-    local part = ProperRay(newp, Vector3.new(0, -5000, 0), {lp.Character})
-
-    if not part or (Vector2.new(newp.X, newp.Z) - Vector2.new(-128, 2048)).magnitude < 2 then
+    
+    if newp.Y < -26 then
         Goto(positions["Nexus"])
-        return
     end
 
-    if Color == Color3.new(0.639216, 0.635294, 0.647059) then
-        task.delay(.1, function()
-            if (Vector2.new(newp.X, newp.Z) - Vector2.new(Saved1.X, Saved1.Z)).magnitude > 5 then
-
-            end
-        end)
-    end
+    task.delay(.1, function()
+        if (Vector2.new(newp.X, newp.Z) - Vector2.new(Saved1.X, Saved1.Z)).magnitude > 5 then
+            Goto(pos)
+        end
+    end)
 end
 
 local function Team(Color)
@@ -1174,12 +1434,10 @@ local function CloneHumanoid()
     cam.CameraSubject = cl
 end
 
-local function Bring(plr, tool, cframe) -- thanks fate for teaching me the humanoid cloning & deletion (ive never touched it before)
+local function Bring(plr, tool, cframe) -- thanks fate for teaching me the humanoid cloning & deletion (ive never touched it before) (should probably be noted on the function above)
     if not lp.Character or not plr or not plr.Character or not plr.Character:FindFirstChild("Humanoid") or not tool or not cframe then return end
-    local oldab = togs.AntiBring
-    togs.AntiBring = false
     if plr.Character.Humanoid.Sit then
-        Kill({plr})
+        Kill{plr}
         repeat until not task.wait() or plr.Character
     end
 
@@ -1197,7 +1455,8 @@ local function Bring(plr, tool, cframe) -- thanks fate for teaching me the human
         task.spawn(firetouchinterest, tool.Handle, plr.Character.HumanoidRootPart, ffalse)
     end
 
-    togs.AntiBring = oldab
+    task.wait(.3)
+
     remotes.Load:InvokeServer()
     Goto(saved)
 end
@@ -1207,8 +1466,7 @@ local function Crim(plr) -- chaotic told me this method
     local oldnt = togs.Noclip.Toggled
     togs.Noclip.Toggled = true
     local pad = workspace["Criminals Spawn"].SpawnLocation
-    local padpos, oldpos, oldab = pad.CFrame, lp.Character.HumanoidRootPart.CFrame, togs.AntiBring
-    togs.AntiBring = false
+    local padpos, oldpos = pad.CFrame, lp.Character.HumanoidRootPart.CFrame
 
     GetGun{togs.BringTool}
     local tool = lp.Backpack:WaitForChild(togs.BringTool)
@@ -1225,13 +1483,14 @@ local function Crim(plr) -- chaotic told me this method
         task.spawn(firetouchinterest, pad, plr.Character.HumanoidRootPart, ffalse)
         task.spawn(firetouchinterest, tool.Handle, plr.Character.HumanoidRootPart, ffalse)
     end
+
+    task.wait(.3)
     
     remotes.Load:InvokeServer()
     pad:PivotTo(padpos)
     Goto(oldpos)
 
     togs.Noclip.Toggled = oldnt
-    togs.AntiBring = oldab
 end
 
 local function GetPlayer(a)
@@ -1255,12 +1514,13 @@ local function GetPlayer(a)
     end
 end
 
-local function AGetPlayer(str) -- its awful ik (move to top later gfx ok?)
+local function AGetPlayer(str) -- its awful ik
     if table.find({"g", "guard", "guards"}, str:lower()) then return sv.Teams.Guards:GetPlayers() end
     if table.find({"c", "crim", "crims", "criminal", "criminal"}, str:lower()) then return sv.Teams.Criminals:GetPlayers() end
     if table.find({"p", "i", "inmate", "prisoner", "inmates", "prisoners"}, str:lower()) then return sv.Teams.Inmates:GetPlayers() end
     if table.find({"n", "neutral", "neutrals", "skid", "skids"}, str:lower()) then return sv.Teams.Neutral:GetPlayers() end
-    if table.find({"custom", "cu", "customs"}, str:lower()) then 
+    if table.find({"all", "everyone"}, str:lower()) then return sv.Players:GetPlayers() end
+    if table.find({"custom", "cu", "customs"}, str:lower()) then
         local customs = {}
 
         for i,v in pairs(sv.Players:GetPlayers()) do
@@ -1340,6 +1600,22 @@ local function OnCharacterAdded(char)
         end)
     end
 
+    if togs.AutoRespawn.ForceField then
+        Team("Medium stone grey")
+        task.delay(6.9, function() -- function() end because .CFrame just teleports u to where u spawn
+            Respawn(BrickColor.new("Really red"), char:WaitForChild("HumanoidRootPart").CFrame)
+        end)
+
+        task.spawn(function()
+            for i = 1, 50 do
+                task.wait(.01)
+                if lp.Team ~= sv.Teams.Neutral then
+                    Team("Medium stone grey")
+                end
+            end
+        end)
+     end
+
     coroutine.wrap(function()
         local bap = lp:WaitForChild("Backpack")
 
@@ -1356,8 +1632,13 @@ local function OnCharacterAdded(char)
         end)
 
         ca = char.ChildAdded:Connect(function(item)
-            if togs.AntiBring and not table.find(allowedtools, item) and item.ClassName == "Tool" then
-                item:ClearAllChildren()
+            if not togs.AntiBring then return end
+
+            task.spawn(Anchorage, .001)
+            if not table.find(allowedtools, item) and item.ClassName == "Tool" then
+                task.spawn(function()
+                    repeat item.Parent = nil until item.Parent == nil or not task.wait()
+                end)
                 task.spawn(Anchorage, .1)
 
                 task.spawn(table.foreach, lp.Character:GetDescendants(), function(_, v)
@@ -1380,6 +1661,8 @@ local function OnCharacterAdded(char)
     end)()
 
     hd = hum.Died:Connect(function()
+        if togs.Godmode or togs.AutoRespawn.ForceField then return end
+
         pcall(function()
             hd:Disconnect()
             rs:Disconnect()
@@ -1391,6 +1674,17 @@ local function OnCharacterAdded(char)
             local tool = char:FindFirstChildOfClass("Tool")
             local isgun = table.find({"M4A1", "M9", "AK-47", "Remington 870"}, tool and tool.Name or "")
             Respawn(nil, char:WaitForChild("HumanoidRootPart").CFrame)
+            
+            if togs.AutoRespawn.ForceField then
+                Team("Medium stone grey")
+                task.delay(7.9, Respawn, BrickColor.new("Really red"), char:WaitForChild("HumanoidRootPart").CFrame)
+                for i = 1, 50 do
+                    task.wait(.01)
+                    if lp.Team ~= sv.Teams.Neutral then
+                        Team("Medium stone grey")
+                    end
+                end
+            end
 
             if togs.AutoRespawn.EquipOldWeapon then
                 local newtool = isgun and tool.Name
@@ -1414,10 +1708,7 @@ local function OnCharacterAdded(char)
 
         for i,v in pairs(debug.getregistry()) do
             if v ~= nil and type(v) == "function" and getfenv(v).script == char.ClientInputHandler then
-                if type(v2) == "table" and v2.isRunning ~= nil then -- getsenv breaks on v3
-                    print(i2, v2)
-                    cs = v2
-                end
+                cs = getfenv(v)["cs"]
 
                 for i2,v2 in pairs(debug.getupvalues(v)) do
                     if type(v2) == "function" then
@@ -1453,7 +1744,7 @@ local function OnCharacterAdded(char)
         end
     end)
 
-    char:WaitForChild("Humanoid").Seated:Connect(function() 
+    char:WaitForChild("Humanoid").Seated:Connect(function()
         if not togs.AntiSit then return end
 
         char.Humanoid.Sit = false
@@ -1505,6 +1796,21 @@ local function PlayerCharacterAdded(plr)
 
             if tplr and not table.find({plr, lp}, tplr) and not table.find(togs.Whitelist, tplr.Name) then
                 Kill({tplr})
+            end
+        end)
+    end)
+
+    task.spawn(function()
+        char:WaitForChild("Humanoid").AnimationPlayed:Connect(function(an)
+            if not table.find({"rbxassetid://484926359", "rbxassetid://484200742"}, an.Animation.AnimationId) then return end
+            local pos = char:GetPivot()
+            local base = workspace:FindPartOnRay(Ray.new(pos.p, pos.LookVector * 3), char) -- yea i just took it from pl :grin:
+
+            if base and base:FindFirstAncestorOfClass("Model") and base:FindFirstAncestorOfClass("Model"):FindFirstChild("Humanoid") then
+                local hitplr = sv.Players:GetPlayerFromCharacter(base.Parent)
+                if hitplr and table.find(givenantipunch, hitplr.Name) or (hitplr == lp and togs.AntiPunch) then
+                    (hitplr == lp and MeleeKill or Kill)({plr})
+                end
             end
         end)
     end)
@@ -1565,6 +1871,23 @@ local function PlayerAdded(plr)
                     end
 
                     weldcrash = true
+                end
+
+                if part:IsA("Tool") then
+                    pcall(function()
+                        local con; con = part:WaitForChild("Handle", 5).Touched:Connect(function(bpart)
+                            if not bpart or not bpart:IsDescendantOf(lp.Character) or tostring(part.Parent) ~= lp.Name or not plr.Character or not bpart.Name == "HumanoidRootPart" then return end
+
+                            Note(("%s tried to bring you!"):format(plr.Name))
+                        end)
+
+                        local con2; con2 = part.AncestryChanged:Connect(function(Noneedforthisone, parent) 
+                            if parent ~= nil then return end
+
+                            con:Disconnect()
+                            con2:Disconnect()
+                        end)
+                    end)
                 end
             end)
         end
@@ -1638,10 +1961,6 @@ local function SpamArrest(plr, power)
     Note(("Arrested in: %.02f seconds"):format(tick() - starttick))
 end
 
-local function Lerp(a, b, t)
-    return a + (b - a) * t
-end
-
 local ChatLogAdd do
     local AthenaChat = Instance.new("Frame")
     local Top = Instance.new("Frame")
@@ -1664,6 +1983,7 @@ local ChatLogAdd do
     AthenaChat.Position = UDim2.new(0.274984151, 0, 0.597905636, 0)
     AthenaChat.Size = UDim2.new(0, 371, 0, 214)
     AthenaChat.Name = "AthenaChat"
+    AthenaChat.Visible = false
 
     Top.Name = "Top"
     Top.Parent = AthenaChat
@@ -1985,6 +2305,10 @@ combat:Toggle("Anti touch", togs.AntiTouch, function(a)
     togs.AntiTouch = a
 end)
 
+combat:Toggle("Anti punch", togs.AntiPunch, function(a)
+    togs.AntiPunch = a
+end)
+
 combat:Toggle("Gun spawn", togs.GunSpawn, function(a)
     togs.GunSpawn = a
 end)
@@ -2037,6 +2361,10 @@ thing:Toggle("Equip old weapon", togs.AutoRespawn.EquipOldWeapon, function(a)
     togs.AutoRespawn.EquipOldWeapon = a
 end)
 
+thing:Toggle("Force field", togs.AutoRespawn.ForceField, function(a)
+    togs.AutoRespawn.ForceField = a
+end)
+
 local thing = player:ToggleDropdown("Fly", togs.Fly.Toggled, function(a)
     togs.Fly.Toggled = a
 end)
@@ -2074,7 +2402,7 @@ end)
 for i,v in next, {"Neutral", "Inmates", "Criminals"} do
     thing:Button(v, function()
         Team(sv.Teams[v].TeamColor.Name)
-        Note(("Changed team to %s"):format(i))
+        Note(("Changed team to %s"):format(v))
     end)
 end
 
@@ -2134,6 +2462,13 @@ player:Toggle("God mode", togs.Godmode, function(a)
     end
 end)
 
+player:Button("Delete HRP", function() 
+    local c = lp.Character
+    c.Parent = nil
+    c.HumanoidRootPart.Parent = nil
+    c.Parent = workspace
+end)
+
 player:Toggle("Noclip", togs.Noclip.Toggled, function(a)
     togs.Noclip.Toggled = a
 end)
@@ -2184,6 +2519,28 @@ world:Button("Timeout V1", function()
     Note("Successfully sent timeout")
 end)
 
+world:Button("Teleport cars", function()
+    local oldpos = lp.Character:GetPivot()
+    local squadcars = {}
+
+    for i,v in pairs(workspace.Prison_ITEMS.buttons:GetChildren()) do
+        if v.Name == "Car Spawner" and v["Car Spawner"].type.Value == "Squad" then
+            table.insert(squadcars, v)
+        end
+    end
+
+    for i,v in pairs(squadcars) do
+        task.spawn(remotes.Item.InvokeServer, remotes.Item, v["Car Spawner"])
+        local car = workspace.CarContainer.ChildAdded:Wait()
+        repeat
+            car:WaitForChild("Body"):WaitForChild("VehicleSeat"):Sit(lp.Character.Humanoid)
+        until not lp.Character or not lp.Character:FindFirstChild("Humanoid") or lp.Character.Humanoid.Sit or not task.wait()
+        lp.Character:PivotTo(oldpos)
+    end
+
+    lp.Character.Humanoid.Sit = false
+end)
+
 world:Toggle("Stay", false, function(a)
     Stay(a and (lp.Character or lp.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").CFrame, not a)
 end)
@@ -2214,7 +2571,7 @@ thing:Button("Save schematic", function()
     end
 
     writefile("AthenaSchematics/Saved/"..DrawingName..".txt", sv.HttpService:JSONEncode(save))
-    Note(("Saved schematic %s"):format(Drawingname))
+    Note(("Saved schematic %s"):format(DrawingName))
 end)
 
 thing:Slider("Refresh rate", 0.2, 2, togs.Drawing.Refresh, true, function(a)
@@ -2243,6 +2600,14 @@ thing:Toggle("Place mode", togs.Drawing.Place, function(a)
     togs.Drawing.Place = a
 end)
 
+world:Toggle("Auto grab keycard", togs.AGK, function(a)
+    togs.AGK = a
+    local key = workspace.Prison_ITEMS.single:FindFirstChild("Key card")
+    if a and key then
+        remotes.Item:InvokeServer(key.ITEMPICKUP)
+    end
+end)
+
 misc:TextBox("Player", "players", function(a)
     selected = GetPlayer(a)
 end)
@@ -2264,7 +2629,7 @@ thing:Button("Admin", function()
 end)
 
 thing:Button("Loopkill", function()
-    if not selected or selected.Parent ~= sv.Players then return end
+    if not selected then return end
 
     local a = table.find(loopkilltable, selected.Name)
     table[a and "remove" or "insert"](loopkilltable, a or selected.Name)
@@ -2272,15 +2637,23 @@ thing:Button("Loopkill", function()
 end)
 
 thing:Button("Give killaura", function()
-    if not selected or selected.Parent ~= sv.Players then return end
+    if not selected then return end
 
     local a = table.find(givenkillaura, selected.Name)
     table[a and "remove" or "insert"](givenkillaura, a or selected.Name)
     Note((a and "Gave %s killaura" or "Removed %s's killaura"):format(selected.Name))
 end)
 
+thing:Button("Anti punch", function()
+    if not selected then return end
+
+    local a = table.find(givenantipunch, selected.Name)
+    table[a and "remove" or "insert"](givenantipunch, a or selected.Name)
+    Note((a and "Gave %s anti punch" or "Removed %s's anti punch"):format(selected.Name))
+end)
+
 thing:Button("Thorns", function()
-    if not selected or selected.Parent ~= sv.Players then return end
+    if not selected then return end
 
     local a = table.find(giventhorns, selected.Name)
     table[a and "remove" or "insert"](giventhorns, a or selected.Name)
@@ -2288,7 +2661,7 @@ thing:Button("Thorns", function()
 end)
 
 thing:Button("Anti touch", function()
-    if not selected or selected.Parent ~= sv.Players then return end
+    if not selected then return end
 
     local a = table.find(givenantitouch, selected.Name)
     table[a and "remove" or "insert"](givenantitouch, a or selected.Name)
@@ -2296,7 +2669,7 @@ thing:Button("Anti touch", function()
 end)
 
 thing:Button("One shot guns", function()
-    if not selected or selected.Parent ~= sv.Players then return end
+    if not selected then return end
 
     local a = table.find(givenoneshot, selected.Name)
     table[a and "remove" or "insert"](givenoneshot, a or selected.Name)
@@ -2305,16 +2678,27 @@ end)
 
 thing:Button("Spam auto team", function()
     if not selected then return end
-
     if connections["SpamTeam"] then
         connections["SpamTeam"]:Disconnect()
         connections["SpamTeam"] = nil
-
+        Note("Stopped spamming auto team")
         return
     end
 
-    Respawn(selected.TeamColor)
-    connections["SpamTeam"] = selected:GetPropertyChangedSignal("TeamColor"):Connect(Respawn)
+    local t = tick()
+    connections["SpamTeam"] = sv.RunService.Heartbeat:Connect(function()
+        if tick() - t < .2 then return end
+        if not selected then
+            connections["SpamTeam"]:Disconnect()
+            connections["SpamTeam"] = nil
+            Note(("%s has left, disconnected spam auto team"):format(selected.Name))
+        end
+
+        if lp.TeamColor ~= selected.TeamColor then
+            t = tick()
+            Respawn(selected.TeamColor)
+        end
+    end)
 end)
 
 thing:Button("View", function()
@@ -2389,9 +2773,8 @@ thing:Button("Arrest", function()
     end
 
     Goto((selected.Character or selected.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").CFrame)
-    task.wait(.2)
-    remotes.Arrest:InvokeServer(selected.Character.Head)
-    task.wait(.2)
+    task.spawn(remotes.Arrest.InvokeServer, remotes.Arrest, selected.Character.Head)
+    selected.Character.Head:WaitForChild("handcuffedGui", 1/0)
     Goto(oldpos)
     Note(("Arrested %s"):format(selected.Name))
 end)
@@ -2446,6 +2829,14 @@ setting:Button("Athena chat", function()
     ChatLogs.AthenaChat.Visible = true
 end)
 
+setting:Button("Exploiter detections", function()
+    ChatLogs.ExploiterDetect.Visible = true
+end)
+
+setting:Toggle("Notify on detect", togs.EDN, function(a)
+    togs.EDN = a
+end)
+
 setting:Toggle("No fade ui", togs.NoFade, function(a)
     togs.NoFade = a
     lp.PlayerGui.Home.fadeFrame.Visible = not a
@@ -2473,6 +2864,14 @@ end)
 
 setting:Keybind("Cmd Focus Key", togs.Admin.FocusKey, function(a) 
     togs.Admin.FocusKey = a
+end)
+
+setting:Toggle("Ui blur", true, function(a)
+    settings.blur = a
+end)
+
+setting:Toggle("Ui disable chat", true, function(a)
+    settings.disablechat = a
 end)
 
 for i,v in pairs(listfiles"AthenaSchematics") do
@@ -2659,12 +3058,12 @@ end)
 workspace.Remote.arrestPlayer.OnClientEvent:Connect(function()
     if not togs.AntiArrest or not lp.Character or not lp.Character:FindFirstChild("Humanoid") then return end
 
-    local oldc, oldar = lp.TeamColor, togs.AutoRespawn.Toggled
+    local oldc, oldar, oldpos = lp.TeamColor, togs.AutoRespawn.Toggled, lp.Character:GetPivot()
     togs.AutoRespawn.Toggled = false
-    lp.Character:WaitForChild("Humanoid").Health = 0
-    togs.AutoRespawn.Toggled = oldar
+    lp.Character:BreakJoints()
     lp.CharacterAdded:Wait()
-    Respawn(oldc, positions["Nexus"])
+    Respawn(oldc, oldpos)
+    togs.AutoRespawn.Toggled = oldar
 end)
 
 remotes.Replicate.OnClientEvent:Connect(function(bullets) -- became a new message handler
@@ -2844,38 +3243,50 @@ sv.RunService.Stepped:Connect(function()
     end
 end)
 
+workspace.Prison_ITEMS.single.ChildAdded:Connect(function(a)
+    if a.Name ~= "Key card" or not togs.AGK then return end
+
+    remotes.Item:InvokeServer(a.ITEMPICKUP)
+end)
+
 sv.Players.PlayerRemoving:Connect(PlayerRemoved)
 sv.Players.PlayerAdded:Connect(PlayerAdded)
 lp.Chatted:Connect(HandleMessage)
 OnCharacterAdded(lp.Character)
 lp.CharacterAdded:Connect(OnCharacterAdded)
-sv.ReplicatedStorage.DefaultChatSystemChatEvents.OnMessageDoneFiltering.OnClientEvent:Connect(function(msgdata) 
+sv.ReplicatedStorage.DefaultChatSystemChatEvents.OnMessageDoneFiltering.OnClientEvent:Connect(function(msgdata)
     if msgdata.FromSpeaker == lp.Name then return end
 
-    if table.find(togs.Admin.Admins, msgdata.FromSpeaker) and msgdata.Message:sub(1, 1) == togs.Admin.Prefix and table.find({"help", "cmds"}, msgdata.Message:lower():sub(2, 5)) then
-        sv.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(("/w %s Prefix is %s | Your commands list: "):format(msgdata.FromSpeaker, togs.Admin.Prefix), "All")
-        local msg = ""
-        local msgs = {}
-        for i,v in pairs(Commandstbl) do
-            if v.IsUseableByOthers then
-                msg = msg..v.Name..", "
+    if table.find(togs.Admin.Admins, msgdata.FromSpeaker) and msgdata.Message:sub(1, 1) == togs.Admin.Prefix then
+        if table.find({"help", "cmds"}, msgdata.Message:lower():sub(2, 5)) then
+            sv.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(("/w %s Prefix is %s | Your commands list: "):format(msgdata.FromSpeaker, togs.Admin.Prefix), "All")
+            local msg = ""
+            local msgs = {}
+            for i,v in pairs(Commandstbl) do
+                if v.IsUseableByOthers then
+                    msg = ("%s %s (%s),"):format(msg, v.Command, not v.Aliases and "" or type(v.Aliases) == "table" and table.concat(v.Aliases, ", ") or v.Aliases)
+                end
             end
+
+            for i = 1, math.ceil(#msg / 250) do
+                table.insert(msgs, msg:sub(i ~= 1 and (i - 1) * 250 or 1, i * 250))
+            end
+
+            for i,v in pairs(msgs) do
+                sv.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(("/w %s %s"):format(msgdata.FromSpeaker, v), "All")
+                task.wait(.5)
+            end
+            
+            return
         end
 
-        for i = 1, math.ceil(#msg / 250) do
-            table.insert(msgs, msg:sub(i ~= 1 and (i - 1) * 250 or 1, i * 250))
-        end
-
-        for i,v in pairs(msgs) do
-            sv.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(v, ("To %s"):format(msgdata.FromSpeaker))
-            task.wait(.5)
-        end
+        HandleMessage(msgdata.Message, msgdata.FromSpeaker)
     end
 end)
 
 task.spawn(LoaderUpdate)
 
-task.spawn(function() 
+task.spawn(function()
     while task.wait() do
         if lp.Team == sv.Teams.Criminals and togs.AntiCriminal then
             local oldar = togs.AutoRespawn.Toggled
@@ -3107,13 +3518,13 @@ getgenv().SendMsg = SendMsg
 
 -- everyones favorite part (not fucking mine), COMMANDS!
 
-AddCommand("Kill", "k", "Kills given players or team", true --[[requiresargs]], true --[[isusablebyothers]], function(plr, ...)     
+AddCommand("Kill", "k", "Kills given players or team", true --[[requiresargs]], true --[[IsUseableByOthers]], function(plr, ...)
     for i,v in pairs({...}) do
         Kill(AGetPlayer(v))
     end
 end)
 
-AddCommand("Loopkill", "lk", "Loopkills given players or team", true, true, function(plr, ...)     
+AddCommand("Loopkill", "lk", "Loopkills given players or team", true, true, function(plr, ...)
     for i,v in pairs({...}) do
         local t = GetTeam(v) or GetPlayer(v)
         if not t then continue end
@@ -3128,11 +3539,11 @@ AddCommand("Loopkill", "lk", "Loopkills given players or team", true, true, func
     end
 end)
 
-AddCommand("Respawn", {"Re", "Reload"}, "Reloads your character", false, false, function(plr, ...)     
+AddCommand("Respawn", {"Re", "Reload"}, "Reloads your character", false, false, function(plr, ...)
     Respawn()
 end)
 
-AddCommand("Getswatitems", {"Getswat", "Gsi"}, "Gets swat items", false, false, function(plr, ...)     
+AddCommand("Getswatitems", {"Getswat", "Gsi"}, "Gets swat items", false, false, function(plr, ...)
     local oldteam
     if lp.Team ~= sv.Teams.Guards then
         oldteam = lp.TeamColor.Name
@@ -3157,34 +3568,76 @@ AddCommand("Getswatitems", {"Getswat", "Gsi"}, "Gets swat items", false, false, 
     end
 end)
 
-AddCommand("Getguns", "Guns", "Gets your guns in gun order", false, false, function(plr, ...)     
+AddCommand("Getguns", "Guns", "Gets your guns in gun order", false, false, function(plr, ...)
     GetGun(togs.GunOrder)
 end)
 
-AddCommand("Athenachat", "Ach", "Opens the athena server chat", false, false, function(plr, ...)     
+AddCommand("Athenachat", "Ach", "Opens the athena server chat", false, false, function(plr, ...)
     ChatLogs.AthenaChat.Visible = true
 end)
 
-AddCommand("Breakspamarrest", {"Breaksa", "Breakspam", "Bsa"}, "Breaks spam arrest", false, false, function(plr, ...)     
+AddCommand("Exploiterdetections", {"exploitlogs", "elogs"}, "Opens the exploiter detections", false, false, function(plr, ...)
+    ChatLogs.ExploiterDetect.Visible = true
+end)
+
+AddCommand("Breakspamarrest", {"Breaksa", "Breakspam", "Bsa"}, "Breaks spam arrest", false, false, function(plr, ...)
     breaksa = true
     task.wait(.1)
     breaksa = false
 end)
 
-AddCommand("Cleardrawing", "Cleard", "Clears all drawing objects", false, false, function(plr, ...)     
+AddCommand("Cleardrawing", "Cleard", "Clears all drawing objects", false, false, function(plr, ...)
     drawingobjects = {}
     workspacedrawingobjects:ClearAllChildren()
 end)
 
-AddCommand("Rejoin", "Rj", "Rejoins the server", false, false, function(plr, ...)     
+AddCommand("Arrest", "ar", "Arrests player", true, true, function(plr, ...)
+    for i,v in pairs({...}) do
+        for i, v2 in pairs(AGetPlayer(v)) do
+            local oldpos = (lp.Character or lp.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").CFrame
+
+            if not CanBeArrested(v2) then
+                Crim(v2)
+            end
+
+            Goto((v2.Character or v2.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").CFrame)
+            task.spawn(remotes.Arrest.InvokeServer, remotes.Arrest, v2.Character.Head)
+            v2.Character.Head:WaitForChild("handcuffedGui", 1/0)
+            Goto(oldpos)
+        end
+    end
+end)
+
+AddCommand("Copyteamcolor", {"ctc", "ct"}, "Copies player team color", true, false, function(plr, one)
+    local splr = GetPlayer(one)
+    if not splr then return end
+
+    Respawn(splr.TeamColor)
+end)
+
+AddCommand("Goto", {"to", "teleport"}, "Teleports player to player (only 1 argument accepted)", true, true, function(plr, one)
+    local splr = GetPlayer(one)
+    if not splr then return end
+
+    if not plr then
+        Goto(splr.Character:GetPivot())
+
+        return
+    end
+
+    GetGun{togs.BringTool}
+    Bring(sv.Players[plr], lp.Backpack:WaitForChild(togs.BringTool), splr.Character:GetPivot())
+end)
+
+AddCommand("Rejoin", "Rj", "Rejoins the server", false, false, function(plr, ...)
     sv.TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
 end)
 
-AddCommand("Copygameteleport", {"Copytp", "Copygametp", "Ctp"}, "Get the games teleport", false, false, function(plr, ...)     
+AddCommand("Copygameteleport", {"Copytp", "Copygametp", "Ctp"}, "Get the games teleport", false, false, function(plr, ...)
     setclipboard(("game:GetService\"TeleportService\":TeleportToPlaceInstance(%i, \"%s\")"):format(game.PlaceId, game.JobId))
 end)
 
-AddCommand("Timeout", "Disconnect", "Timeouts the server", false, false, function(plr, ...)     
+AddCommand("Timeout", "Disconnect", "Timeouts the server", false, false, function(plr, ...)
     GetGun{"M9"}
     local gun = lp.Backpack:FindFirstChild("M9") or lp.Character:FindFirstChild("M9")
 
@@ -3193,7 +3646,7 @@ AddCommand("Timeout", "Disconnect", "Timeouts the server", false, false, functio
     end
 end)
 
-AddCommand("Weldcrash", "Crash", "Crashes the server using welds", false, false, function(plr, ...)     
+AddCommand("Weldcrash", "Crash", "Crashes the server using welds", false, false, function(plr, ...)
     GetGun{"Remington 870"}
     local rem = lp.Backpack:WaitForChild("Remington 870")
 
@@ -3222,12 +3675,12 @@ AddCommand("Saveschematic", {"Save", "Saveschem"}, "Saves all your drawing objec
     writefile("AthenaSchematics/Saved/"..table.concat({...})..".txt", sv.HttpService:JSONEncode(save))
 end)
 
-AddCommand("Admin", "Rank", "Admins given player", true, false, function(plr, ...)     
+AddCommand("Admin", "Rank", "Admins given player", true, false, function(plr, ...)
     for i,v in pairs({...}) do
-        local plr = GetPlayer(v)
-        if not plr then continue end
+        local splr = GetPlayer(v)
+        if not splr then continue end
 
-        ChangeAdminPerms(plr.Name)
+        ChangeAdminPerms(splr.Name)
     end
 end)
 
@@ -3235,21 +3688,21 @@ AddCommand("Bring", nil, "Brings player to you or an admin", true, true, functio
     for i,v in pairs({...}) do
         for i, v2 in pairs(AGetPlayer(v)) do
             GetGun{togs.BringTool}
-            Bring(v2, lp.Backpack:FindFirstChild(togs.BringTool), plr ~= nil and plr.Character:GetPivot() or lp.Character:GetPivot())
+            Bring(v2, lp.Backpack:FindFirstChild(togs.BringTool), plr and sv.Players[plr].Character:GetPivot() or lp.Character:GetPivot())
         end
     end
 end)
 
-AddCommand("Criminal", "Crim", "Admins given player", true, true, function(plr, ...)     
+AddCommand("Criminal", "Crim", "Criminals given players", true, true, function(plr, ...)
     for i,v in pairs({...}) do
         for i, v2 in pairs(AGetPlayer(v)) do
             GetGun{togs.BringTool}
-            Crim(v2, lp.Backpack:FindFirstChild(togs.BringTool), plr ~= nil and plr.Character:GetPivot() or lp.Character:GetPivot())
+            Crim(v2, lp.Backpack:FindFirstChild(togs.BringTool), plr and sv.Players[plr].Character:GetPivot() or lp.Character:GetPivot())
         end
     end
 end)
 
-AddCommand("Spamarrest", "sa", "Admins given player", true, false, function(plr, ...)     
+AddCommand("Spamarrest", "sa", "Spam arrests given players", true, false, function(plr, ...)
     local plr, power = ...
     local aplr = GetPlayer(plr)
 
@@ -3257,7 +3710,7 @@ AddCommand("Spamarrest", "sa", "Admins given player", true, false, function(plr,
     SpamArrest(aplr, power or togs.SpamArrestPower)
 end)
 
-AddCommand("Unloopkill", "Unlk", "Admins given player", true, false, function(plr, ...)     
+AddCommand("Unloopkill", "Unlk", "Unloopkills given players", true, true, function(plr, ...)
     for i,v in pairs({...}) do
         local t = GetTeam(v) or GetPlayer(v)
         if not t then continue end
@@ -3276,7 +3729,7 @@ AddCommand("Unloopkill", "Unlk", "Admins given player", true, false, function(pl
     end
 end)
 
---[[AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)     
+--[[AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)
     for i,v in pairs({...}) do
         local plr = GetPlayer(v)
         if not plr then continue end
@@ -3285,7 +3738,7 @@ end)
     end
 end)
 
-AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)     
+AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)
     for i,v in pairs({...}) do
         local plr = GetPlayer(v)
         if not plr then continue end
@@ -3294,7 +3747,7 @@ AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, 
     end
 end)
 
-AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)     
+AddCommand("Admin", {"Rank"}, "Admins given player", true, false, function(plr, ...)
     for i,v in pairs({...}) do
         local plr = GetPlayer(v)
         if not plr then continue end
