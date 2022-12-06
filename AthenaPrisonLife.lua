@@ -1712,10 +1712,10 @@ local function OnCharacterAdded(char)
     task.spawn(function()
         if togs.Godmode then return end
 
-        repeat task.wait() until getconnections(remotes.Taze.OnClientEvent)[1] and getconnections(hum.Jumped)[1]
+        repeat task.wait() until getconnections(remotes.Taze.OnClientEvent)[1] and getconnections(hum.Jumping)[1]
         char:WaitForChild("ClientInputHandler")
 
-        local taze, jumpcon = getconnections(remotes.Taze.OnClientEvent)[1], getconnections(hum.Jumped)[1]
+        local taze, jumpcon = getconnections(remotes.Taze.OnClientEvent)[1], getconnections(hum.Jumping)[1]
         taze[togs.AntiTaze and "Disable" or "Enable"](taze)
 
         for i,v in pairs(debug.getregistry()) do
@@ -2444,7 +2444,7 @@ end)
 player:Toggle("Infinite stamina", togs.InfiniteStamina, function(a)
     togs.InfiniteStamina = a
     if lp.Character and lp.Character:FindFirstChild("Humanoid") then
-        local jumpcon = getconnections(lp.Character.Humanoid.Jumped)[1]
+        local jumpcon = getconnections(lp.Character.Humanoid.Jumping)[1]
 
         jumpcon[a and "Disable" or "Enable"](jumpcon)
     end
