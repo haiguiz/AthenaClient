@@ -215,6 +215,7 @@ local togs = { -- yeah it should be "settings" but you are a little ni
     AntiShield =            false;
     ClickKill =             false;
     AntiTaze =              false;
+    TazeAura =              false;
     FastPunch =             false;
     OnePunch =              false;
     InfiniteStamina =       false;
@@ -229,6 +230,9 @@ local togs = { -- yeah it should be "settings" but you are a little ni
     AntiTouch =             false;
     SpamPunch =             false;
     Godmode =               false;
+    EDN =                   false;
+    ADHRP =                 false;
+    AGK =                   false;
     SpamArrestPower =       10;
     BringTool =             "Hammer";
 }
@@ -537,6 +541,8 @@ local LoaderUpdate do -- drawing looks like 5x better on syn v3
 end
 
 local function Note(txt, err)
+    if exv:find("v2") then return lib:Note(txt, err) end
+
     task.spawn(function()
         local ins = {}
         table.insert(notes, ins)
@@ -1290,18 +1296,16 @@ end
 local function Respawn(Color, pos)
     Color = Color and Color.Color or lp.TeamColor.Color
 
-    local Saved1, Saved2 = pos or lp.Character:WaitForChild("HumanoidRootPart").CFrame, cam.CFrame
+    local Saved1, Saved2 = pos or (lp.Character:FindFirstChild("HumanoidRootPart") or lp.Character:FindFirstChild("Torso")).CFrame, cam.CFrame
     cam.CameraSubject = nil
     cam.CFrame = Saved2
     task.spawn(remotes.Load.InvokeServer, remotes.Load, lp, Color)
     lp.CharacterAdded:Wait()
     task.delay(.05, Goto, Saved1)
-    cam:GetPropertyChangedSignal("CFrame"):Wait()
-    cam.CFrame = Saved2
-    local newp = lp.Character:WaitForChild("HumanoidRootPart").CFrame.p
+    local newp = (lp.Character:FindFirstChild("HumanoidRootPart") or lp.Character:FindFirstChild("Torso")).CFrame.p
     
     if newp.Y < -26 then
-        Goto(positions["Nexus"])
+        task.spawn(Goto, positions["Nexus"])
     end
 
     task.delay(.1, function()
@@ -1309,6 +1313,9 @@ local function Respawn(Color, pos)
             Goto(pos)
         end
     end)
+    
+    cam:GetPropertyChangedSignal("CFrame"):Wait()
+    cam.CFrame = Saved2
 end
 
 local function Team(Color)
@@ -1441,18 +1448,22 @@ local function Bring(plr, tool, cframe) -- thanks fate for teaching me the human
         repeat until not task.wait() or plr.Character
     end
 
-    local saved = lp.Character.HumanoidRootPart.CFrame
+    local saved = (lp.Character:FindFirstChild("HumanoidRootPart") or lp.Character:FindFirstChild("Torso")).CFrame
     CloneHumanoid()
     tool.Parent = lp.Character
     Goto(cframe)
 
     for i = 1, 500 do
-        if not lp.Character or not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") or tool.Parent ~= lp.Character then break end
+        if not lp.Character or not plr.Character or (not plr.Character:FindFirstChild("HumanoidRootPart") and not plr.Character:FindFirstChild("Torso")) or tool.Parent ~= lp.Character then break end
+
+        task.wait();
+        (plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character:FindFirstChild("Torso")).CFrame = tool.Handle.CFrame * CFrame.Angles(90, 0, 0)
         
-        task.wait()
-        plr.Character.HumanoidRootPart.CFrame = tool.Handle.CFrame * CFrame.Angles(90, 0, 0)
-        lp.Character.HumanoidRootPart.Anchored = true
-        task.spawn(firetouchinterest, tool.Handle, plr.Character.HumanoidRootPart, ffalse)
+        if lp.Character:FindFirstChild("HumanoidRootPart") then
+            lp.Character.HumanoidRootPart.Anchored = true
+        end
+
+        task.spawn(firetouchinterest, tool.Handle, plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character:FindFirstChild("Torso"), ffalse)
     end
 
     task.wait(.3)
@@ -1466,7 +1477,7 @@ local function Crim(plr) -- chaotic told me this method
     local oldnt = togs.Noclip.Toggled
     togs.Noclip.Toggled = true
     local pad = workspace["Criminals Spawn"].SpawnLocation
-    local padpos, oldpos = pad.CFrame, lp.Character.HumanoidRootPart.CFrame
+    local padpos, oldpos = pad.CFrame, (lp.Character:FindFirstChild("HumanoidRootPart") or lp.Character:FindFirstChild("Torso")).CFrame
 
     GetGun{togs.BringTool}
     local tool = lp.Backpack:WaitForChild(togs.BringTool)
@@ -1475,13 +1486,17 @@ local function Crim(plr) -- chaotic told me this method
     pad.CanCollide = false
 
     for i = 1, 500 do
-        if not lp.Character or not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") or tool.Parent ~= lp.Character then break end
+        if not lp.Character or not plr.Character or (not plr.Character:FindFirstChild("HumanoidRootPart") and not plr.Character:FindFirstChild("Torso")) or tool.Parent ~= lp.Character then break end
         
-        task.wait()
-        plr.Character.HumanoidRootPart.CFrame = tool.Handle.CFrame * CFrame.Angles(90, 0, 0)
-        lp.Character.HumanoidRootPart.Anchored = true
-        task.spawn(firetouchinterest, pad, plr.Character.HumanoidRootPart, ffalse)
-        task.spawn(firetouchinterest, tool.Handle, plr.Character.HumanoidRootPart, ffalse)
+        task.wait();
+        (plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character:FindFirstChild("Torso")).CFrame = tool.Handle.CFrame * CFrame.Angles(90, 0, 0)
+
+        if lp.Character:FindFirstChild("HumanoidRootPart") then
+            lp.Character.HumanoidRootPart.Anchored = true
+        end
+
+        task.spawn(firetouchinterest, pad, plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character:FindFirstChild("Torso"), ffalse)
+        task.spawn(firetouchinterest, tool.Handle, plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character:FindFirstChild("Torso"), ffalse)
     end
 
     task.wait(.3)
@@ -1557,7 +1572,7 @@ end
 
 local function MeleeKill(tbl)
     for i,v in pairs(tbl) do
-        if v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health ~= 0 and lp:DistanceFromCharacter(v.Character:WaitForChild("HumanoidRootPart").CFrame.p) < 10 then
+        if v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health ~= 0 and lp:DistanceFromCharacter(v.Character.HumanoidRootPart.CFrame.p) < 10 then
             for i = 1, math.ceil(v.Character.Humanoid.Health / 10) do
                 remotes.Melee:FireServer(v)
             end
@@ -1592,18 +1607,24 @@ local function OnCharacterAdded(char)
 
     local hum, rs, ca, hd, bp = char:WaitForChild("Humanoid")
 
+    if togs.ADHRP and char:FindFirstChild("HumanoidRootPart") then
+        char.Parent = nil
+        char.HumanoidRootPart.Parent = nil
+        char.Parent = workspace
+    end
+
     if togs.Godmode then
         CloneHumanoid()
         hum = char:WaitForChild("Humanoid")
         task.delay(4.9, function()
-            Respawn(nil, char:WaitForChild("HumanoidRootPart").CFrame)
+            Respawn(nil, (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")).CFrame)
         end)
     end
 
     if togs.AutoRespawn.ForceField then
         Team("Medium stone grey")
         task.delay(6.9, function() -- function() end because .CFrame just teleports u to where u spawn
-            Respawn(BrickColor.new("Really red"), char:WaitForChild("HumanoidRootPart").CFrame)
+            Respawn(BrickColor.new("Really red"), (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")).CFrame)
         end)
 
         task.spawn(function()
@@ -1673,18 +1694,7 @@ local function OnCharacterAdded(char)
         if togs.AutoRespawn.Toggled then
             local tool = char:FindFirstChildOfClass("Tool")
             local isgun = table.find({"M4A1", "M9", "AK-47", "Remington 870"}, tool and tool.Name or "")
-            Respawn(nil, char:WaitForChild("HumanoidRootPart").CFrame)
-            
-            if togs.AutoRespawn.ForceField then
-                Team("Medium stone grey")
-                task.delay(7.9, Respawn, BrickColor.new("Really red"), char:WaitForChild("HumanoidRootPart").CFrame)
-                for i = 1, 50 do
-                    task.wait(.01)
-                    if lp.Team ~= sv.Teams.Neutral then
-                        Team("Medium stone grey")
-                    end
-                end
-            end
+            Respawn(nil, (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")).CFrame)
 
             if togs.AutoRespawn.EquipOldWeapon then
                 local newtool = isgun and tool.Name
@@ -1942,7 +1952,7 @@ local function SpamArrest(plr, power)
     local starttick = tick()
 
     while task.wait() and plr.Character and CanBeArrested(plr) and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health ~= 0 and not breaksa do
-        local pp = plr.Character:WaitForChild("HumanoidRootPart").CFrame
+        local pp = (plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character:FindFirstChild("Torso")).CFrame
         Goto(pp + Vector3.new(0, 5, 0))
         Stay(pp.p + Vector3.new(0, 5, 0))
 
@@ -2274,6 +2284,10 @@ thing:Toggle("Rainbow", togs.CCB.Rainbow, function(a)
     togs.CCB.Rainbow = a
 end)
 
+combat:Toggle("Tase aura", togs.TazeAura, function(a) 
+    togs.TazeAura = a
+end)
+
 combat:Toggle("Anti shield", togs.AntiShield, function(a)
     togs.AntiShield = a
 end)
@@ -2462,6 +2476,17 @@ player:Toggle("God mode", togs.Godmode, function(a)
     end
 end)
 
+player:Toggle("Auto delete HRP", togs.ADHRP, function(a) 
+    togs.ADHRP = a
+
+    if a then
+        local c = lp.Character
+        c.Parent = nil
+        c.HumanoidRootPart.Parent = nil
+        c.Parent = workspace
+    end
+end)
+
 player:Button("Delete HRP", function() 
     local c = lp.Character
     c.Parent = nil
@@ -2604,7 +2629,7 @@ world:Toggle("Auto grab keycard", togs.AGK, function(a)
     togs.AGK = a
     local key = workspace.Prison_ITEMS.single:FindFirstChild("Key card")
     if a and key then
-        remotes.Item:InvokeServer(key.ITEMPICKUP)
+        remotes.Item:InvokeServer(key:WaitForChild"ITEMPICKUP")
     end
 end)
 
@@ -2727,7 +2752,7 @@ thing:Button("Bring", function()
     if not selected or not selected.Character or not lp.Character then return end
 
     GetGun{togs.BringTool}
-    Bring(selected, lp.Backpack:WaitForChild(togs.BringTool), (lp.Character or lp.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").CFrame)
+    Bring(selected, lp.Backpack:WaitForChild(togs.BringTool), (lp.Character:FindFirstChild("HumanoidRootPart") or lp.Character:FindFirstChild("Torso")).CFrame)
     Note(("Brung %s"):format(selected.Name))
 end)
 
@@ -2739,11 +2764,11 @@ end)
 
 thing:Button("Fling", function()
     if not selected or not selected.Character or not lp.Character then return end
-    local nt, op = togs.Noclip.Toggled, (lp.Character or lp.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").CFrame
+    local nt, op = togs.Noclip.Toggled, (lp.Character:FindFirstChild("HumanoidRootPart") or lp.Character:FindFirstChild("Torso")).CFrame
     togs.Noclip.Toggled = true
 
     for i = 1, 500 do
-        local pos = (selected.Character or selected.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").CFrame
+        local pos = (selected.Character:FindFirstChild("HumanoidRootPart") or selected.Character:FindFirstChild("Torso")).CFrame
         if pos.Y > 400 or not lp.Character or not lp.Character:FindFirstChild("HumanoidRootPart") or not selected.Character then break end
 
         Goto(pos + Vector3.new(0, 10, 0))
@@ -2766,13 +2791,13 @@ end)
 thing:Button("Arrest", function()
     if not selected or not selected.Character or not lp.Character then return end
 
-    local oldpos = (lp.Character or lp.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").CFrame
+    local oldpos = (lp.Character:FindFirstChild("HumanoidRootPart") or lp.Character:FindFirstChild("Torso")).CFrame
 
     if not CanBeArrested(selected) then
         Crim(selected)
     end
 
-    Goto((selected.Character or selected.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").CFrame)
+    Goto((selected.Character:FindFirstChild("HumanoidRootPart") or selected.Character:FindFirstChild("Torso")).CFrame)
     task.spawn(remotes.Arrest.InvokeServer, remotes.Arrest, selected.Character.Head)
     selected.Character.Head:WaitForChild("handcuffedGui", 1/0)
     Goto(oldpos)
@@ -3246,7 +3271,7 @@ end)
 workspace.Prison_ITEMS.single.ChildAdded:Connect(function(a)
     if a.Name ~= "Key card" or not togs.AGK then return end
 
-    remotes.Item:InvokeServer(a.ITEMPICKUP)
+    remotes.Item:InvokeServer(a:WaitForChild"ITEMPICKUP")
 end)
 
 sv.Players.PlayerRemoving:Connect(PlayerRemoved)
@@ -3354,6 +3379,40 @@ task.spawn(function()
                         end
                     end
                 end
+            end
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(2) do
+        if togs.TazeAura then
+            local tt = {}
+
+            for i,v in pairs(sv.Players:GetPlayers()) do
+                if v ~= lp and not table.find(togs.Whitelist, v.Name) and v.Character and v.Character.PrimaryPart and lp.Character and (lp.Character:FindFirstChild("Taser") or lp.Backpack:FindFirstChild("Taser")) then
+                    if v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health ~= 0 and v.Character:FindFirstChild("Head") and lp:DistanceFromCharacter(v.Character.PrimaryPart.Position) <= 12 then
+                        table.insert(tt, v)
+                    end
+                end
+            end 
+
+            if tt[1] then
+                local senttbl = {}
+                local gun = lp.Character:FindFirstChild("Taser") or lp.Backpack:FindFirstChild("Taser")
+
+                for i,v in pairs(tt) do
+                    table.insert(senttbl, {
+                        ["RayObject"] = Ray.new(),
+                        ["Distance"] = 0,
+                        ["Cframe"] = CFrame.new(),
+                        ["Hit"] = v.Character.Head
+                    })
+                end
+
+                remotes.Reload:FireServer(gun)
+                remotes.Shoot:FireServer(tt, gun)
+                remotes.Reload:FireServer(gun)
             end
         end
     end
@@ -3594,13 +3653,13 @@ end)
 AddCommand("Arrest", "ar", "Arrests player", true, true, function(plr, ...)
     for i,v in pairs({...}) do
         for i, v2 in pairs(AGetPlayer(v)) do
-            local oldpos = (lp.Character or lp.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").CFrame
+            local oldpos = (lp.Character:FindFirstChild("HumanoidRootPart") or lp.Character:FindFirstChild("Torso")).CFrame
 
             if not CanBeArrested(v2) then
                 Crim(v2)
             end
 
-            Goto((v2.Character or v2.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart").CFrame)
+            Goto((v2.Character:FindFirstChild("HumanoidRootPart") or v2.Character:FindFirstChild("Torso")).CFrame)
             task.spawn(remotes.Arrest.InvokeServer, remotes.Arrest, v2.Character.Head)
             v2.Character.Head:WaitForChild("handcuffedGui", 1/0)
             Goto(oldpos)
