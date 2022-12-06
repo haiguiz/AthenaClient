@@ -1712,10 +1712,10 @@ local function OnCharacterAdded(char)
     task.spawn(function()
         if togs.Godmode then return end
 
-        repeat task.wait() until getconnections(remotes.Taze.OnClientEvent)[1] and getconnections(hum.Changed)[1]
+        repeat task.wait() until getconnections(remotes.Taze.OnClientEvent)[1] and getconnections(hum.Jumped)[1]
         char:WaitForChild("ClientInputHandler")
 
-        local taze, jump = getconnections(remotes.Taze.OnClientEvent)[1], getconnections(hum.Changed)[1]
+        local taze, jumpcon = getconnections(remotes.Taze.OnClientEvent)[1], getconnections(hum.Jumped)[1]
         taze[togs.AntiTaze and "Disable" or "Enable"](taze)
 
         for i,v in pairs(debug.getregistry()) do
@@ -1732,10 +1732,7 @@ local function OnCharacterAdded(char)
             end
         end
 
-        for i,v in pairs(debug.getupvalues(jump.Function)) do
-            if type(v) ~= "number" or v == 5 then continue end
-            debug.setupvalue(jump.Function, i, togs.InfiniteStamina and math.huge or 12)
-        end
+        jumpcon[togs.InfiniteStamina and "Disable" or "Enable"](jumpcon)
 
         rs = sv.RunService.RenderStepped:Connect(function()
             pcall(function()
@@ -2447,13 +2444,9 @@ end)
 player:Toggle("Infinite stamina", togs.InfiniteStamina, function(a)
     togs.InfiniteStamina = a
     if lp.Character and lp.Character:FindFirstChild("Humanoid") then
-        local jump = getconnections(lp.Character.Humanoid.Changed)[1]
+        local jumpcon = getconnections(lp.Character.Humanoid.Jumped)[1]
 
-        for i,v in pairs(debug.getupvalues(jump.Function)) do
-            if type(v) ~= "number" or v == 5 then continue end
-
-            debug.setupvalue(jump.Function, i, a and math.huge or 12)
-        end
+        jumpcon[a and "Disable" or "Enable"](jumpcon)
     end
 end)
 
