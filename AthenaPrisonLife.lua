@@ -445,98 +445,100 @@ local function Lerp(a, b, t)
 end
 
 local LoaderUpdate do -- drawing looks like 5x better on syn v3
-    if exv:find("v2") then LoaderUpdate = function() end return end
+    if not exv:find("v2") then
+        local Loads = {
+            [1] = "Ui setup";
+            [2] = "Connections";
+            [3] = "Loops";
+            [4] = "Finished loading"
+        }
+        local i = 0
 
-    local Loads = {
-        [1] = "Ui setup";
-        [2] = "Connections";
-        [3] = "Loops";
-        [4] = "Finished loading"
-    }
-    local i = 0
+        local MBP, LTP, LITP = Instance.new("Vector3Value"), Instance.new("Vector3Value"), Instance.new("Vector3Value")
+        MBP.Value = V2toV3(Vector2.new(cam.ViewportSize.X / 2 - 150, -100))
+        LTP.Value = V2toV3(Vector2.new(cam.ViewportSize.X / 2, -190))
+        LITP.Value = V2toV3(Vector2.new(cam.ViewportSize.X / 2, -125))
 
-    local MBP, LTP, LITP = Instance.new("Vector3Value"), Instance.new("Vector3Value"), Instance.new("Vector3Value")
-    MBP.Value = V2toV3(Vector2.new(cam.ViewportSize.X / 2 - 150, -100))
-    LTP.Value = V2toV3(Vector2.new(cam.ViewportSize.X / 2, -190))
-    LITP.Value = V2toV3(Vector2.new(cam.ViewportSize.X / 2, -125))
+        local MainBox = OutlinedBox({
+            OutlineColor = Color3.new(), -- outline color
+            Color = Color3.fromRGB(38, 38, 38), -- box color
+            Thickness = 2, -- outline thickness
+            Visibility = .5, -- Opacity / Transparency / Visibility
+            Size = Vector2.new(300, 100), -- size
+            Pos = V3toV2(MBP.Value), -- pos
+            ZIndex = 0 -- Zindex
+        })
 
-    local MainBox = OutlinedBox({
-        OutlineColor = Color3.new(), -- outline color
-        Color = Color3.fromRGB(38, 38, 38), -- box color
-        Thickness = 2, -- outline thickness
-        Visibility = .5, -- Opacity / Transparency / Visibility
-        Size = Vector2.new(300, 100), -- size
-        Pos = V3toV2(MBP.Value), -- pos
-        ZIndex = 0 -- Zindex
-    })
+        local LoadText = Text({
+            Text = "Athena Loader",
+            Pos = V3toV2(LTP.Value),
+            Size = 18,
+            Font = Drawing.Fonts.System,
+            Color = Color3.fromRGB(33, 57, 129),
+            ZIndex = 2,
+            Centered = true
+        })
 
-    local LoadText = Text({
-        Text = "Athena Loader",
-        Pos = V3toV2(LTP.Value),
-        Size = 18,
-        Font = Drawing.Fonts.System,
-        Color = Color3.fromRGB(33, 57, 129),
-        ZIndex = 2,
-        Centered = true
-    })
+        local LoadInfoText = Text({
+            Text = "Functions",
+            Pos = V3toV2(LITP.Value),
+            Size = 15,
+            Font = Drawing.Fonts.System,
+            Color = Color3.new(1, 1, 1),
+            ZIndex = 2,
+            Centered = true
+        })
 
-    local LoadInfoText = Text({
-        Text = "Functions",
-        Pos = V3toV2(LITP.Value),
-        Size = 15,
-        Font = Drawing.Fonts.System,
-        Color = Color3.new(1, 1, 1),
-        ZIndex = 2,
-        Centered = true
-    })
+        local MBPS, LTPS, LITPS; MBPS = MBP.Changed:Connect(function(vec)
+            MainBox.Pos = V3toV2(vec)
+        end)
 
-    local MBPS, LTPS, LITPS; MBPS = MBP.Changed:Connect(function(vec)
-        MainBox.Pos = V3toV2(vec)
-    end)
+        LTPS = LTP.Changed:Connect(function(vec)
+            LoadText.T.Position = V3toV2(vec)
+        end)
 
-    LTPS = LTP.Changed:Connect(function(vec)
-        LoadText.T.Position = V3toV2(vec)
-    end)
+        LITPS = LITP.Changed:Connect(function(vec)
+            LoadInfoText.T.Position = V3toV2(vec)
+        end)
 
-    LITPS = LITP.Changed:Connect(function(vec)
-        LoadInfoText.T.Position = V3toV2(vec)
-    end)
+        local AB = Vector3.new(0, math.round(cam.ViewportSize.Y / 2) + 195, 0)
+        sv.TweenService:Create(MBP, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Value = MBP.Value + AB}):Play()
+        sv.TweenService:Create(LTP, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Value = LTP.Value + AB}):Play()
+        sv.TweenService:Create(LITP, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Value = LITP.Value + AB}):Play()
+        task.wait(1.6)
 
-    local AB = Vector3.new(0, math.round(cam.ViewportSize.Y / 2) + 195, 0)
-    sv.TweenService:Create(MBP, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Value = MBP.Value + AB}):Play()
-    sv.TweenService:Create(LTP, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Value = LTP.Value + AB}):Play()
-    sv.TweenService:Create(LITP, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Value = LITP.Value + AB}):Play()
-    task.wait(1.6)
+        local LoaderBox = OutlinedBox({
+            OutlineColor = Color3.new(), -- outline color
+            Color = Color3.fromRGB(33, 57, 129), -- box color
+            Thickness = 2, -- outline thickness
+            Visibility = 1, -- Opacity / Transparency / Visibility
+            Size = Vector2.new(0, 30), -- size
+            Pos = Vector2.new(cam.ViewportSize.X / 2 - 130, math.round(cam.ViewportSize.Y / 2) + 60), -- pos
+            ZIndex = 0 -- Zindex
+        })
 
-    local LoaderBox = OutlinedBox({
-        OutlineColor = Color3.new(), -- outline color
-        Color = Color3.fromRGB(33, 57, 129), -- box color
-        Thickness = 2, -- outline thickness
-        Visibility = 1, -- Opacity / Transparency / Visibility
-        Size = Vector2.new(0, 30), -- size
-        Pos = Vector2.new(cam.ViewportSize.X / 2 - 130, math.round(cam.ViewportSize.Y / 2) + 60), -- pos
-        ZIndex = 0 -- Zindex
-    })
+        function LoaderUpdate()
+            i += 1
+            LoadInfoText.Text = Loads[i]
 
-    function LoaderUpdate()
-        i += 1
-        LoadInfoText.Text = Loads[i]
-
-        for _ = 1, 65 do
-            task.wait()
-            LoaderBox.Size += Vector2.new(1, 0)
+            for _ = 1, 65 do
+                task.wait()
+                LoaderBox.Size += Vector2.new(1, 0)
+            end
+            
+            if i > 3 then
+                task.wait(1)
+                LoaderBox.Remove()
+                MainBox.Remove()
+                LoadInfoText.Remove()
+                LoadText.Remove()
+                LTPS:Disconnect()
+                MBPS:Disconnect()
+                LITPS:Disconnect()
+            end
         end
-        
-        if i > 3 then
-            task.wait(1)
-            LoaderBox.Remove()
-            MainBox.Remove()
-            LoadInfoText.Remove()
-            LoadText.Remove()
-            LTPS:Disconnect()
-            MBPS:Disconnect()
-            LITPS:Disconnect()
-        end
+    else
+        LoaderUpdate = function() end
     end
 end
 
@@ -1302,7 +1304,7 @@ local function Respawn(Color, pos)
     task.spawn(remotes.Load.InvokeServer, remotes.Load, lp, Color)
     lp.CharacterAdded:Wait()
     task.delay(.05, Goto, Saved1)
-    local newp = (lp.Character:FindFirstChild("HumanoidRootPart") or lp.Character:FindFirstChild("Torso")).CFrame.p
+    local newp = (lp.Character:FindFirstChild("HumanoidRootPart") or lp.Character:FindFirstChild("Torso") or {CFrame = lp.Character:GetPivot()}).CFrame.p
     
     if newp.Y < -26 then
         task.spawn(Goto, positions["Nexus"])
