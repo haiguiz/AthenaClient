@@ -1606,6 +1606,7 @@ end
 
 local function OnCharacterAdded(char)
     task.wait()
+    print(char:GetFullName())
 
     local hum, rs, ca, hd, bp = char:WaitForChild("Humanoid")
 
@@ -1712,11 +1713,9 @@ local function OnCharacterAdded(char)
     task.spawn(function()
         if togs.Godmode then return end
 
-        repeat task.wait() until getconnections(remotes.Taze.OnClientEvent)[1] and getconnections(hum.Jumping)[1]
         char:WaitForChild("ClientInputHandler")
 
-        local taze, jumpcon = getconnections(remotes.Taze.OnClientEvent)[1], getconnections(hum.Jumping)[1]
-        taze[togs.AntiTaze and "Disable" or "Enable"](taze)
+        local taze = getconnections(remotes.Taze.OnClientEvent)
 
         for i,v in pairs(debug.getregistry()) do
             if v ~= nil and type(v) == "function" and getfenv(v).script == char.ClientInputHandler then
@@ -1732,7 +1731,14 @@ local function OnCharacterAdded(char)
             end
         end
 
-        jumpcon[togs.InfiniteStamina and "Disable" or "Enable"](jumpcon)
+        table.foreach(taze, function(_, a)
+            a[togs.AntiTaze and "Disable" or "Enable"](a)
+        end)
+
+        task.spawn(table.foreach, getconnections(hum.Jumping), function(_, a) -- getconnections on hum jump literally breaks my entire script (without task.spawn)
+            a[togs.InfiniteStamina and "Disable" or "Enable"](a)
+            print(a)
+        end)
 
         rs = sv.RunService.RenderStepped:Connect(function()
             pcall(function()
@@ -3322,7 +3328,7 @@ end)
 
 task.spawn(function()
     while task.wait() do
-        pcall(function()
+        --pcall(function()
             if togs.Fly.Toggled then
                 if not lp.Character or not lp.Character:FindFirstChild("HumanoidRootPart") or not lp.Character:FindFirstChild("Humanoid") or sv.UserInputService:GetFocusedTextBox() ~= nil then return end
                 local hrp = lp.Character.HumanoidRootPart
@@ -3359,7 +3365,7 @@ task.spawn(function()
                     lp.Character.Humanoid.PlatformStand = false
                 end
             end
-        end)
+        --end)
     end
 end)
 
