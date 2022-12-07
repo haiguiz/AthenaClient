@@ -1606,7 +1606,6 @@ end
 
 local function OnCharacterAdded(char)
     task.wait()
-    print(char:GetFullName())
 
     local hum, rs, ca, hd, bp = char:WaitForChild("Humanoid")
 
@@ -1715,13 +1714,15 @@ local function OnCharacterAdded(char)
 
         char:WaitForChild("ClientInputHandler")
 
-        local taze = getconnections(remotes.Taze.OnClientEvent)
-
         for i,v in pairs(debug.getregistry()) do
             if v ~= nil and type(v) == "function" and getfenv(v).script == char.ClientInputHandler then
                 cs = getfenv(v)["cs"]
 
                 for i2,v2 in pairs(debug.getupvalues(v)) do
+                    if type(v2) == "number" and v2 < 13 then
+                        debug.setupvalue(v, i2, togs.InfiniteStamina and math.huge or v2)
+                    end
+
                     if type(v2) == "function" then
 						if debug.getinfo(v2).name == "fight" then
                             punchfunc = v2
@@ -1731,13 +1732,8 @@ local function OnCharacterAdded(char)
             end
         end
 
-        table.foreach(taze, function(_, a)
+        table.foreach(getconnections(remotes.Taze.OnClientEvent), function(_, a)
             a[togs.AntiTaze and "Disable" or "Enable"](a)
-        end)
-
-        task.spawn(table.foreach, getconnections(hum.Jumping), function(_, a) -- getconnections on hum jump literally breaks my entire script (without task.spawn)
-            a[togs.InfiniteStamina and "Disable" or "Enable"](a)
-            print(a)
         end)
 
         rs = sv.RunService.RenderStepped:Connect(function()
@@ -2449,11 +2445,6 @@ end)
 
 player:Toggle("Infinite stamina", togs.InfiniteStamina, function(a)
     togs.InfiniteStamina = a
-    if lp.Character and lp.Character:FindFirstChild("Humanoid") then
-        local jumpcon = getconnections(lp.Character.Humanoid.Jumping)[1]
-
-        jumpcon[a and "Disable" or "Enable"](jumpcon)
-    end
 end)
 
 player:Toggle("Anti sit", togs.AntiSit, function(a) 
