@@ -1901,11 +1901,11 @@ local Log do
                 end
 
                 if v.TeamColor == BrickColor.new("Really black") then
-                    Log(v, "Septex or XTheMasterX admin (Could be somethin else)")
+                    Log(v, "Septex or XTheMasterX admin")
                 end
 
                 if ((v:FindFirstChild("Backpack") and v.Backpack:FindFirstChild("AK-47")) or (v.Character and v.Character:FindFirstChild("AK-47"))) and table.find({game.Teams.Inmates, game.Teams.Neutral}, v.Team) then
-                    Log(v, "Gun spawn (or brung with AK-47)")
+                    Log(v, "Gun spawn")
                 end
 
                 if v.Character and v.Character:FindFirstChild("HumanoidRootPart") and not v.Character:FindFirstChild("Torso") then
@@ -1913,7 +1913,7 @@ local Log do
                 end
 
                 if v.Character and not v.Character:FindFirstChild("Humanoid") and not v.Character:FindFirstChild("ForceField") then
-                    Log(v, "God mode or bringing (Could have just spawned in)")
+                    Log(v, "God mode or bringing")
                 end
             end
 
@@ -3089,7 +3089,7 @@ do
     end)
 
     for i,v in pairs(getgc()) do
-		if type(v) == "function" and getfenv(v).script == game:GetService("Players").MrGFXTI.PlayerScripts.ClientGunReplicator then -- i fucking hate syn v2
+		if type(v) == "function" and getfenv(v).script == lp.PlayerScripts.ClientGunReplicator then -- i fucking hate syn v2
             local old; old = hookfunction(v, function(bullets, istaser)
                 if not togs.AntiCrash then return ReplicateHook(bullets, istaser) end
                 for i,v in pairs(bullets) do
