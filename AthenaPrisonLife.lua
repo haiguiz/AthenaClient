@@ -42,9 +42,8 @@ givenantitouch,
 givenoneshot,
 givenkillaura,
 Commandstbl,
-notes,
 givenantipunch,
-oldctrl, tools, remotes, positions, togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+oldctrl, tools, remotes, positions, togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
 {w = 0, s = 0, a = 0, d = 0}, 
 {
     ["M4A1"] =          workspace.Prison_ITEMS.giver.M4A1.ITEMPICKUP;
@@ -133,9 +132,6 @@ oldctrl, tools, remotes, positions, togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {
         G =                 255;
         B =                 255;
     };
-    Noclip = {
-        Toggled =           false;
-    };
     Drawing = {
         Toggled =           false;
         Delete =            false;
@@ -172,6 +168,7 @@ oldctrl, tools, remotes, positions, togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {
         FocusKey =          Enum.KeyCode.Semicolon;
         Admins =            {}
     };
+    Noclip =                false;
     AntiShield =            false;
     ClickKill =             false;
     AntiTaze =              false;
@@ -322,306 +319,259 @@ end
 
 -- Drawing library
 
-local function OutlinedBox(props) -- some drawing stuff since im planning to convert a bunch of shit to it lol
-    local d = setmetatable({["M"] = Drawing.new("Square")}, {
-        __index = function(t, k)
-            return props[k]
-        end,
-        
-        __newindex = function(t, k, v)
-            if #k == 1 then
-                v.Visible = true
-                v.ZIndex = props.ZIndex or 0
-                v.Color = props.OutlineColor or Color3.new()
-                v.Thickness = props.Thickness or 2
-                
-                rawset(t, k, v)
-                
-                return
-            end
-            
-            props[k] = v
-            
-            if k == "Color" then
-                for i,v2 in next, t do
-                    if #i ~= 1 then continue end
-                    
-                    v2.Color = v
-                end
-            end
-            
-            t.Resize(props.Pos, props.Size)
-            t.Edit(props)
-        end
-    })
+local LoaderUpdate do
+    local drawingobjs = {
+        -- Box
+        T = Drawing.new("Line");
+        B = Drawing.new("Line");
+        L = Drawing.new("Line");
+        R = Drawing.new("Line");
+        M = Drawing.new("Square");
+        -- Bar
+        T2 = Drawing.new("Line");
+        B2 = Drawing.new("Line");
+        L2 = Drawing.new("Line");
+        R2 = Drawing.new("Line");
+        M2 = Drawing.new("Square");
+        -- Info
+        TE = Drawing.new("Text");
+        TE2 = Drawing.new("Text")
+    }
+    local texti = {
+        [0] = "Interface";
+        [1] = "Hooks";
+        [2] = "Loops";
+        [3] = "Commands"
+    }
+    local pos = Vector2.new(cam.ViewportSize.X / 2 - 150, cam.ViewportSize.Y / 2)
+    local npos = pos + Vector2.new(20, 30)
+    local i = 0
 
-    rawset(d, "Remove", function()
-        table.foreach(d, function(_, v)
-            pcall(function()
-                v:Remove()
-            end)
-        end)
-    end)
-    
-    rawset(d, "Resize", function(pos, size)
-        d.T.From = pos
-        d.T.To   = pos + Vector2.new(size.X, 0)
-        d.B.From = pos - Vector2.new(0, size.Y)
-        d.B.To   = pos + Vector2.new(size.X, -size.Y)
-        d.L.From = pos
-        d.L.To   = pos - Vector2.new(0, size.Y)
-        d.R.From = pos + Vector2.new(size.X, 0)
-        d.R.To   = pos + Vector2.new(size.X, -size.Y)
-        d.M.Size = size
-        d.M.Position = pos - Vector2.new(0, size.Y)
-    end)
-
-    rawset(d, "Edit", function(props)
-        for i, v in next,  props do
-            for _, v2 in next, d do
-                if type(v2) ~= "table" or not pcall(function() v2[i] = v2[i] end) then continue end
-
-                v2[i] = v
-            end
-        end
-    end)
-
-    d["T"] = Drawing.new("Line")
-    d["B"] = Drawing.new("Line")
-    d["L"] = Drawing.new("Line")
-    d["R"] = Drawing.new("Line")
-
-    d.M.Visible = true
-    d.M.ZIndex = props.ZIndex and props.ZIndex - 1 or -1
-    d.M.Color = props.Color or Color3.new()
-    d.M.Filled = true
-    d.M.Transparency = props.Visibility or 1
-    
-    d.Resize(props.Pos, props.Size)
-
-    return d
-end
-
-local function Text(props)
-    local d = setmetatable({}, {
-        __index = function(t, k)
-            return props[k]
-        end,
-        
-        __newindex = function(t, k, v)
-            if #k == 1 then -- default shit
-                v.Visible = true
-                v.ZIndex = props.ZIndex or 0
-                v.Color = props.Color or Color3.new()
-                v.Center = props.Centered ~= nil and props.Centered or false
-                v.Text = props.Text or ""
-                v.Outline = true
-                v.Size = props.Size and props.Size or 18
-                v.Font = props.Font or Drawing.Fonts.System
-                v.Transparency = props.Visibility or 1
-                
-                rawset(t, k, v)
-                
-                return
-            end
-            
-            props[k] = v
-            
-            t.Edit(props)
-        end
-    })
-
-    rawset(d, "Remove", function()
-        d.T:Remove()
-    end)
-    
-    rawset(d, "Edit", function(props)
-        for i, v in next,  props do
-            for _, v2 in next, d do
-                if type(v2) ~= "table" or not pcall(function() v2[i] = v2[i] end) then continue end
-
-                v2[i] = v
-            end
-        end
-    end)
-    
-    d["T"]       = Drawing.new("Text")
-    d.T.Position = props.Pos or Vector2.new()
-    
-    return d
-end
-
-local LoaderUpdate do -- drawing looks like 5x better on syn v3
-	local Loads = {
-		[1] = "Ui setup";
-		[2] = "Connections";
-		[3] = "Loops";
-		[4] = "Finished loading"
-	}
-	local i = 0
-
-	local MBP, LTP, LITP = Instance.new("Vector3Value"), Instance.new("Vector3Value"), Instance.new("Vector3Value")
-	MBP.Value = V2toV3(Vector2.new(cam.ViewportSize.X / 2 - 150, -100))
-	LTP.Value = V2toV3(Vector2.new(cam.ViewportSize.X / 2, -190))
-	LITP.Value = V2toV3(Vector2.new(cam.ViewportSize.X / 2, -125))
-
-	local MainBox = OutlinedBox({
-		OutlineColor = Color3.new(), -- outline color
-		Color = Color3.fromRGB(38, 38, 38), -- box color
-		Thickness = 2, -- outline thickness
-		Visibility = .5, -- Opacity / Transparency / Visibility
-		Size = Vector2.new(300, 100), -- size
-		Pos = V3toV2(MBP.Value), -- pos
-		ZIndex = 0 -- Zindex
-	})
-
-	local LoadText = Text({
-		Text = "Athena Loader",
-		Pos = V3toV2(LTP.Value),
-		Size = isv2 and 22 or 18,
-		Font = Drawing.Fonts.System,
-		Color = Color3.fromRGB(33, 57, 129),
-		ZIndex = 2,
-		Centered = true
-	})
-
-	local LoadInfoText = Text({
-		Text = "Functions",
-		Pos = V3toV2(LITP.Value),
-		Size = isv2 and 19 or 15,
-		Font = Drawing.Fonts.System,
-		Color = Color3.new(1, 1, 1),
-		ZIndex = 2,
-		Centered = true
-	})
-
-	local MBPS, LTPS, LITPS; MBPS = MBP.Changed:Connect(function(vec)
-		MainBox.Pos = V3toV2(vec)
-	end)
-
-	LTPS = LTP.Changed:Connect(function(vec)
-		LoadText.T.Position = V3toV2(vec)
-	end)
-
-	LITPS = LITP.Changed:Connect(function(vec)
-		LoadInfoText.T.Position = V3toV2(vec)
-	end)
-
-	local AB = Vector3.new(0, math.round(cam.ViewportSize.Y / 2) + 195, 0)
-	sv.TweenService:Create(MBP, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Value = MBP.Value + AB}):Play()
-	sv.TweenService:Create(LTP, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Value = LTP.Value + AB}):Play()
-	sv.TweenService:Create(LITP, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Value = LITP.Value + AB}):Play()
-	task.wait(1.6)
-
-	local LoaderBox = OutlinedBox({
-		OutlineColor = Color3.new(), -- outline color
-		Color = Color3.fromRGB(33, 57, 129), -- box color
-		Thickness = 2, -- outline thickness
-		Visibility = 1, -- Opacity / Transparency / Visibility
-		Size = Vector2.new(0, 30), -- size
-		Pos = Vector2.new(cam.ViewportSize.X / 2 - 130, math.round(cam.ViewportSize.Y / 2) + 60), -- pos
-		ZIndex = 0 -- Zindex
-	})
-
-	function LoaderUpdate()
-		i += 1
-		LoadInfoText.Text = Loads[i]
-
-		for _ = 1, 65 do
-			task.wait()
-			LoaderBox.Size += Vector2.new(1, 0)
-		end
-
-		if i > 3 then
-			task.wait(1)
-			LoaderBox.Remove()
-			MainBox.Remove()
-			LoadInfoText.Remove()
-			LoadText.Remove()
-			LTPS:Disconnect()
-			MBPS:Disconnect()
-			LITPS:Disconnect()
-		end
-	end
-end
-
-local function Note(txt, err)
-    task.spawn(function()
-        local ins = {}
-        table.insert(notes, ins)
-        local mainv, textv = Instance.new("Vector3Value"), Instance.new("Vector3Value")
-
-        ins.Main = OutlinedBox({
-            OutlineColor = Color3.new(), -- outline color
-            Color = not err and Color3.fromRGB(38, 38, 38) or Color3.new(.5, 0, 0), -- box color
-            Thickness = 2, -- outline thickness
-            Visibility = .5, -- Opacity / Transparency / Visibility
-            Size = Vector2.new(500, 40), -- size
-            Pos = Vector2.new((cam.ViewportSize.X / 2) - 250, cam.ViewportSize.Y + 40), -- pos
-            ZIndex = 0 -- Zindex
-        })
-
-        ins.Text = Text({
-            Text = "",
-            Pos = Vector2.new((cam.ViewportSize.X / 2) - 245, cam.ViewportSize.Y + 10),
-            Size = isv2 and 18 or 22,
-            Centered = false,
-            Font = Drawing.Fonts.System,
-            Color = Color3.new(1, 1, 1),
-            ZIndex = 2,
-        })
-
-        ins.Mainv = mainv
-        ins.Textv = textv
-
-        mainv.Value, textv.Value = V2toV3(ins.Main.Pos), V2toV3(ins.Text.Pos)
-
-        local mt = game:GetService("TweenService"):Create(mainv, TweenInfo.new(.5, Enum.EasingStyle.Quad), {Value = V2toV3(ins.Main.Pos - Vector2.new(0, 60) - (Vector2.new(0, 44 * (#notes - 1))))})
-        local tt = game:GetService("TweenService"):Create(textv, TweenInfo.new(.5, Enum.EasingStyle.Quad), {Value = V2toV3(ins.Text.Pos - Vector2.new(0, 60) - (Vector2.new(0, 44 * (#notes - 1))))})
-        mt:Play()
-        tt:Play()
-
-        local mc; mc = mainv.Changed:Connect(function(vec)
-            ins.Main.Pos = V3toV2(vec)
-        end)
-
-        local tc; tc = textv.Changed:Connect(function(vec)
-            ins.Text.T.Position = V3toV2(vec)
-        end)
-
-        mt.Completed:Wait()
-
-        for i = 1, #txt do
-            task.wait(math.random(3, 5) / 75)
-            ins.Text.T.Text = txt:sub(1, i)
+    for i2,v in pairs(drawingobjs) do
+        if tostring(v) == "Line" then
+            v.Thickness = 2
+            v.Color = Color3.new()
+            v.ZIndex = 1
         end
 
-        task.wait(3)
+        if tostring(v) == "Square" then
+            local em = i2 == "M"
+
+            v.Color = em and Color3.fromRGB(38, 38, 38) or Color3.fromRGB(33, 57, 129)
+            v.Transparency = em and .5 or 1
+            v.Size = em and Vector2.new(300, 100) or Vector2.new(0, 40)
+            v.Position = em and pos or npos
+            v.Filled = true
+        end
+
+        if tostring(v) == "Text" then
+            local e2 = i2 == "TE2"
+
+            v.Size = e2 and 18 or 22
+            v.Color = e2 and Color3.new(1,1,1) or Color3.fromRGB(66, 89, 162)
+            v.Centered = true
+            v.Outlined = true
+            v.Position = pos + Vector2.new(150, e2 and 75 or 5)
+            v.Text = e2 and "Functions" or "Athena Client"
+        end
+
+        v.Visible = true
+    end
+
+    drawingobjs.T.From = pos
+    drawingobjs.B.From = pos + Vector2.new(0, 100)
+    drawingobjs.L.From = pos
+    drawingobjs.R.From = pos + Vector2.new(300, 0)
+
+    drawingobjs.T.To = pos + Vector2.new(300, 0)
+    drawingobjs.B.To = pos + Vector2.new(300, 100)
+    drawingobjs.L.To = pos + Vector2.new(0, 100)
+    drawingobjs.R.To = pos + Vector2.new(300, 100)
+
+    task.wait(1)
+
+    function LoaderUpdate()
+        local lposx, oposx = (260 / 3) * i, drawingobjs.M2.Size.X
+        drawingobjs.TE2.Text = texti[i]
 
         task.spawn(function()
-            for i = 1, 0, -.1 do
-                task.wait()
-                ins.Text.Visibility = i
-            end
+            for i2 = 0, 1, .01 do
+                local nlposx = Lerp(oposx, lposx, Ease(i2))
 
-            ins.Text.Remove()
+                drawingobjs.T2.From = npos
+                drawingobjs.B2.From = npos + Vector2.new(0, 40)
+                drawingobjs.L2.From = npos
+                drawingobjs.R2.From = npos + Vector2.new(nlposx, 0)
+
+                drawingobjs.T2.To = npos + Vector2.new(nlposx, 0)
+                drawingobjs.B2.To = npos + Vector2.new(nlposx, 40)
+                drawingobjs.L2.To = npos + Vector2.new(0, 40)
+                drawingobjs.R2.To = npos + Vector2.new(nlposx, 40)
+
+                drawingobjs.M2.Size = Vector2.new(nlposx, 40)
+                task.wait()
+            end
         end)
 
-        local x = ins.Main.Size.X
-        for i = 0, .7, .005 do
-            task.wait()
-            ins.Main.Size = Vector2.new(Lerp(x, 0, Ease(i)), ins.Main.Size.Y)
+        i += 1
+    end
+end
+
+local Note do
+    local notes = {}
+    local t = Drawing.new("Text")
+
+    local function GetTextSize(msg, size, font)
+        t.Font = font
+        t.Size = size
+        t.Text = msg
+
+        return t.TextBounds
+    end
+
+    local function NoteWrapper(msg, err)
+        local drawingobjs = {
+            T = Drawing.new("Line");
+            B = Drawing.new("Line");
+            L = Drawing.new("Line");
+            R = Drawing.new("Line");
+            ML = Drawing.new("Line");
+            H = Drawing.new("Square");
+            M = Drawing.new("Square");
+            TE = Drawing.new("Text");
+            IUp = 0
+        }
+
+        notes[#notes+1] = drawingobjs
+        local inote = #notes - 1
+
+        local textlen = GetTextSize(msg, 20, Drawing.Fonts.UI) + Vector2.new(8, 0)
+
+        for i,v in pairs(drawingobjs) do
+            if type(v) == "number" then continue end
+
+            if tostring(v) == "Line" then
+                v.Thickness = 2
+                v.Color = Color3.new()
+                v.ZIndex = 1
+            end
+
+            if tostring(v) == "Square" then
+                local ih = i == "H"
+
+                v.Color = ih and (err and Color3.new(.7, 0, 0) or Color3.fromRGB(33, 57, 129)) or Color3.new(.2, .2, .2)
+                v.Size = ih and Vector2.new(15, 30) or Vector2.new(0, 30)
+                v.Filled = true
+            end
+
+            v.Visible = true
         end
 
-        table.remove(notes, table.find(notes, ins))
-        for i,v in pairs(notes) do
-            game:GetService("TweenService"):Create(v.Mainv, TweenInfo.new(.5, Enum.EasingStyle.Quad), {Value = V2toV3(v.Main.Pos + Vector2.new(0, 44))}):Play()
-            game:GetService("TweenService"):Create(v.Textv, TweenInfo.new(.5, Enum.EasingStyle.Quad), {Value = V2toV3(v.Text.Pos + Vector2.new(0, 44))}):Play()
+        local spos = Vector2.new(-textlen.X - 37, cam.ViewportSize.Y - 105 - ((inote - 1) * 45))
+
+        drawingobjs.T.From = spos
+        drawingobjs.B.From = spos + Vector2.new(0, 30)
+        drawingobjs.L.From = spos
+        drawingobjs.R.From = spos + Vector2.new(15, 0)
+
+        drawingobjs.T.To = spos + Vector2.new(15, 0)
+        drawingobjs.B.To = spos + Vector2.new(15, 30)
+        drawingobjs.L.To = spos + Vector2.new(0, 30)
+        drawingobjs.R.To = spos + Vector2.new(15, 30)
+
+        drawingobjs.ML.From = spos + Vector2.new(15, 0)
+        drawingobjs.ML.To = spos + Vector2.new(15, 30)
+
+        drawingobjs.H.Position = spos
+        drawingobjs.H.Filled = true
+
+        drawingobjs.M.Position = spos + Vector2.new(16)
+
+        drawingobjs.TE.Text = msg
+        drawingobjs.TE.Outlined = true
+        drawingobjs.TE.Size = 20
+        drawingobjs.TE.Position = spos + Vector2.new(20, 4)
+        drawingobjs.TE.Color = Color3.new(1,1,1)
+        drawingobjs.TE.Font = Drawing.Fonts.UI
+        drawingobjs.TE.Transparency = 0
+
+        local r = {}
+
+        for i,v in next, drawingobjs do
+            if type(v) == "number" then continue end
+
+            r[i] = {type = tostring(v)}
+
+            if r[i].type == "Line" then
+                r[i].To = v.To
+                r[i].From = v.From
+
+                continue
+            end
+
+            r[i].Position = v.Position
         end
-        tc:Disconnect()
-        mc:Disconnect()
-        ins.Main.Remove()
-    end)
+
+        for i = 0, 1, .005 do
+            for _,v in next, drawingobjs do
+                if type(v) == "number" then continue end
+
+                if tostring(v) == "Line" then
+                    v.From = Vector2.new(r[_].From.X + Lerp(spos.X, textlen.X + 57, Ease(i)), v.From.Y)
+                    v.To = Vector2.new(r[_].To.X + Lerp(spos.X, textlen.X + 57, Ease(i)), v.To.Y)
+
+                    continue
+                end
+
+                v.Position = Vector2.new(r[_].Position.X + Lerp(spos.X, textlen.X + 57, Ease(i)), spos.Y + (_ == "TE" and 3 or 0))
+            end
+
+            task.wait()
+        end
+
+        task.wait(.5)
+
+        spos = Vector2.new(20, cam.ViewportSize.Y - 105 - ((inote - 1) * 45))
+
+        for i = 0, 1, .008 do
+            local pos = Lerp(15, 2 + textlen.X, Ease(i))
+
+            drawingobjs.B.To = spos + Vector2.new(15 + pos, 30)
+            drawingobjs.T.To = spos + Vector2.new(15 + pos)
+
+            drawingobjs.R.From = spos + Vector2.new(15 + pos)
+            drawingobjs.R.To = spos + Vector2.new(15 + pos, 30)
+
+            drawingobjs.M.Size = Vector2.new(pos, 30)
+
+            task.wait()
+        end
+
+        for i = 0, 1, .01 do
+            drawingobjs.TE.Transparency = i
+            task.wait()
+        end
+
+        drawingobjs.IUp = 1
+
+        task.wait(8)
+
+        for i = 1, 0, -.01 do
+            for _,v in next, drawingobjs do
+                if type(v) == "number" then continue end
+
+                v.Transparency = i
+            end
+
+            task.wait()
+        end
+
+        table.remove(notes, table.find(notes, drawingobjs))
+    end
+
+    function Note(...)
+        return task.defer(NoteWrapper, ...)
+    end
 end
 
 -- String functions
@@ -690,10 +640,8 @@ end
 
 -- World
 
-local function Goto(pos) -- since tweenservice actually makes shit go through appearently
-    lp.Character:WaitForChild("HumanoidRootPart")
-
-    sv.TweenService:Create(lp.Character.HumanoidRootPart, TweenInfo.new(0), {CFrame = pos}):Play()
+local function Goto(pos)
+    lp.Character:PivotTo(pos)
 end
 
 local function GetGun(order)
@@ -727,10 +675,18 @@ local function Respawn(Color, pos)
     local Saved1, Saved2 = pos or lp.Character:GetPivot(), cam.CFrame
 
     remotes.Load:InvokeServer(lp, Color)
-    task.defer(coroutine.wrap(Goto), Saved1)
+    task.delay(.01, coroutine.wrap(Goto), Saved1)
     task.defer(function()
         cam.CFrame = Saved2
     end)
+    
+    if lp.Character:GetPivot().Y < 1 then
+        task.defer(coroutine.wrap(Goto), positions["Nexus"])
+    end
+
+    if lp.PlayerGui.Home.hud.Topbar.titleBar.Title.Text == "Lights out" and lp.Team == sv.Teams.Inmates then
+        task.delay(.3, Goto, Saved1)
+    end
 end
 
 local function Team(Color)
@@ -739,8 +695,13 @@ local function Team(Color)
         return
     end
 
-    if Color == "Bright blue" and #sv.Teams.Guards:GetPlayers() < 8 then
-        remotes.Team:FireServer(Color)
+    if Color == "Bright blue" then
+        if #sv.Teams.Guards:GetPlayers() < 8 then
+            remotes.Team:FireServer(Color)
+        else
+            Respawn(BrickColor.new(Color))
+        end
+
         return
     end
 
@@ -785,7 +746,6 @@ local function Anchorage(wt)
         v.Anchored = false
     end)
 end
-
 
 local function CloneHumanoid()
     if not lp.Character then repeat until not task.wait() or lp.Character end
@@ -1030,7 +990,8 @@ local function Bring(plr, tool, cframe) -- thanks fate for teaching me the human
         repeat until not task.wait() or plr.Character
     end
 
-    local saved = lp.Character.PrimaryPart.CFrame
+    local saved, oldnc = lp.Character.PrimaryPart.CFrame, togs.Noclip
+    togs.Noclip = false
     CloneHumanoid()
     tool.Parent = lp.Character
     lp.Character:PivotTo(cframe)
@@ -1039,52 +1000,51 @@ local function Bring(plr, tool, cframe) -- thanks fate for teaching me the human
         lp.Character.HumanoidRootPart.Anchored = true
     end
 
-    for i = 1, 500 do
+    for i = 1, 15 do -- waiting in loops is overrated
         if not lp.Character or not plr.Character or not plr.Character.PrimaryPart or tool.Parent ~= lp.Character then break end
 
-        task.wait()
-        task.spawn(firetouchinterest, tool.Handle, plr.Character.PrimaryPart, ffalse)
-        task.spawn(lp.Character.PivotTo, lp.Character, cframe)
+        for i = 1, 3 do task.spawn(firetouchinterest, tool.Handle, plr.Character.PrimaryPart, ffalse) end
+        coroutine.wrap(Goto)(saved)
     end
 
-    task.wait(.1)
+    local t = tick()
+    repeat
+        task.wait()
+    until not plr.Character or not plr.Character:FindFirstChild("Humanoid") or plr.Character.Humanoid:GetState() == Enum.HumanoidStateType.FallingDown or tick() - t > 1
 
-    remotes.Load:InvokeServer()
-    lp.Character:PivotTo(saved)
+    togs.Noclip = oldnc
+    Respawn(nil, saved)
 end
 
 local function Crim(plr) -- chaotic told me this method
     if not plr or not plr.Character or not lp.Character then return end
-    local oldnt = togs.Noclip.Toggled
-    togs.Noclip.Toggled = true
-    local pad = workspace["Criminals Spawn"].SpawnLocation
-    local padpos, oldpos = pad.CFrame, lp.Character.PrimaryPart.CFrame
+    local pad, oldpos, oldnt = workspace["Criminals Spawn"].SpawnLocation, lp.Character.PrimaryPart.CFrame, togs.Noclip
+    togs.Noclip = false
 
     GetGun{togs.BringTool}
     local tool = lp.Backpack:WaitForChild(togs.BringTool)
     CloneHumanoid()
     tool.Parent = lp.Character
     pad.CanCollide = false
-    if lp.Character:FindFirstChild("HumanoidRootPart") then
-        lp.Character.HumanoidRootPart.Anchored = true
+
+    for i = 1, 15 do
+        if not lp.Character or not plr.Character or not plr.Character.PrimaryPart or tool.Parent ~= lp.Character or plr.Team == sv.Teams.Criminals then break end
+
+        for i = 1, 3 do task.spawn(firetouchinterest, tool.Handle, plr.Character.PrimaryPart, ffalse) end
+
+        task.defer(firetouchinterest, pad, plr.Character.PrimaryPart, ffalse)
+        coroutine.wrap(Goto)(oldpos)
     end
 
-    for i = 1, 500 do
-        if not lp.Character or not plr.Character or not plr.Character.PrimaryPart or tool.Parent ~= lp.Character then break end
-        
+    local t = tick()
+    repeat
         task.wait()
-        task.spawn(firetouchinterest, pad, plr.Character.PrimaryPart, ffalse)
-        task.spawn(firetouchinterest, tool.Handle, plr.Character.PrimaryPart, ffalse)
-        task.spawn(lp.Character.PivotTo, lp.Character, oldpos)
-    end
+        task.defer(firetouchinterest, pad, plr.Character.PrimaryPart, ffalse)
+    until plr.Team == sv.Teams.Criminals or tick() - t > 1
 
-    task.wait(.1)
-    
-    remotes.Load:InvokeServer()
-    pad:PivotTo(padpos)
-    Goto(oldpos)
+    Respawn(nil, oldpos)
 
-    togs.Noclip.Toggled = oldnt
+    togs.Noclip = oldnt
 end
 
 local function SendMsg(args)
@@ -1260,7 +1220,7 @@ local function SpamArrest(plr, power)
     if not plr or not plr.Character or not plr.Character:FindFirstChild("Humanoid") or plr.Character.Humanoid.Health == 0 or not plr.Character:FindFirstChild("Head") then return end
 
     if not CanBeArrested(plr) then
-        repeat Crim(plr) until CanBeArrested(plr) or plr.Parent ~= sv.Players -- crim func yields dw
+        repeat Crim(plr) until CanBeArrested(plr) or plr.Parent ~= sv.Players or breaksa -- crim func yields dw
     end
 
     local arrests = 0
@@ -1900,20 +1860,20 @@ local Log do
                     end
                 end
 
-                if v.TeamColor == BrickColor.new("Really black") then
-                    Log(v, "Septex or XTheMasterX admin")
+                if not v.Team then
+                    Log(v, "Custom team")
                 end
 
                 if ((v:FindFirstChild("Backpack") and v.Backpack:FindFirstChild("AK-47")) or (v.Character and v.Character:FindFirstChild("AK-47"))) and table.find({game.Teams.Inmates, game.Teams.Neutral}, v.Team) then
-                    Log(v, "Gun spawn")
+                    Log(v, "Possible gun spawn")
                 end
 
                 if v.Character and v.Character:FindFirstChild("HumanoidRootPart") and not v.Character:FindFirstChild("Torso") then
-                    Log(v, "Invisible Fling")
+                    Log(v, "Invisible fling")
                 end
 
                 if v.Character and not v.Character:FindFirstChild("Humanoid") and not v.Character:FindFirstChild("ForceField") then
-                    Log(v, "God mode or bringing")
+                    Log(v, "Possible god or bring")
                 end
             end
 
@@ -2309,17 +2269,7 @@ do
             local oldteam
             if lp.Team ~= sv.Teams.Guards then
                 oldteam = lp.TeamColor.Name
-                if #sv.Teams.Guards:GetPlayers() < 8 then
-                    if lp.Team ~= sv.Teams.Criminals then
-                        Team("Bright blue")
-                    else
-                        Respawn(BrickColor.new("Bright blue"))
-                    end
-                else
-                    Note("Guard team is full!", true)
-
-                    return
-                end
+                Respawn(BrickColor.new("Bright blue"))
             end
 
             remotes.Item:InvokeServer(workspace.Prison_ITEMS.clothes:FindFirstChild("Riot Police").ITEMPICKUP)
@@ -2478,8 +2428,8 @@ do
             c.Parent = workspace
         end)
 
-        player:Toggle("Noclip", togs.Noclip.Toggled, function(a)
-            togs.Noclip.Toggled = a
+        player:Toggle("Noclip", togs.Noclip, function(a)
+            togs.Noclip = a
         end)
 
         player:Button("Rejoin", function()
@@ -2706,6 +2656,7 @@ do
                     connections["SpamTeam"]:Disconnect()
                     connections["SpamTeam"] = nil
                     Note("Stopped spamming auto team")
+
                     return
                 end
 
@@ -2716,12 +2667,71 @@ do
                         connections["SpamTeam"]:Disconnect()
                         connections["SpamTeam"] = nil
                         Note(("%s has left, disconnected spam auto team"):format(selected.Name))
+
+                        return
                     end
 
                     if lp.TeamColor ~= selected.TeamColor then
                         t = tick()
                         Respawn(selected.TeamColor)
                     end
+                end)
+            end)
+
+            thing:Button("Loop bring", function()
+                if not selected then return end
+                if connections["LoopBring"] then
+                    connections["LoopBring"]:Disconnect()
+                    connections["LoopBring"] = nil
+                    Note("Stopped loop bring")
+                    
+                    return
+                end
+
+                local bringing
+                connections["LoopBring"] = sv.RunService.Heartbeat:Connect(function()
+                    if bringing then return end
+                    if not selected then
+                        connections["LoopBring"]:Disconnect()
+                        connections["LoopBring"] = nil
+                        Note(("%s has left, disconnected loop bring"):format(selected.Name))
+                        
+                        return
+                    end
+
+                    bringing = true
+                    GetGun{togs.BringTool}
+                    Bring(selected, lp.Backpack:WaitForChild(togs.BringTool), lp.Character:GetPivot())
+                    task.wait(1.3)
+                    bringing = false
+                end)
+            end)
+
+            thing:Button("Loop criminal", function()
+                if not selected then return end
+                if connections["LoopCrim"] then
+                    connections["LoopCrim"]:Disconnect()
+                    connections["LoopCrim"] = nil
+                    Note("Stopped loop criminal")
+                    
+                    return
+                end
+
+                local bringing
+                connections["LoopCrim"] = sv.RunService.Heartbeat:Connect(function()
+                    if bringing then return end
+                    if not selected then
+                        connections["LoopCrim"]:Disconnect()
+                        connections["LoopCrim"] = nil
+                        Note(("%s has left, disconnected loop criminal"):format(selected.Name))
+                        
+                        return
+                    end
+
+                    bringing = true
+                    Crim(selected)
+                    task.wait(.4)
+                    bringing = false
                 end)
             end)
 
@@ -2766,8 +2776,8 @@ do
 
             thing:Button("Fling", function()
                 if not selected or not selected.Character or not lp.Character then return end
-                local nt, op = togs.Noclip.Toggled, lp.Character.PrimaryPart.CFrame
-                togs.Noclip.Toggled = true
+                local nt, op = togs.Noclip, lp.Character.PrimaryPart.CFrame
+                togs.Noclip = true
 
                 local bg = Instance.new("BodyAngularVelocity", lp.Character.HumanoidRootPart)
                 local bp = Instance.new("BodyPosition", lp.Character.HumanoidRootPart)
@@ -2786,7 +2796,7 @@ do
 
                 bg:Destroy()
                 lp.Character:PivotTo(op)
-                togs.Noclip.Toggled = nt
+                togs.Noclip = nt
                 Note(("Flung %s"):format(selected.Name))
             end)
 
@@ -3090,8 +3100,11 @@ do
 
     for i,v in pairs(getgc()) do
 		if type(v) == "function" and getfenv(v).script == lp.PlayerScripts.ClientGunReplicator then -- i fucking hate syn v2
+            if debug.getinfo(v).currentline ~= 4 then continue end
+
             local old; old = hookfunction(v, function(bullets, istaser)
-                if not togs.AntiCrash then return ReplicateHook(bullets, istaser) end
+                if not togs.AntiCrash then return old(bullets, istaser) end
+
                 for i,v in pairs(bullets) do
                     if not v.RayObject or not v.Cframe or not v.Distance or v.Distance > 800 or v.Distance == 0 then
                         return
@@ -3100,12 +3113,11 @@ do
     
                 return old(bullets, istaser)
             end)
-            
-			break
 		end
     end
 end
 -- Connections
+
 do
     workspace.Remote.arrestPlayer.OnClientEvent:Connect(function()
         if not togs.AntiArrest or not lp.Character or not lp.Character:FindFirstChild("Humanoid") then return end
@@ -3259,7 +3271,7 @@ do
     end)
 
     sv.RunService.Stepped:Connect(function()
-        if not togs.Noclip.Toggled then return end
+        if not togs.Noclip then return end
         
         for i,v in pairs(workspace.CarContainer:GetDescendants()) do
             if v:IsA("BasePart") then
@@ -3328,13 +3340,14 @@ do
     task.spawn(function()
         while task.wait() do
             if lp.Team == sv.Teams.Criminals and togs.AntiCriminal then
-                for i = 1, 50 do
-                    if lp.Team == sv.Teams.Criminals then
-                        Respawn(sv.Teams.Guards.TeamColor, positions["Nexus"])
-                    end
-                    
-                    task.wait()
-                end
+                local oldar = togs.AutoRespawn.Toggled
+                togs.AutoRespawn.Toggled = false
+
+                CloneHumanoid()
+                lp.Character:BreakJoints()
+                Respawn(sv.Teams.Guards.TeamColor, positions["Nexus"])
+                task.wait()
+                togs.AutoRespawn.Toggled = oldar
             end
         end
     end)
@@ -3388,7 +3401,7 @@ do
                 for i,v in pairs(sv.Players:GetPlayers()) do
                     if v ~= lp and CanBeArrested(v) and not table.find(togs.Whitelist, v.Name) and v.Character and v.Character.PrimaryPart then
                         if v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health ~= 0 and v.Character:FindFirstChild("Head") and lp:DistanceFromCharacter(v.Character.PrimaryPart.Position) <= 12 then
-                            for i = 1,togs.SpamArrestPower do
+                            for _ = 1,togs.SpamArrestPower do
                                 task.spawn(remotes.Arrest.InvokeServer, remotes.Arrest, v.Character.Head)
                             end
                         end
@@ -3409,7 +3422,7 @@ do
                             table.insert(tt, v)
                         end
                     end
-                end 
+                end
 
                 if tt[1] then
                     local senttbl = {}
@@ -3456,7 +3469,7 @@ do
         while task.wait(.2) do
             if togs.Killaura.Toggled then
                 local kt, mkt = {}, {}
-                
+
                 for i,v in pairs(sv.Players:GetPlayers()) do
                     if v == lp or table.find(togs.Whitelist, v.Name) or not v.Character then continue end
 
@@ -3638,17 +3651,7 @@ do
         local oldteam
         if lp.Team ~= sv.Teams.Guards then
             oldteam = lp.TeamColor.Name
-            if #sv.Teams.Guards:GetPlayers() < 8 then
-                if lp.Team ~= sv.Teams.Criminals then
-                    Team("Bright blue")
-                else
-                    Respawn(BrickColor.new("Bright blue"))
-                end
-            else
-                Note("Guard team is full!", true)
-
-                return
-            end
+            Respawn(BrickColor.new("Bright blue"))
         end
 
         remotes.Item:InvokeServer(workspace.Prison_ITEMS.clothes:FindFirstChild("Riot Police").ITEMPICKUP)
