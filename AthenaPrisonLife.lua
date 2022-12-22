@@ -2351,7 +2351,7 @@ task.spawn(LoaderUpdate)
 -- Ui library stuff
 
 do
-    local ui, settings = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/GFXTI/AthenaClient/main/MainUi.lua", true))()
+    local ui, settings = loadstring(game:HttpGet("https://raw.githubusercontent.com/GFXTI/AthenaClient/main/MainUi.lua", true))()
     local lib =          ui:Library()
 
     -- Combat window
