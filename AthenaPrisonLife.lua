@@ -479,7 +479,7 @@ local LoaderUpdate do
 
             v.Size = e2 and 18 or 22
             v.Color = e2 and Color3.new(1,1,1) or Color3.fromRGB(66, 89, 162)
-            v.Centered = true
+            v.Center = true
             v.Outlined = true
             v.Position = pos + Vector2.new(150, e2 and 75 or 5)
             v.Text = e2 and "Functions" or "Athena Client"
@@ -697,7 +697,7 @@ local MessageBox do
 
         Box.Title = DrawingStruct.new(Box.Main, "Text", "Title", {
             Position = pos + Vector2.new(200, 3),
-            Centered = true,
+            Center = true,
             Size = 25,
             Font = Drawing.Fonts.UI,
             Outline = true,
@@ -707,7 +707,7 @@ local MessageBox do
 
         Box.Info = DrawingStruct.new(Box.Main, "Text", "Info", {
             Position = pos + Vector2.new(200, 30),
-            Centered = true,
+            Center = true,
             Size = 22,
             Font = Drawing.Fonts.UI,
             Outline = true,
@@ -939,14 +939,14 @@ local function AddPlayer(plr)
     local ToAdd, con = {}
 
     ToAdd.Name = Drawing.new("Text")
-    ToAdd.Name.Centered = true
+    ToAdd.Name.Center = true
     ToAdd.Name.Outline = true
     ToAdd.Name.Text = plr.Name
     ToAdd.Name.Size = 19
     ToAdd.Name.Font = Drawing.Fonts.UI
 
     ToAdd.Info = Drawing.new("Text")
-    ToAdd.Info.Centered = true
+    ToAdd.Info.Center = true
     ToAdd.Info.Outline = true
     ToAdd.Info.Text = ""
     ToAdd.Info.Size = 17
