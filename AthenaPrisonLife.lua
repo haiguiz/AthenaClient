@@ -480,7 +480,7 @@ local LoaderUpdate do
             v.Size = e2 and 18 or 22
             v.Color = e2 and Color3.new(1,1,1) or Color3.fromRGB(66, 89, 162)
             v.Center = true
-            v.Outlined = true
+            v.Outline = true
             v.Position = pos + Vector2.new(150, e2 and 75 or 5)
             v.Text = e2 and "Functions" or "Athena Client"
         end
@@ -598,7 +598,7 @@ local Note do
         drawingobjs.M.Position = spos + Vector2.new(16)
 
         drawingobjs.TE.Text = msg
-        drawingobjs.TE.Outlined = true
+        drawingobjs.TE.Outline = true
         drawingobjs.TE.Size = 20
         drawingobjs.TE.Position = spos + Vector2.new(20, 4)
         drawingobjs.TE.Color = Color3.new(1,1,1)
