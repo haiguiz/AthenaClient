@@ -42,7 +42,8 @@ givenantitouch,
 givenoneshot,
 givenkillaura,
 givenantipunch,
-oldctrl, tools, remotes, positions, togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+PlayerESPDrawings,
+oldctrl, tools, remotes, positions, togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
 {w = 0, s = 0, a = 0, d = 0},
 {
     ["M4A1"] =          workspace.Prison_ITEMS.giver.M4A1.ITEMPICKUP;
@@ -167,6 +168,7 @@ oldctrl, tools, remotes, positions, togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {
         FocusKey =          Enum.KeyCode.Semicolon;
         Admins =            {}
     };
+    ESP =                   false;
     Noclip =                false;
     AntiShield =            false;
     ClickKill =             false;
@@ -682,6 +684,120 @@ local Note do
     end
 end
 
+local MessageBox do
+    function MessageBox(title, info)
+        local pos = Vector2.new(cam.ViewportSize.X / 2 - 200, cam.ViewportSize.Y / 2)
+        local event = Instance.new("BindableEvent")
+
+        local Box = MakeBoxedFrame(pos, Vector2.new(400, 125), nil, {
+            Color = Color3.new(.2, .2, .2),
+            Transparency = .9,
+            Filled = true,
+        })
+
+        Box.Title = DrawingStruct.new(Box.Main, "Text", "Title", {
+            Position = pos + Vector2.new(200, 3),
+            Centered = true,
+            Size = 25,
+            Font = Drawing.Fonts.UI,
+            Outline = true,
+            Text = title,
+            Color = Color3.new(1,1,1),
+        })
+
+        Box.Info = DrawingStruct.new(Box.Main, "Text", "Info", {
+            Position = pos + Vector2.new(200, 30),
+            Centered = true,
+            Size = 22,
+            Font = Drawing.Fonts.UI,
+            Outline = true,
+            Text = info,
+            Color = Color3.new(1,1,1),
+            Transparency = .9
+        })
+
+        local Accept = MakeBoxedFrame(pos + Vector2.new(90, 95), Vector2.new(100, 20), Box, {
+            Color = Color3.fromRGB(33, 57, 129),
+            Transparency = .9,
+            Filled = true,
+        })
+
+        Accept.Accept = DrawingStruct.new(Accept.Main, "Text", "Accept", {
+            Position = Accept.Main.Obj.Position + Vector2.new(26, -2),
+            Size = 21,
+            Font = Drawing.Fonts.UI,
+            Outline = true,
+            Text = "Accept",
+            Color = Color3.new(1,1,1),
+            Transparency = .9
+        })
+
+        local Decline = MakeBoxedFrame(pos + Vector2.new(205, 95), Vector2.new(100, 20), Box, {
+            Color = Color3.new(.2, .2, .2),
+            Transparency = .9,
+            Filled = true,
+        })
+
+        Decline.Decline = DrawingStruct.new(Decline.Main, "Text", "Decline", {
+            Position = Decline.Main.Obj.Position + Vector2.new(26, -2),
+            Size = 21,
+            Font = Drawing.Fonts.UI,
+            Outline = true,
+            Text = "Decline",
+            Color = Color3.new(1,1,1),
+            Transparency = .9
+        })
+
+        local function idkwhattofuckingnamethis()
+            for i,v in next, Accept do
+                v.Obj:Remove()
+            end
+
+            for i,v in next, Decline do
+                v.Obj:Remove()
+            end
+
+            for i,v in next, Box do
+                v.Obj:Remove()
+            end
+        end
+
+        local con; con = game:GetService"UserInputService".InputBegan:Connect(function(input, gameProcessedEvent)
+            if gameProcessedEvent then return end
+
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                local mpos = getmousepos()
+
+                if IsInFrame(mpos, Accept.Main.Obj.Position, Vector2.new(100, 20)) then
+                    event:Fire(true)
+                    con:Disconnect()
+                    idkwhattofuckingnamethis()
+                end
+
+                if IsInFrame(mpos, Decline.Main.Obj.Position, Vector2.new(100, 20)) then
+                    event:Fire(false)
+                    con:Disconnect()
+                    idkwhattofuckingnamethis()
+                end
+            end
+        end)
+
+        for i,v in next, Box do
+            v.Obj.Visible = true
+        end
+
+        for i,v in next, Accept do
+            v.Obj.Visible = true
+        end
+
+        for i,v in next, Decline do
+            v.Obj.Visible = true
+        end
+
+        return event.Event:Wait()
+    end
+end
+
 -- String functions
 
 local function GetPlayer(a)
@@ -787,6 +903,12 @@ local function Respawn(Color, pos)
     task.wait(1/30)
     cam.CFrame = Saved2
 
+    if Saved1.Y < 0 then
+        Goto(positions["Nexus"])
+
+        return
+    end
+
     task.delay(.2, function()
         if lp:DistanceFromCharacter(Saved1.p) > 5 then
             Goto(Saved1)
@@ -811,6 +933,34 @@ local function Team(Color)
     end
 
     Respawn(BrickColor.new(Color))
+end
+
+local function AddPlayer(plr)
+    local ToAdd, con = {}
+
+    ToAdd.Name = Drawing.new("Text")
+    ToAdd.Name.Centered = true
+    ToAdd.Name.Outline = true
+    ToAdd.Name.Text = plr.Name
+    ToAdd.Name.Size = 19
+    ToAdd.Name.Font = Drawing.Fonts.UI
+
+    ToAdd.Info = Drawing.new("Text")
+    ToAdd.Info.Centered = true
+    ToAdd.Info.Outline = true
+    ToAdd.Info.Text = ""
+    ToAdd.Info.Size = 17
+    ToAdd.Info.Font = Drawing.Fonts.UI
+    ToAdd.Info.Color = Color3.new(.8, .8, .8)
+
+    PlayerESPDrawings[plr.Name] = ToAdd
+
+    con = game.Players.PlayerRemoving:Connect(function(player)
+        if player ~= plr then return end
+
+        PlayerESPDrawings[plr.Name] = nil
+        con:Disconnect()
+    end)
 end
 
 local function Stay(pos, destroy)
@@ -1335,54 +1485,65 @@ local function SpamArrest(plr, power, d)
     if not plr or not plr.Character or not plr.Character:FindFirstChild("Humanoid") or plr.Character.Humanoid.Health == 0 or not plr.Character:FindFirstChild("Head") then return end
     assert(lp.Character:FindFirstChild("HumanoidRootPart"), "no hrp?")
     if d then
-       --Delay(d)
+       Delay(d)
     end
     
     local pad, oldpos, oldnt, arrests, starttick = workspace["Criminals Spawn"].SpawnLocation, lp.Character.PrimaryPart.CFrame, togs.Noclip, 0, tick()
 
     local function Arrest()
-        if not CanBeArrested(plr) then return end
+        if not d and not CanBeArrested(plr) then return end
 
         if remotes.Arrest:InvokeServer(plr.Character.Head) == true then
             arrests += 1
         end
     end
 
+    Crim(plr)
+
     while task.wait() and not breaksa do
         if not CanBeArrested(plr) and plr.Team == sv.Teams.Inmates then break end
+        local c, finished = plr.Character
+
+        task.spawn(function() 
+            while not finished and not breaksa and task.wait() do
+                if plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character:FindFirstChild("Head") then
+                    for i = 0, power do
+                        coroutine.wrap(lp.Character.PivotTo)(lp.Character, plr.Character:GetPivot())
+                        task.defer(coroutine.wrap(Arrest))
+                    end
+                end
+            end
+        end)
 
         GetGun{togs.BringTool}
         local tool = lp.Backpack:WaitForChild(togs.BringTool)
         CloneHumanoid()
         tool.Parent = lp.Character
         pad.CanCollide = false
+        local c = plr.Character
 
         if not lp.Character or not plr.Character or not plr.Character.PrimaryPart or tool.Parent ~= lp.Character then
             togs.Noclip = oldnt
             Respawn(nil, plr.Character:GetPivot())
-         end
+        end
 
         task.spawn(pcall, firetouchinterest, tool:FindFirstChild("Handle"), plr.Character.PrimaryPart, ffalse)
         task.defer(pcall, firetouchinterest, pad, plr.Character.PrimaryPart, ffalse)
 
         local t = tick()
         repeat
-            for i = 1, power do
-                coroutine.wrap(lp.Character.PivotTo)(lp.Character, plr.Character:GetPivot())
-                task.defer(coroutine.wrap(Arrest))
-            end
-
             task.wait()
             task.spawn(pcall, firetouchinterest, pad, plr.Character.PrimaryPart, ffalse)
-        until tick() - t > 1
+        until tick() - t > 1 or (not d and not CanBeArrested(plr) and plr.Team == sv.Teams.Inmates) or breaksa or c ~= plr.Character
 
         Respawn(nil, lp.Character:GetPivot())
+        finished = true
     end
 
     togs.Noclip = oldnt
-    Respawn(nil, oldpos)
     Note(("Arrested with: %i arrests"):format(arrests))
     Note(("Arrested in: %.02f seconds"):format(tick() - starttick))
+    Respawn(nil, oldpos)
 end
 
 function CrashSA(plr, d)
@@ -2118,7 +2279,7 @@ local ChatLogAdd do
 
     TextBox.FocusLost:Connect(function(enter)
         if not enter then return end
-        local idmsg = {["ACC_IDENTIFIER"] = lp.UserId / 9.98}
+        local idmsg = {["ACC_IDENTIFIER"] = lp}
         local msg = {}
 
         table.foreach(TextBox.Text:reverse():split(""), function(_, v)
@@ -2131,7 +2292,7 @@ local ChatLogAdd do
             [2] = msg
         })
     
-        ChatLogAdd(lp.UserId, TextBox.Text, tick())
+        ChatLogAdd(lp, TextBox.Text, tick())
 
         TextBox.Text = ""
     end)
@@ -2162,7 +2323,7 @@ local ChatLogAdd do
 
         chatticks[user] = tic
 		local Text = Instance.new("TextLabel")
-        local name = sv.Players:GetNameFromUserIdAsync(user)
+        local name = user.Name
 		local size = sv.TextService:GetTextSize(name..": "..msg:sub(1, 300), 15, "SourceSansBold", Vector2.new(360, 1 / 0)).Y
 
 		Text.Name = "Text"
@@ -2643,6 +2804,17 @@ do
 
         world:Toggle("Spam arrest aura", togs.SpamArrestAura, function(a)
             togs.SpamArrestAura = a
+        end)
+
+        world:Toggle("Player ESP", togs.ESP, function(a)
+            togs.ESP = a
+
+            if not a then
+                for i, v in next, PlayerESPDrawings do
+                    v.Text.Visible = false
+                    v.Info.Visible = false
+                end
+            end
         end)
 
         -- Drawing
@@ -3237,9 +3409,9 @@ do
     for i,v in pairs(getgc()) do
 		if type(v) == "function" and getfenv(v).script == lp.PlayerScripts.ClientGunReplicator then -- i fucking hate syn v2
             if debug.getinfo(v).currentline ~= 4 then continue end
-
-            local old; old = hookfunction(v, function(bullets, istaser)
-                if not togs.AntiCrash then return old(bullets, istaser) end
+            local oldfunc = v
+            getgc()[i] = function(bullets, istaser)
+                if not togs.AntiCrash then return oldfunc(bullets, istaser) end
 
                 for i,v in pairs(bullets) do
                     if not v.RayObject or not v.Cframe or not v.Distance or v.Distance > 800 or v.Distance == 0 then
@@ -3247,8 +3419,8 @@ do
                     end
                 end
     
-                return old(bullets, istaser)
-            end)
+                oldfunc(bullets, istaser)
+            end
 		end
     end
 end
@@ -3270,6 +3442,33 @@ do
             lp.CharacterAdded:Wait()
             task.spawn(Respawn, oldc, oldpos)
             togs.AutoRespawn.Toggled = oldar
+        end
+    end)
+
+    game:GetService"RunService".RenderStepped:Connect(function()
+        if not togs.ESP then return end
+
+        for i,v in next, PlayerESPDrawings do
+            local plr = game.Players:FindFirstChild(i)
+
+            if plr then
+                local pos, vis = workspace.CurrentCamera:WorldToViewportPoint((plr.Character and plr.Character:GetPivot() or CFrame.new()).p)
+                pos = Vector2.new(pos.X, pos.Y) - Vector2.new(0, 30)
+                local hitm = plr.Character and lp:GetMouse().Target and lp:GetMouse().Target:IsDescendantOf(plr.Character)
+
+                v.Name.Color = plr.TeamColor.Color
+
+                v.Name.Visible = plr.Character ~= nil and vis and togs.ESP
+                v.Info.Visible = plr.Character ~= nil and vis and togs.ESP
+
+                v.Name.Transparency = hitm and .9 or .6
+                v.Info.Transparency = hitm and .9 or .6
+
+                v.Name.Position = pos
+                v.Info.Position = pos + Vector2.new(0, v.Name.TextBounds.Y)
+
+                v.Info.Text = ("[%i/%i]\nTool: %s"):format((plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health) or 0, (plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.MaxHealth) or 0, tostring(plr.Character and plr.Character:FindFirstChildOfClass("Tool") or "nil"))
+            end
         end
     end)
 
@@ -3303,7 +3502,6 @@ do
         local plr = bullets[1] and bullets[1]["https://discord.gg/ng8yFn2zX6"]
         if plr and plr:IsA("Player") and not table.find(athenausers, plr.Name) then
             table.insert(athenausers, plr.Name)
-            table.insert(togs.Whitelist, plr.Name)
             Note(plr.Name.." is using Athena!")
 
             SendMsg({
@@ -3324,7 +3522,7 @@ do
                 end
             end)
 
-            ChatLogAdd(bullets[1]["ACC_IDENTIFIER"] * 9.98, table.concat(fnlmsg):reverse(), tick())
+            ChatLogAdd(bullets[1]["ACC_IDENTIFIER"], table.concat(fnlmsg):reverse(), tick())
 
             return
         end
@@ -3442,15 +3640,15 @@ do
     sv.RunService.Stepped:Connect(function()
         if not togs.Noclip then return end
         
-        for i,v in pairs(workspace.CarContainer:GetDescendants()) do
+        for i,v in next, workspace.CarContainer:GetDescendants() do
             if v:IsA("BasePart") then
                 v.CanCollide = false
             end
         end
 
-        for i,v in pairs(sv.Players:GetPlayers()) do
+        for i,v in next, sv.Players:GetPlayers() do
             if v.Character then
-                for i2,v2 in pairs(v.Character:GetDescendants()) do
+                for i2,v2 in next, v.Character:GetDescendants() do
                     if v2:IsA("BasePart") then
                         v2.CanCollide = false
                     end
@@ -3467,6 +3665,7 @@ do
 
     sv.Players.PlayerRemoving:Connect(PlayerRemoved)
     sv.Players.PlayerAdded:Connect(PlayerAdded)
+    sv.Players.PlayerAdded:Connect(AddPlayer)
     lp.Chatted:Connect(HandleMessage)
     OnCharacterAdded(lp.Character)
     lp.CharacterAdded:Connect(OnCharacterAdded)
@@ -3508,8 +3707,8 @@ task.spawn(LoaderUpdate)
 do
     task.spawn(function()
         while task.wait() do
-            pcall(function()
-                if togs.Fly.Toggled then
+            if togs.Fly.Toggled then
+                pcall(function()
                     if not lp.Character or not lp.Character:FindFirstChild("HumanoidRootPart") or not lp.Character:FindFirstChild("Humanoid") or sv.UserInputService:GetFocusedTextBox() ~= nil then return end
                     local hrp = lp.Character.HumanoidRootPart
                     local fv = hrp:FindFirstChild("BodyVelocity") or Instance.new("BodyVelocity", hrp)
@@ -3538,14 +3737,14 @@ do
                     oldctrl = curdown
 
                     lp.Character.Humanoid.PlatformStand = true
-                else
-                    if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") and lp.Character:FindFirstChild("Humanoid") then
-                        (lp.Character.HumanoidRootPart:FindFirstChild("BodyGyro") or Instance.new("Model")):Destroy();
-                        (lp.Character.HumanoidRootPart:FindFirstChild("BodyVelocity") or Instance.new("Model")):Destroy()
-                        lp.Character.Humanoid.PlatformStand = false
-                    end
+                end)
+            else
+                if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") and lp.Character:FindFirstChild("Humanoid") then
+                    (lp.Character.HumanoidRootPart:FindFirstChild("BodyGyro") or Instance.new("Model")):Destroy();
+                    (lp.Character.HumanoidRootPart:FindFirstChild("BodyVelocity") or Instance.new("Model")):Destroy()
+                    lp.Character.Humanoid.PlatformStand = false
                 end
-            end)
+            end
         end
     end)
 
@@ -3715,6 +3914,7 @@ do
     for i,v in pairs(sv.Players:GetPlayers()) do
         if v ~= lp then
             PlayerAdded(v)
+            AddPlayer(v)
         end
     end
 end
@@ -3900,6 +4100,8 @@ do
     end)
 
     AddCommand("Timeout", "Disconnect", "Timeouts the server", false, false, function(plr, ...)
+        if not MessageBox("Confirm", "Are you sure you want timeout?") then return end
+
         GetGun{"M9"}
         local gun = lp.Backpack:FindFirstChild("M9") or lp.Character:FindFirstChild("M9")
 
@@ -3909,6 +4111,8 @@ do
     end)
 
     AddCommand("Weldcrash", "Crash", "Crashes the server using welds", false, false, function(plr, ...)
+        if not MessageBox("Confirm", "Are you sure you want to weld crash?") then return end
+
         GetGun{"Remington 870"}
         local rem = lp.Backpack:WaitForChild("Remington 870")
 
@@ -3962,7 +4166,9 @@ do
         plr = GetPlayer(plr)
         if not plr then return end
 
-        CrashSA(plr, d)
+        if MessageBox("Confirm", ("Are you sure you want to crash sa\n%s?"):format(plr.Name)) then
+            CrashSA(plr, d)
+        end
     end)
 
     AddCommand("Criminal", "Crim", "Criminals given players", true, true, function(plr, ...)
@@ -3981,7 +4187,10 @@ do
         local aplr = GetPlayer(plr)
 
         if not aplr then return end
-        SpamArrest(aplr, tonumber(power) or togs.SpamArrestPower)
+
+        if MessageBox("Confirm", ("Are you sure you want to spam arrest\n%s?"):format(aplr.Name)) then
+            SpamArrest(aplr, tonumber(power) or togs.SpamArrestPower)
+        end
     end)
 
     AddCommand("Unloopkill", "Unlk", "Unloopkills given players", true, true, function(plr, ...)
