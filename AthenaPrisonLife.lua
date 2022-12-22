@@ -680,7 +680,8 @@ local Note do
     end
 
     function Note(...)
-        return isv2 and nil or task.defer(NoteWrapper, ...)
+        if isv2 then return end
+        return task.defer(NoteWrapper, ...)
     end
 end
 
