@@ -485,7 +485,7 @@ local LoaderUpdate do
             v.Text = e2 and "Functions" or "Athena Client"
         end
 
-        v.Visible = true
+        v.Visible = not isv2
     end
 
     drawingobjs.T.From = pos
@@ -501,6 +501,8 @@ local LoaderUpdate do
     task.wait(1)
 
     function LoaderUpdate()
+        if isv2 then return end
+
         local lposx, oposx = (260 / 3) * i, drawingobjs.M2.Size.X
         drawingobjs.TE2.Text = texti[i]
 
@@ -1172,9 +1174,11 @@ local function OnCharacterAdded(char)
             if togs.AutoRespawn.EquipOldWeapon then
                 local newtool = isgun and tool.Name
                 if newtool then
-                    GetGun(togs.GunOrder)
-                    local item = lp.Backpack:WaitForChild(newtool, 10)
-                    item.Parent = lp.Character
+                    pcall(function()
+                        GetGun(togs.GunOrder)
+                        local item = lp.Backpack:WaitForChild(newtool, 10)
+                        item.Parent = lp.Character
+                    end)
                 end
             end
         end
@@ -1488,7 +1492,7 @@ local function SpamArrest(plr, power, d)
     if d then
        Delay(d)
     end
-    
+
     local pad, oldpos, oldnt, arrests, starttick = workspace["Criminals Spawn"].SpawnLocation, lp.Character.PrimaryPart.CFrame, togs.Noclip, 0, tick()
 
     local function Arrest()
@@ -1509,7 +1513,7 @@ local function SpamArrest(plr, power, d)
             while not finished and not breaksa and task.wait() do
                 if plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character:FindFirstChild("Head") then
                     for i = 0, power do
-                        coroutine.wrap(lp.Character.PivotTo)(lp.Character, plr.Character:GetPivot())
+                        coroutine.wrap(lp.Character.PivotTo)(lp.Character, plr.Character:GetPivot() + plr.Character:GetPivot().LookVector * -2)
                         task.defer(coroutine.wrap(Arrest))
                     end
                 end
