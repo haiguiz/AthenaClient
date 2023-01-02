@@ -397,7 +397,7 @@ function Flux:Window(text, bottom,mainclr,toclose)
 		):Play()
 	end
 	local Tabs = {}
-	function Tabs:Tab(text,ico)
+	function Tabs:Tab(text)
 		local Tab = Instance.new("TextButton")
 		local TabIcon = Instance.new("ImageLabel")
 		local TabTitle = Instance.new("TextLabel")
@@ -413,15 +413,6 @@ function Flux:Window(text, bottom,mainclr,toclose)
 		Tab.TextColor3 = Color3.fromRGB(0, 0, 0)
 		Tab.TextSize = 14.000
 		Tab.BackgroundTransparency = 1
-
-		TabIcon.Name = "TabIcon"
-		TabIcon.Parent = Tab
-		TabIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-		TabIcon.BackgroundTransparency = 1.000
-		TabIcon.Position = UDim2.new(0.0634146333, 0, 0.25, 0)
-		TabIcon.Size = UDim2.new(0, 20, 0, 20)
-		TabIcon.Image = ico
-		TabIcon.ImageTransparency = .3
 
 		TabTitle.Name = "TabTitle"
 		TabTitle.Parent = Tab
