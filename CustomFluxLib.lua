@@ -399,7 +399,6 @@ function Flux:Window(text, bottom,mainclr,toclose)
 	local Tabs = {}
 	function Tabs:Tab(text)
 		local Tab = Instance.new("TextButton")
-		local TabIcon = Instance.new("ImageLabel")
 		local TabTitle = Instance.new("TextLabel")
 
 		Tab.Name = "Tab"
@@ -452,7 +451,6 @@ function Flux:Window(text, bottom,mainclr,toclose)
 		if fs == false then
 			fs = true
 			TabTitle.TextTransparency = 0
-			TabIcon.ImageTransparency = 0
 			Tab.BackgroundTransparency = 0
 			Container.Visible = true
 		end
@@ -472,11 +470,6 @@ function Flux:Window(text, bottom,mainclr,toclose)
 						{BackgroundTransparency = 1}
 					):Play()
 					TweenService:Create(
-						v.TabIcon,
-						TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-						{ImageTransparency = .3}
-					):Play()
-					TweenService:Create(
 						v.TabTitle,
 						TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 						{TextTransparency = .3}
@@ -485,11 +478,6 @@ function Flux:Window(text, bottom,mainclr,toclose)
 						Tab,
 						TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 						{BackgroundTransparency = 0}
-					):Play()
-					TweenService:Create(
-						TabIcon,
-						TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-						{ImageTransparency = 0}
 					):Play()
 					TweenService:Create(
 						TabTitle,
