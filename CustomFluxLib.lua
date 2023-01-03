@@ -644,7 +644,7 @@ function Flux:Window(text, bottom,mainclr,toclose)
 			ToggleFrame.Name = "ToggleFrame"
 			ToggleFrame.Parent = Circle
 			ToggleFrame.BackgroundColor3 = Color3.fromRGB(226, 227, 227)
-			ToggleFrame.Position = UDim2.new(33.0856934, 0, 0, 0)
+			ToggleFrame.Position = UDim2.new(36, 0, 0, 0)
 			ToggleFrame.Size = UDim2.new(0, 27, 0, 11)
 
 			ToggleFrameCorner.Name = "ToggleFrameCorner"
@@ -1403,7 +1403,7 @@ function Flux:Window(text, bottom,mainclr,toclose)
 			Title.Position = UDim2.new(0.0822437406, 0, 0, 0)
 			Title.Size = UDim2.new(0, 113, 0, 42)
 			Title.Font = Enum.Font.Gotham
-			Title.Text = "Colorpicker"
+			Title.Text = text
 			Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 			Title.TextSize = 15.000
 			Title.TextTransparency = 0.300
