@@ -3,7 +3,7 @@ local DEBUGGING_MODE = true
 --[[
     https://discord.gg/ng8yFn2zX6  -- Our discord, come report bugs and help development.
     Credits:
-        D-C Team -- trolling those skiddies that say they know lua (Kin, Dis, JNRaid, etc...)
+        D-C Team -- trolling those skiddies that say they know lua
         sawd#2906 -- all the scripting + ui lib
         FATE#8209 -- helpin with humanoid stuff (i never touched it before)
         Swaggered#8967 -- he tells me to do shit idk
