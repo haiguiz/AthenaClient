@@ -3,7 +3,7 @@ local DEBUGGING_MODE = true
 --[[
     https://discord.gg/ng8yFn2zX6  -- Our discord, come report bugs and help development.
     Credits:
-        D-C Team -- trolling those skiddies that say they know lua
+        D-C Team -- trolling those skiddies that say they know lua (Kin, Dis, JNRaid, etc...)
         sawd#2906 -- all the scripting + ui lib
         FATE#8209 -- helpin with humanoid stuff (i never touched it before)
         Swaggered#8967 -- he tells me to do shit idk
@@ -16,12 +16,13 @@ local DEBUGGING_MODE = true
 
 -- Variables used basically 2 or more places not in the same do end
 -- General Purpose
-local sv =    setmetatable({}, {__index = function(_, a) return game.GetService(game, a) end})
-local lp =    sv.Players.LocalPlayer
-local isv2 =  ({identifyexecutor()})[2]:find("v2")
-local HasM4 = sv.MarketplaceService:UserOwnsGamePassAsync(lp.UserId, 96651)
+local sv =     setmetatable({}, {__index = function(_, a) return game.GetService(game, a) end})
+local req =    (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+local lp =     sv.Players.LocalPlayer
+local isv2 =   KRNL_LOADED or ({identifyexecutor()})[2]:find("v2")
+local HasM4 =  sv.MarketplaceService:UserOwnsGamePassAsync(lp.UserId, 96651)
 local ffalse = isv2 and 0 or false
-local cam = workspace.CurrentCamera
+local cam =    workspace.CurrentCamera
 
 -- Created Instances
 local ChatLogs =  Instance.new("ScreenGui", sv.CoreGui)
@@ -1758,7 +1759,7 @@ local function draggable(obj)
 	end)
 end
 
-local commands, AddCommand, ChangeAdminPerms, HandleMessage, AdminListInit = {} do
+local commands, AddCommand, ChangeAdminPerms, HandleMessage, AdminListInit = {} do -- nvm im not fixing when u resize windows it doesnt move fuckin seems to mathy
     local ToggleCommandList do
         local pos = Vector2.new(cam.ViewportSize.X - 260, cam.ViewportSize.Y - 415)
         local Inc = MakeBoxedFrame(Vector2.new(cam.ViewportSize.X - 295, cam.ViewportSize.Y - 145), Vector2.new(30, 30), nil, {
@@ -2511,7 +2512,7 @@ task.spawn(LoaderUpdate)
 -- Ui library stuff
 
 do
-    local ui =           loadstring(syn.request({Url = "https://raw.githubusercontent.com/GFXTI/d/main/PianoUI.lua"}).Body)()
+    local ui =           loadstring(req({Url = "https://raw.githubusercontent.com/GFXTI/d/main/PianoUI.lua"}).Body)()
     local lib =          ui.new("Piano")
 
     -- Combat window
