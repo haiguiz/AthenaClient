@@ -2,11 +2,12 @@ local DEBUGGING_MODE = true
 
 --[[
     https://discord.gg/ng8yFn2zX6  -- Our discord, come report bugs and help development.
+
     Credits:
-        D-C Team -- trolling those skiddies that say they know lua (Kin, Dis, JNRaid, etc...)
+        D-C Team -- trolling those skiddies that say they know lua
         sawd#2906 -- all the scripting + ui lib
         FATE#8209 -- helpin with humanoid stuff (i never touched it before)
-        Swaggered#8967 -- he tells me to do shit idk
+        t0xic_waste9807#2444 -- being a dumb retard who doesnt shut the fuck up
 	    dm me (sawd) if u want credit here
     TODO:
         fuckin no clue
@@ -51,6 +52,7 @@ oldctrl,
 tools,
 remotes,
 positions,
+trusted, 
 togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
 {w = 0, s = 0, a = 0, d = 0},
 {
@@ -83,10 +85,32 @@ togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     ["Yard"] =      CFrame.new(736.615173, 99.6887665, 2512.97119, 0.999997199, -3.40389306e-06, -0.00238491991, -4.46612347e-07, 0.999998689, -0.00161580928, 0.00238492223, 0.00161580567, 0.999995887),
     ["Sky wall"] =  CFrame.new(823.119202, 397.705841, 2672.00366, 0.999975801, 2.95520476e-05, 0.00695856567, 6.81028922e-08, 0.99999094, -0.0042566075, -0.00695862854, 0.00425650505, 0.999966741),
     ["Front"] =     CFrame.new(504.223053, 126.521599, 2421.09814, -0.00433305278, -0.0047102836, 0.999979556, -1.8185101e-05, 0.999988914, 0.00471024914, -0.999990642, 2.21143955e-06, -0.00433309004),
-    ["Crim base"] = CFrame.new(-860.264526, 95.9438858, 2085.03564, 0.0224340688, -0.00536062894, -0.999733925, -3.02877697e-06, 0.999985635, -0.00536204642, 0.99974829, 0.000123324076, 0.0224337298),
-    ["Crim pad"] =  CFrame.new(-977.83075, 110.823158, 2053.60034, -0.00541115459, -0.000807852659, -0.99998498, -1.53944185e-07, 0.999999642, -0.000807863718, 0.999985337, -4.22384346e-06, -0.00541115273),
+    ["Base"] = CFrame.new(-860.264526, 95.9438858, 2085.03564, 0.0224340688, -0.00536062894, -0.999733925, -3.02877697e-06, 0.999985635, -0.00536204642, 0.99974829, 0.000123324076, 0.0224337298),
+    ["Pad"] =  CFrame.new(-977.83075, 110.823158, 2053.60034, -0.00541115459, -0.000807852659, -0.99998498, -1.53944185e-07, 0.999999642, -0.000807863718, 0.999985337, -4.22384346e-06, -0.00541115273),
     ["Slide"] =     CFrame.new(-134.624069, 321.450897, 3625.00415, 0.0220788661, 0.0105385808, 0.999700665, 2.42649165e-11, 0.999944448, -0.0105411503, -0.999756217, 0.000232736682, 0.0220776387)
-}, 
+},
+{
+    [2513042154] = "GFX",
+    [521510355]  = "FATE",
+    [451785325]  = "FATE",
+    [3763951536] = "Dis",
+    [2506979623] = "Air Conditioner",
+    [1980195146] = "Jess",
+    [4189672133] = "Shortest being",
+    [4218694845] = "Shortest being",
+    [160458279]  = "Hack Admin Dev",
+    [225482815]  = "Furry gunclanner",
+    [2413365536] = "Midnight",
+    [1884661572] = "Silence",
+    [1437457246] = "Pedophile",
+    [275535162]  = "Hack Admin Dev",
+    [1364211018] = "Signus",
+    [1993374243] = "Romie", -- :troll:
+    [502511191]  = "Annoying cunt",
+    [3465019018] = "JJ",
+    [3888471680] = "Gay ass furry"
+
+},
 { -- yeah it should be "settings" but you are a little ni
     GunMods = {
         Toggled =           false;
@@ -207,7 +231,6 @@ togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     AntiTouch =             false;
     SpamPunch =             false;
     Godmode =               false;
-    EDN =                   false;
     ADHRP =                 false;
     AGK =                   false;
     SpamArrestPower =       10;
@@ -285,7 +308,7 @@ end
 
 -- Data
 
-local function SaveData(ba) 
+local function SaveData(ba)
 	local b = ba
 	for i,v in pairs(b) do
 		if type(v) == "table" then
@@ -463,9 +486,9 @@ local LoaderUpdate do
         M = Drawing.new("Square");
         -- Bar
         T2 = Drawing.new("Line");
-        B2 = Drawing.new("Line");
         L2 = Drawing.new("Line");
         R2 = Drawing.new("Line");
+        B2 = Drawing.new("Line");
         M2 = Drawing.new("Square");
         -- Info
         TE = Drawing.new("Text");
@@ -713,113 +736,103 @@ end
 
 local MessageBox do
     function MessageBox(title, info)
-        local pos = Vector2.new(cam.ViewportSize.X / 2 - 200, cam.ViewportSize.Y / 2)
         local event = Instance.new("BindableEvent")
 
-        local Box = MakeBoxedFrame(pos, Vector2.new(400, 125), nil, {
-            Color = Color3.new(.2, .2, .2),
-            Transparency = .9,
-            Filled = true,
-        })
+        local Confirm = Instance.new("Frame")
+        local b = Instance.new("UIStroke")
+        local a = Instance.new("UICorner")
+        local Label = Instance.new("TextLabel")
+        local Info = Instance.new("TextLabel")
+        local Accept = Instance.new("TextButton")
+        local a_2 = Instance.new("UICorner")
+        local Decline = Instance.new("TextButton")
+        local a_3 = Instance.new("UICorner")
 
-        Box.Title = DrawingStruct.new(Box.Main, "Text", "Title", {
-            Position = pos + Vector2.new(200, 3),
-            Center = true,
-            Size = 25,
-            Font = Drawing.Fonts.UI,
-            Outline = true,
-            Text = title,
-            Color = Color3.new(1,1,1),
-        })
+        Confirm.Name = "Confirm"
+        Confirm.Parent = ChatLogs
+        Confirm.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+        Confirm.BorderColor3 = Color3.fromRGB(40, 40, 40)
+        Confirm.Position = UDim2.new(0.5, -175, 0.5, -75)
+        Confirm.Size = UDim2.new(0, 350, 0, 150)
 
-        Box.Info = DrawingStruct.new(Box.Main, "Text", "Info", {
-            Position = pos + Vector2.new(200, 30),
-            Center = true,
-            Size = 22,
-            Font = Drawing.Fonts.UI,
-            Outline = true,
-            Text = info,
-            Color = Color3.new(1,1,1),
-            Transparency = .9
-        })
+        a.CornerRadius = UDim.new(0, 2)
+        a.Name = "a"
+        a.Parent = Confirm
 
-        local Accept = MakeBoxedFrame(pos + Vector2.new(90, 95), Vector2.new(100, 20), Box, {
-            Color = Color3.fromRGB(22, 120, 19),
-            Transparency = .9,
-            Filled = true,
-        })
+        b.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+        b.Color = Color3.fromRGB(40, 40, 40)
+        b.LineJoinMode = Enum.LineJoinMode.Round
+        b.Thickness = 2
+        b.Transparency = 0
+        b.Enabled = true
+        b.Name = "b"
+        b.Parent = Confirm
 
-        Accept.Accept = DrawingStruct.new(Accept.Main, "Text", "Accept", {
-            Position = Accept.Main.Obj.Position + Vector2.new(26, -2),
-            Size = 21,
-            Font = Drawing.Fonts.UI,
-            Outline = true,
-            Text = "Accept",
-            Color = Color3.new(1,1,1),
-            Transparency = .9
-        })
+        Label.Name = "Label"
+        Label.Parent = Confirm
+        Label.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Label.BackgroundTransparency = 1.000
+        Label.Position = UDim2.new(0.0285714287, 0, 0.0666666701, 0)
+        Label.Size = UDim2.new(0, 330, 0, 27)
+        Label.Font = Enum.Font.SourceSans
+        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Label.TextSize = 20.000
+        Label.Text = title
 
-        local Decline = MakeBoxedFrame(pos + Vector2.new(205, 95), Vector2.new(100, 20), Box, {
-            Color = Color3.new(.2, .2, .2),
-            Transparency = .9,
-            Filled = true,
-        })
+        Info.Name = "Info"
+        Info.Parent = Confirm
+        Info.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Info.BackgroundTransparency = 1.000
+        Info.Position = UDim2.new(0.0285714287, 0, 0.286666662, 0)
+        Info.Size = UDim2.new(0, 330, 0, 35)
+        Info.Font = Enum.Font.SourceSans
+        Info.Text = info
+        Info.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Info.TextSize = 17.000
+        Info.TextYAlignment = Enum.TextYAlignment.Top
 
-        Decline.Decline = DrawingStruct.new(Decline.Main, "Text", "Decline", {
-            Position = Decline.Main.Obj.Position + Vector2.new(26, -2),
-            Size = 21,
-            Font = Drawing.Fonts.UI,
-            Outline = true,
-            Text = "Decline",
-            Color = Color3.new(1,1,1),
-            Transparency = .9
-        })
+        Accept.Name = "Accept"
+        Accept.Parent = Confirm
+        Accept.BackgroundColor3 = Color3.fromRGB(49, 218, 46)
+        Accept.BackgroundTransparency = 0.320
+        Accept.Position = UDim2.new(0.0571428575, 0, 0.706666648, 0)
+        Accept.Size = UDim2.new(0, 135, 0, 24)
+        Accept.AutoButtonColor = false
+        Accept.Font = Enum.Font.SourceSans
+        Accept.Text = "Accept"
+        Accept.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Accept.TextSize = 21.000
 
-        local function idkwhattofuckingnamethis()
-            for i,v in next, Accept do
-                v.Obj:Remove()
-            end
+        a_2.CornerRadius = UDim.new(0, 2)
+        a_2.Name = "a"
+        a_2.Parent = Accept
 
-            for i,v in next, Decline do
-                v.Obj:Remove()
-            end
+        Decline.Name = "Decline"
+        Decline.Parent = Confirm
+        Decline.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        Decline.Position = UDim2.new(0.557142854, 0, 0.706666648, 0)
+        Decline.Size = UDim2.new(0, 135, 0, 24)
+        Decline.AutoButtonColor = false
+        Decline.Font = Enum.Font.SourceSans
+        Decline.Text = "Decline"
+        Decline.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Decline.TextSize = 18.000
 
-            for i,v in next, Box do
-                v.Obj:Remove()
-            end
-        end
+        a_3.CornerRadius = UDim.new(0, 2)
+        a_3.Name = "a"
+        a_3.Parent = Decline
 
-        local con; con = game:GetService"UserInputService".InputBegan:Connect(function(input, gameProcessedEvent)
-            if gameProcessedEvent then return end
-
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                local mpos = getmousepos()
-
-                if IsInFrame(mpos, Accept.Main.Obj.Position, Vector2.new(100, 20)) then
-                    event:Fire(true)
-                    con:Disconnect()
-                    idkwhattofuckingnamethis()
-                end
-
-                if IsInFrame(mpos, Decline.Main.Obj.Position, Vector2.new(100, 20)) then
-                    event:Fire(false)
-                    con:Disconnect()
-                    idkwhattofuckingnamethis()
-                end
-            end
+        Decline.MouseButton1Up:Connect(function() 
+            event:Fire()
         end)
 
-        for i,v in next, Box do
-            v.Obj.Visible = true
-        end
+        Accept.MouseButton1Up:Connect(function() 
+            event:Fire(true)
+        end)
 
-        for i,v in next, Accept do
-            v.Obj.Visible = true
-        end
-
-        for i,v in next, Decline do
-            v.Obj.Visible = true
-        end
+        event.Event:Once(function()
+            Confirm:Destroy()
+        end)
 
         return event.Event:Wait()
     end
@@ -904,9 +917,9 @@ end
 local function Goto(pos)
     if not lp.Character then return end
 
+    workspace:WaitForChild(lp.Name):PivotTo(pos)
     local tw = select(2, pcall(sv.TweenService.Create, sv.TweenService,  lp.Character:FindFirstChild("HumanoidRootPart") or lp.Character:FindFirstChild("Torso"), TweenInfo.new(0), {CFrame = pos}))
     pcall(tw.Play, tw)
-    pcall(lp.Character.PivotTo, lp.Character, pos)
 end
 
 local function GetGun(order)
@@ -966,23 +979,21 @@ local function Respawn(Color, pos)
 
     task.spawn(function()
         pcall(remotes.Load.InvokeServer, remotes.Load, lp, Color)
-        task.wait(1/25)
-        Goto(Saved1)
+        workspace:WaitForChild(lp.Name):PivotTo(Saved1)
     end)
 
     lp.CharacterAdded:Wait()
-    Goto(Saved1)
-    task.wait(1/25)
+    lp.Character:PivotTo(Saved1)
+    workspace:WaitForChild(lp.Name):PivotTo(Saved1)
+    task.wait(1/30)
     cam.CFrame = Saved2
 
-    if Saved1.Y < 0 or (Saved1.Z == 0 and Saved1.X == 0) then
+    if Saved1.Y < 0 then
         Goto(positions["Nexus"])
-
-        return
     end
 
-    task.delay(GetPing() + .05, function()
-        if lp:DistanceFromCharacter(Saved1.p) > 10 or (Saved1.Z == 0 and Saved1.X == 0)  then
+    task.delay(.2, function()
+        if lp:DistanceFromCharacter(Saved1.p) > 10 or (Saved1.Z == 0 and Saved1.X == 0) then
             Goto(Saved1)
         end
     end)
@@ -1013,7 +1024,7 @@ local function AddPlayer(plr)
     ToAdd.Name = Drawing.new("Text")
     ToAdd.Name.Center = true
     ToAdd.Name.Outline = true
-    ToAdd.Name.Text = plr.Name
+    ToAdd.Name.Text = trusted[plr.UserId] and ("%s\n[%s]"):format(plr.Name, trusted[plr.UserId]) or plr.Name
     ToAdd.Name.Size = 19
     ToAdd.Name.Font = Drawing.Fonts.UI
 
@@ -1092,22 +1103,25 @@ end
 
 local function Kill(tru, weapon)
     local args = {}
-    local gun = weapon or FindGun()
-    
+    local oc = lp.TeamColor
+    local gun = weapon or (function() -- lmao
+        GetGun{togs.KillGun}
+        return lp.Backpack:FindFirstChild(togs.KillGun) or lp.Character:FindFirstChild(togs.KillGun) or lp.Backpack:WaitFirstChild(togs.KillGun, 60)
+    end)()
+
     for i,v in pairs(tru) do
         if v ~= lp and not table.find(togs.Whitelist, v.Name) and v.Character and v.Character:FindFirstChild("Head") and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health ~= 0 then
-            if lp.Team == sv.Teams.Guards and v.Status.isHostile.Value == false then
-                Team("Medium stone grey")
-                task.delay(GetPing() + .2, Team, "Bright blue")
-            end
-
             if v.TeamColor == lp.TeamColor then
-                Respawn(BrickColor.random())
+                Team(lp.Team ~= nil and (v.TeamColor.Name ~= "Medium stone grey" and "Medium stone grey" or v.TeamColor == "Medium stone grey" and "Bright orange") or BrickColor.random().Name)
                 GetGun{togs.KillGun}
-                gun = lp.Backpack:WaitForChild(togs.KillGun)
+                gun = lp.Backpack:FindFirstChild(togs.KillGun) or lp.Character:FindFirstChild(togs.KillGun) or lp.Backpack:WaitFirstChild(togs.KillGun, 60)
             end
             
-            for i = 1, math.ceil(v.Character.Humanoid.Health / require(gun.GunStates).Damage) do
+            if lp.Team == sv.Teams.Guards and v.Status.isHostile.Value == false then
+                workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isHostile})
+            end
+
+            for i = 1, math.ceil(v.Character.Humanoid.Health / (require(gun.GunStates)).Damage * 1.5) do
                 table.insert(args, {
                     ["RayObject"] = Ray.new(),
                     ["Distance"] = 0,
@@ -1117,11 +1131,15 @@ local function Kill(tru, weapon)
             end
         end
     end
-    
+
     if gun and args[1] then
         remotes.Reload:FireServer(gun)
         remotes.Shoot:FireServer(args, gun)
         remotes.Reload:FireServer(gun)
+    end
+
+    if oc ~= lp.TeamColor then
+        Team(oc.Name)
     end
 end
 
@@ -1141,7 +1159,7 @@ end
 
 local function Delay(amount)
     amount *= 100
-    remotes.Load:InvokeServer(tools.M9.ITEMPICKUP)
+    remotes.Load:InvokeServer(tools.M9)
     local tool = lp.Backpack:WaitForChild"M9"
     sv.ReplicatedStorage.EquipEvent:FireServer(tool)
     for i = 1, amount do
@@ -1153,14 +1171,17 @@ local OnCharacterAdded do
     local function AOnCharacterAdded(char)
         task.wait()
 
-        local hum, rs, ca, hd, bp, hda = char:WaitForChild("Humanoid")
+        local hum, cons, char = char:WaitForChild("Humanoid"), {}, lp.Character or lp.CharacterAdded:Wait()
 
         if togs.GGS then
+            task.wait(GetPing())
             local op = lp.Character:GetPivot()
-            task.wait(.1)
+            workspace:WaitForChild(lp.Name)
+            Goto(op)
+            task.wait(GetPing() * 1.5)
             lp.Character:BreakJoints()
-            task.spawn(Respawn, nil, op)
- 
+            Respawn(nil, op)
+
             return
         end
 
@@ -1201,7 +1222,7 @@ local OnCharacterAdded do
         coroutine.wrap(function()
             local bap = lp:WaitForChild("Backpack")
 
-            bp = bap.ChildAdded:Connect(function(item)
+            cons['3'] = bap.ChildAdded:Connect(function(item)
                 table.insert(allowedtools, item)
                 local a = table.find({"AK-47", "M4A1", "M9", "Remington 870", "Taser"}, item.Name) and item:FindFirstChild("GunStates")
 
@@ -1213,7 +1234,7 @@ local OnCharacterAdded do
                 end
             end)
 
-            ca = char.ChildAdded:Connect(function(item)
+            cons["t"] = char.ChildAdded:Connect(function(item)
                 if not togs.AntiBring then return end
 
                 task.spawn(Anchorage, .001)
@@ -1238,14 +1259,11 @@ local OnCharacterAdded do
             end
         end)()
 
-        hd = hum.Died:Connect(function()
+        cons['h'] = hum.Died:Connect(function()
             if togs.Godmode or togs.AutoRespawn.ForceField then return end
 
-            pcall(function()
-                hd:Disconnect()
-                rs:Disconnect()
-                bp:Disconnect()
-                ca:Disconnect()
+            table.foreach(cons, function(_,v) 
+                pcall(v.Disconnect, v)
             end)
 
             if togs.AutoRespawn.Toggled then
@@ -1294,7 +1312,7 @@ local OnCharacterAdded do
                 a[togs.AntiTaze and "Disable" or "Enable"](a)
             end)
 
-            rs = sv.RunService.RenderStepped:Connect(function()
+            cons['l'] = sv.RunService.RenderStepped:Connect(function()
                 pcall(function()
                     if togs.FastPunch then
                         cs.isRunning = false
@@ -1304,13 +1322,13 @@ local OnCharacterAdded do
             end)
         end)
 
-        hda = char:WaitForChild("Head").ChildAdded:Connect(function(a)
+        cons['m'] = char:WaitForChild("Head").ChildAdded:Connect(function(a)
             if a:IsA("BillboardGui") then
                 task.defer(a.Destroy, a)
             end
         end)
 
-        char:WaitForChild("Torso").Touched:Connect(function(thing)
+        cons['p'] = char:WaitForChild("Torso").Touched:Connect(function(thing)
             local model = thing and thing:FindFirstAncestorOfClass("Model")
             local tplr = model and sv.Players:FindFirstChild(model.Name)
 
@@ -1319,7 +1337,7 @@ local OnCharacterAdded do
             end
         end)
 
-        char:WaitForChild("Humanoid").Seated:Connect(function()
+        cons['v'] = char:WaitForChild("Humanoid").Seated:Connect(function()
             if not togs.AntiSit then return end
 
             char.Humanoid.Sit = false
@@ -1357,7 +1375,7 @@ local function CanBeArrested(plr)
     return plr.Team == sv.Teams.Criminals
 end
 
-local function Bring(plr, tool, cframe, second) -- thanks fate for teaching me the humanoid cloning & deletion (ive never touched it before) (should probably be noted on the function above)
+local function Bring(plr, tool, cframe, second) -- thanks fate for teaching me the humanoid cloning & deletion (ive never touched it before) (should probably be noted on the clonehumanoid func)
     if not lp.Character or not plr or not plr.Character or not plr.Character.PrimaryPart or not plr.Character:FindFirstChild("Humanoid") or not tool or not cframe then return end
     if plr.Character.Humanoid.Sit then
         Kill{plr}
@@ -1369,15 +1387,20 @@ local function Bring(plr, tool, cframe, second) -- thanks fate for teaching me t
     CloneHumanoid()
     tool.Parent = lp.Character
     Goto(cframe)
-    task.wait(math.min(second or 0, 4.5) + GetPing() + .05)
 
     if lp.Character:FindFirstChild("HumanoidRootPart") then
         lp.Character.HumanoidRootPart.Anchored = true
     end
-    
+
     task.spawn(pcall, firetouchinterest, tool:FindFirstChild("Handle"), plr.Character.PrimaryPart, ffalse)
-    lp.Character:PivotTo(lp.Character:GetPivot() * CFrame.Angles(math.rad(45), 0, 0))
-    task.wait(GetPing())
+    tool.AncestryChanged:Once(function()
+        for i = 1, 3 do
+            task.wait(GetPing() / 4)
+            lp.Character:PivotTo(lp.Character:GetPivot() * CFrame.Angles(math.rad(-20), 0, 0))
+        end
+    end)
+
+    task.wait(math.clamp((second or 0) + (GetPing() * 2), 0, 4.5))
     togs.Noclip = oldnc
     Respawn(nil, saved)
 end
@@ -1392,7 +1415,7 @@ local function Crim(plr, sec)
     local tool = lp.Backpack:WaitForChild(togs.BringTool)
     CloneHumanoid()
     tool.Parent = lp.Character
-    task.wait(math.min(sec or 0, 4.5))
+    task.wait(math.clamp(sec or 0, 0, 4.5))
     pad.CanCollide = false
 
     if not lp.Character or not plr.Character or not plr.Character.PrimaryPart or tool.Parent ~= lp.Character or plr.Team == sv.Teams.Criminals then
@@ -1405,12 +1428,12 @@ local function Crim(plr, sec)
 
         task.spawn(pcall, firetouchinterest, tool:FindFirstChild("Handle"), plr.Character.PrimaryPart, ffalse)
         task.defer(pcall, firetouchinterest, pad, plr.Character.PrimaryPart, ffalse)
-        coroutine.wrap(Goto)(oldpos * CFrame.Angles(math.rad(45), 0, 0))
+        coroutine.wrap(Goto)(oldpos * CFrame.Angles(math.rad(90), 0, 0))
         task.wait(GetPing())
     end
 
     if plr.Team ~= sv.Teams.Criminals then
-        lp.Character:PivotTo(lp.Character:GetPivot() * CFrame.Angles(math.rad(45), 0, 0))
+        lp.Character:PivotTo(lp.Character:GetPivot() * CFrame.Angles(math.rad(90), 0, 0))
         task.spawn(pcall, firetouchinterest, tool:FindFirstChild("Handle"), plr.Character.PrimaryPart, ffalse)
         task.defer(pcall, firetouchinterest, pad, plr.Character.PrimaryPart, ffalse)
         task.wait(GetPing() + .1)
@@ -1466,20 +1489,33 @@ local function PlayerCharacterAdded(plr)
     local vests = {}
     local weldcrash
     local tt = tick()
+    local cons = {}
 
     if viewing == plr then
         cam.CameraSubject = char
     end
 
+    cons['g'] = char.AncestryChanged:Connect(function(a, parent)
+        if parent == nil then
+            task.wait(5)
+
+            if char.Parent == nil then
+                table.foreach(cons, function(_,v)
+                    pcall(v.Disconnect, v)
+                end)
+            end
+        end
+    end)
+
     task.spawn(function()
-        char:WaitForChild("Head").ChildAdded:Connect(function(gui)
+        cons['a'] = char:WaitForChild("Head").ChildAdded:Connect(function(gui)
             task.wait()
             if not togs.AntiCrash or not gui:IsA("BillboardGui") or not char:FindFirstChild("Head") or #char.Head:GetChildren() < 10 then return end
 
             gui:Destroy()
         end)
 
-        char:WaitForChild("Torso").Touched:Connect(function(thing)
+        cons['b'] = char:WaitForChild("Torso").Touched:Connect(function(thing)
             if tick() - tt < .2 or not table.find(givenantitouch, plr.Name) then return end
             tt = tick()
 
@@ -1490,35 +1526,37 @@ local function PlayerCharacterAdded(plr)
                 Kill{tplr}
             end
         end)
-    end)
 
-    task.spawn(function()
-        char:WaitForChild("Humanoid").AnimationPlayed:Connect(function(an)
-            if not table.find({"rbxassetid://484926359", "rbxassetid://484200742", "rbxassetid://275012308"}, an.Animation.AnimationId) then return end
-            local pos = char:GetPivot()
-            local base = workspace:FindPartOnRay(Ray.new(pos.p, pos.LookVector * 5), char)
-
-            if base and base:FindFirstAncestorOfClass("Model") and base:FindFirstAncestorOfClass("Model"):FindFirstChild("Humanoid") then
-                local hitplr = sv.Players:GetPlayerFromCharacter(base.Parent)
-                if hitplr and table.find(givenantipunch, hitplr.Name) or (hitplr == lp and togs.AntiPunch) then
-                    (hitplr == lp and MeleeKill or Kill){plr}
-                end
-            end
+        cons['f'] = char:WaitForChild("Humanoid").Died:Connect(function()
+            table.foreach(cons, function(_,v)
+                pcall(v.Disconnect, v)
+            end)
         end)
     end)
 
-    char.ChildRemoved:Connect(function(part)
-        if part.Name == "Humanoid" and char.Parent ~= nil then
-            Log(plr, "Godmode")
+    cons['c'] = char:WaitForChild("Humanoid").AnimationPlayed:Connect(function(an)
+        if not table.find({"rbxassetid://484926359", "rbxassetid://484200742", "rbxassetid://275012308"}, an.Animation.AnimationId) then return end
+        local pos = char:GetPivot()
+        local base = workspace:FindPartOnRay(Ray.new(pos.p, pos.LookVector * 5), char)
 
-            char.ChildAdded:Connect(function(t)
+        if base and base:FindFirstAncestorOfClass("Model") and base:FindFirstAncestorOfClass("Model"):FindFirstChild("Humanoid") then
+            local hitplr = sv.Players:GetPlayerFromCharacter(base.Parent)
+            if hitplr and table.find(givenantipunch, hitplr.Name) or (hitplr == lp and togs.AntiPunch) then
+                (hitplr == lp and MeleeKill or Kill){plr}
+            end
+        end
+    end)
+
+    cons['d'] = char.ChildRemoved:Connect(function(part)
+        if part.Name == "Humanoid" and char.Parent ~= nil then
+            cons['D'] = char.ChildAdded:Connect(function(t)
                 if not t:IsA("Tool") then return end
             
                 if togs.HardendAntiBring then
                     char:Destroy()
-                    local op, t = lp.Character:GetPivot(), tick()
+                    local op, ti = lp.Character:GetPivot(), tick()
                     sv.Debris:AddItem(lp.Character, 0)
-                    repeat task.wait() until tick() - t > 5 - GetPing() or char.Parent == nil
+                    repeat task.wait() until tick() - ti > 5 - GetPing() or char.Parent == nil
                     Respawn(nil, op)
 
                     return
@@ -1540,7 +1578,7 @@ local function PlayerCharacterAdded(plr)
         end
     end)
 
-    char.DescendantAdded:Connect(function(part)
+    cons['e'] = char.DescendantAdded:Connect(function(part)
         task.wait()
         if togs.AntiCrash and part:IsA("Weld") and part.Parent and #part.Parent:GetChildren() > 300 then
             part.Parent:Destroy()
@@ -1585,20 +1623,27 @@ end
 
 local function PlayerAdded(plr)
     PlayerCharacterAdded(plr)
-    local bpcon, weldcrash
+    local cons, weldcrash = {}
+
+    if trusted[plr.UserId] then
+        Note(("%s (%s) is in your game!"):format(plr.Name, trusted[plr.UserId]))
+    end
 
     if plr:IsFriendsWith(lp.UserId) then
-        table.insert(togs.Whitelist, plr.Name)
+        if not table.find(togs.Whitelist, plr.Name) then
+            table.insert(togs.Whitelist, plr.Name)
+        end
+
         Note(("Friend %s has been added to whitelist!"):format(plr.Name))
     end
 
-    plr.ChildAdded:Connect(function(thing)
+    cons['a'] = plr.ChildAdded:Connect(function(thing)
         if thing.Name == "Backpack" then
-            if bpcon then
-                bpcon:Disconnect()
+            if cons['b'] then
+                cons['b']:Disconnect()
             end
 
-            bpcon = thing.DescendantAdded:Connect(function(part)
+            cons['b'] = thing.DescendantAdded:Connect(function(part)
                 if togs.AntiCrash and part:IsA("Weld") and part.Parent and #part.Parent:GetChildren() > 300 then
                     part.Parent:Destroy()
 
@@ -1635,25 +1680,35 @@ local function PlayerAdded(plr)
         end
     end)
 
-    plr.CharacterAdded:Connect(function() -- CharacterAppearanceLoaded
+    cons['c'] = plr.CharacterAdded:Connect(function() -- CharacterAppearanceLoaded
         PlayerCharacterAdded(plr)
+    end)
+
+    cons['d'] = plr.AncestryChanged:Connect(function()
+        table.foreach(cons, function(_, a)
+            pcall(a.Disconnect, a)
+        end)
     end)
 end
 
-local function SpamArrest(plr, power, d, tn)
+local function SpamArrest(plr, power, d)
     if not plr or not plr.Character or not plr.Character:FindFirstChild("Humanoid") or plr.Character.Humanoid.Health == 0 or not plr.Character:FindFirstChild("Head") then return end
     assert(lp.Character:FindFirstChild("HumanoidRootPart"), "no hrp?")
     local pad, oldpos, oldnt, arrests, starttick, broken = game.SpawnLocation, lp.Character:GetPivot(), togs.Noclip, 0, tick()
 
     local function Arrest()
-        if not d and (not CanBeArrested(plr) or (tn and plr.Team == nil)) then return end
+        if not d and (not CanBeArrested(plr)) then return end
 
         if remotes.Arrest:InvokeServer(plr.Character.Head) == true then
             arrests += 1
         end
     end
 
-    Crim(plr)
+    for i = 0, 5 do
+        if CanBeArrested(plr) then break end
+
+        Crim(plr)
+    end
 
     while task.wait() and not broken do
         if not CanBeArrested(plr) and plr.Team == sv.Teams.Inmates then break end
@@ -1663,6 +1718,9 @@ local function SpamArrest(plr, power, d, tn)
             while not finished and task.wait() do
                 if breaksa then
                     broken = true
+                    Note(("Arrested with: %i arrests"):format(arrests))
+                    Note(("Arrested in: %.02f seconds"):format(tick() - starttick))
+
                     break
                 end
 
@@ -1678,8 +1736,12 @@ local function SpamArrest(plr, power, d, tn)
         GetGun{togs.BringTool}
         local tool = lp.Backpack:WaitForChild(togs.BringTool)
         if d then
-            for i = 1, 300 do
-                remotes.Weld:FireServer(tool)
+            if d == 1 then
+                for i = 1, 300 do
+                    remotes.Weld:FireServer(tool)
+                end
+            else
+                Delay(.5)
             end
         end
         CloneHumanoid()
@@ -1706,8 +1768,6 @@ local function SpamArrest(plr, power, d, tn)
     end
 
     togs.Noclip = oldnt
-    Note(("Arrested with: %i arrests"):format(arrests))
-    Note(("Arrested in: %.02f seconds"):format(tick() - starttick))
     Respawn(nil, oldpos)
 end
 
@@ -1759,151 +1819,89 @@ local function draggable(obj)
 	end)
 end
 
-local commands, AddCommand, ChangeAdminPerms, HandleMessage, AdminListInit = {} do -- nvm im not fixing when u resize windows it doesnt move fuckin seems to mathy
+local commands, AddCommand, ChangeAdminPerms, HandleMessage, CommandBar = {} do
     local ToggleCommandList do
-        local pos = Vector2.new(cam.ViewportSize.X - 260, cam.ViewportSize.Y - 415)
-        local Inc = MakeBoxedFrame(Vector2.new(cam.ViewportSize.X - 295, cam.ViewportSize.Y - 145), Vector2.new(30, 30), nil, {
-            Color = Color3.new(.2, .2, .2),
-            Transparency = .9,
-            Filled = true,
-        })
-        local Dec = MakeBoxedFrame(Vector2.new(cam.ViewportSize.X - 55, cam.ViewportSize.Y - 145), Vector2.new(30, 30), nil, {
-            Color = Color3.new(.2, .2, .2),
-            Transparency = .9,
-            Filled = true,
-        })
-        local Main = MakeBoxedFrame(pos, Vector2.new(200, 300), nil, {
-            Color = Color3.new(.2, .2, .2),
-            Transparency = .9,
-            Filled = true,
-        })
-        Main.Label = DrawingStruct.new(Main.Main, "Text", "Label", {
-            Size = 22,
-            Font = Drawing.Fonts.UI,
-            Outline = true,
-            Position = pos + Vector2.new(5, 2),
-            Text = "Commands\t\t\tPage: 1",
-            Color = Color3.new(1,1,1)
-        })
-        Inc.TE = DrawingStruct.new(Inc.Main, "Text", "Next", {
-            Size = 30,
-            Font = Drawing.Fonts.UI,
-            Outline = true,
-            Position = Inc.Main.Obj.Position + Vector2.new(8, -3),
-            Text = "<",
-            Color = Color3.new(1,1,1)
-        })
-        Dec.TE = DrawingStruct.new(Dec.Main, "Text", "Back", {
-            Size = 30,
-            Font = Drawing.Fonts.UI,
-            Outline = true,
-            Position = Dec.Main.Obj.Position + Vector2.new(8, -3),
-            Text = ">",
-            Color = Color3.new(1,1,1)
-        })
-        local Pages = {}
-        local PagesDrawings = {}
-        local Pagei, opened = 1
-        function AdminListInit()
-            for i2 = 1, 20 do
-                for i3 = 1, 10 do
-                    local wtf = commands[i2 == 1 and i3 or (i2 - 1) * 10 + i3]
-                    if wtf then
-                        if not Pages[i2] then Pages[i2] = {}; PagesDrawings[i2] = {} end
+        local CommandsList = Instance.new("Frame")
+        local a = Instance.new("UICorner")
+        local List = Instance.new("ScrollingFrame")
+        local b = Instance.new("UIStroke")
+        local c = Instance.new("UIGridLayout")
+        local d = Instance.new("UIPadding")
 
-                        Pages[i2][i3] = wtf
-                    end
-                end
-            end
+        CommandsList.Name = "CommandsList"
+        CommandsList.Parent = ChatLogs
+        CommandsList.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+        CommandsList.BorderColor3 = Color3.fromRGB(40, 40, 40)
+        CommandsList.Position = UDim2.new(1, -269, 1, -81) + UDim2.new(0, 0, 0, -179)
+        CommandsList.Size = UDim2.new(0, 179, 0, 169)
+        CommandsList.Visible = false
 
-            for i, v in next, Pages do
-                for i2, v2 in next, v do
-                    PagesDrawings[i][i2] = MakeBoxedFrame(pos + Vector2.new(5, 10 + (25 * i2)), Vector2.new(190, 20), Main, {
-                        Color = Color3.fromRGB(22, 120, 19),
-                        Transparency = .9,
-                        Filled = true,
-                    })
-                    
-                    DrawingStruct.new(PagesDrawings[i][i2].Main, "Text", "Command", {
-                        Size = 20,
-                        Font = Drawing.Fonts.UI,
-                        Outline = true,
-                        Position = PagesDrawings[i][i2].Main.Obj.Position + Vector2.new(5, -1),
-                        Text = v2.Command,
-                        Color = Color3.new(1,1,1),
-                        ZIndex = 3
-                    })
-                end
-            end
-        end
+        a.CornerRadius = UDim.new(0, 2)
+        a.Name = "a"
+        a.Parent = CommandsList
 
-        local function ShowPage(page)
-            for i, v in next, PagesDrawings do
-                for i2, v2 in next, v do
-                    for i3, v3 in next, v2.Main:children() do
-                        v3.Obj.Visible = i == page
-                    end
+        List.Name = "List"
+        List.Parent = CommandsList
+        List.Active = true
+        List.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        List.BackgroundTransparency = 1.000
+        List.Size = UDim2.new(0, 179, 0, 169)
+        List.ScrollBarThickness = 0
+        List.CanvasSize = UDim2.new(0, 0, 0, 6)
 
-                    v2.Main.Obj.Visible = i == page
-                end
-            end
+        b.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+        b.Color = Color3.fromRGB(40, 40, 40)
+        b.LineJoinMode = Enum.LineJoinMode.Round
+        b.Thickness = 2
+        b.Transparency = 0
+        b.Enabled = true
+        b.Name = "b"
+        b.Parent = CommandsList
 
-            Main.Label.Obj.Text = ("Commands\t\t\tPage: %i"):format(page)
-        end
+        c.Name = "c"
+        c.Parent = List
+        c.SortOrder = Enum.SortOrder.LayoutOrder
+        c.CellPadding = UDim2.new(0, 5, 0, 3)
+        c.CellSize = UDim2.new(1, 0, 0, 30)
 
-        sv.UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-            if gameProcessedEvent then return end
+        d.Name = "d"
+        d.Parent = List
+        d.PaddingBottom = UDim.new(0, 3)
+        d.PaddingLeft = UDim.new(0, 3)
+        d.PaddingRight = UDim.new(0, 3)
+        d.PaddingTop = UDim.new(0, 3)
 
-            if input.UserInputType == Enum.UserInputType.MouseButton1 and opened then
-                local mpos = getmousepos()
-                
-                if IsInFrame(mpos, Dec.T.Obj.From, Vector2.new(30, 30)) then
-                    Pagei += 1
-                    if Pagei > #Pages then
-                        Pagei = 1
-                    end
-
-                    ShowPage(Pagei)
-                end
-
-                if IsInFrame(mpos, Inc.T.Obj.From, Vector2.new(30, 30)) then
-                    Pagei -= 1
-                    if Pagei < 1 then
-                        Pagei = #Pages
-                    end
-
-                    ShowPage(Pagei)
-                end
-            end
+        List.ChildAdded:Connect(function()
+            task.wait()
+            List.CanvasSize += UDim2.new(0, 0, 0, 33)
         end)
 
         function ToggleCommandList()
-            opened = not opened
-
-            for _,v in pairs(Main) do
-                v.Obj.Visible = opened
-            end
-
-            for _,v in pairs(Dec) do
-                v.Obj.Visible = opened
-            end
-
-            for _,v in pairs(Inc) do
-                v.Obj.Visible = opened
-            end
-
-            ShowPage(opened and Pagei or 0)
+            CommandsList.Visible = not CommandsList.Visible
         end
 
         function AddCommand(Command, Aliases, Info, RequiresArgs, IsUseableByOthers, Function)
             local Final = {}
-            
+
             Final["Command"] = Command
             Final["Aliases"] = Aliases
             Final["Function"] = Function
             Final["RequiresArgs"] = RequiresArgs
             Final["IsUseableByOthers"] = IsUseableByOthers
             Final["Info"] = Info
+
+            local Cmd = Instance.new("TextButton")
+
+            Cmd.Name = "Cmd"
+            Cmd.Parent = List
+            Cmd.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+            Cmd.BorderColor3 = Color3.fromRGB(40, 40, 40)
+            Cmd.BorderSizePixel = 2
+            Cmd.Text = Command
+            Cmd.Size = UDim2.new(0, 179, 0, 50)
+            Cmd.Font = Enum.Font.SourceSans
+            Cmd.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Cmd.TextSize = 16.000
 
             --[[local fstr = Info.."\nIs usable by others: "..tostring(IsUseableByOthers).."\nRequires arguments: "..tostring(RequiresArgs)
             if Aliases then
@@ -1915,125 +1913,137 @@ local commands, AddCommand, ChangeAdminPerms, HandleMessage, AdminListInit = {} 
     end
 
     do
-        local tbox = Instance.new("TextBox", game)
-        local pos = Vector2.new(cam.ViewportSize.X - 260, cam.ViewportSize.Y - 105)
+        CommandBar = Instance.new("Frame")
+        local Prefix = Instance.new("TextButton")
+        local Commands = Instance.new("TextLabel")
+        local a = Instance.new("UICorner")
+        local b = Instance.new("UIStroke")
+        local Bar = Instance.new("TextBox")
+        local BBar = Instance.new("TextLabel")
 
-        local main = DrawingStruct.new(nil, "Square", "MainBox", {
-            Color = Color3.new(.2, .2, .2),
-            Position = pos,
-            Transparency = .9,
-            Size = Vector2.new(200, 70),
-            Filled = true,
-            Visible = true
-        })
-        
-        DrawingStruct.new(main, "Line", "T", {
-            Thickness = 2,
-            Color = Color3.new(),
-            ZIndex = 1,
-            Visible = true,
-            From = pos,
-            To = pos + Vector2.new(200, 0)
-        })
+        CommandBar.Name = "CommandBar"
+        CommandBar.Parent = ChatLogs
+        CommandBar.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+        CommandBar.BorderColor3 = Color3.fromRGB(40, 40, 40)
+        CommandBar.BorderSizePixel = 2
+        CommandBar.Position = UDim2.new(1, -269, 1, -81)
+        CommandBar.Size = UDim2.new(0, 179, 0, 54)
 
-        DrawingStruct.new(main, "Line", "B", {
-            Thickness = 2,
-            Color = Color3.new(),
-            ZIndex = 1,
-            Visible = true,
-            From = pos + Vector2.new(0, 70),
-            To = pos + Vector2.new(200, 70)
-        })
-        
-        DrawingStruct.new(main, "Line", "L", {
-            Thickness = 2,
-            Color = Color3.new(),
-            ZIndex = 1,
-            Visible = true,
-            From = pos,
-            To = pos + Vector2.new(0, 70)
-        })
+        Prefix.Name = "Prefix"
+        Prefix.Parent = CommandBar
+        Prefix.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        Prefix.BackgroundTransparency = 1.000
+        Prefix.BorderColor3 = Color3.fromRGB(52, 52, 52)
+        Prefix.Position = UDim2.new(0, 3, 0, 3)
+        Prefix.Size = UDim2.new(0, 75, 0, 22)
+        Prefix.Font = Enum.Font.SourceSans
+        Prefix.Text = "Commands"
+        Prefix.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Prefix.TextSize = 16.000
 
-        DrawingStruct.new(main, "Line", "R", {
-            Thickness = 2,
-            Color = Color3.new(),
-            ZIndex = 1,
-            Visible = true,
-            From = pos + Vector2.new(200, 0),
-            To = pos + Vector2.new(200, 70)
-        })
+        Commands.Name = "Commands"
+        Commands.Parent = CommandBar
+        Commands.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        Commands.BackgroundTransparency = 1.000
+        Commands.BorderColor3 = Color3.fromRGB(52, 52, 52)
+        Commands.Position = UDim2.new(0.726251543, -3, 0, 3)
+        Commands.Size = UDim2.new(0, 49, 0, 22)
+        Commands.Font = Enum.Font.SourceSans
+        Commands.Text = "Prefix: "..togs.Admin.Prefix
+        Commands.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Commands.TextSize = 16.000
 
-        local TE1 = DrawingStruct.new(main, "Text", "Commands", {
-            Text = "Commands",
-            Position = pos + Vector2.new(5, 2),
-            Color = Color3.new(1,1,1),
-            Outline = true,
-            Font = Drawing.Fonts.UI,
-            Size = 22,
-            Visible = true
-        })
+        a.CornerRadius = UDim.new(0, 2)
+        a.Name = "a"
+        a.Parent = CommandBar
 
-        local TE2 = DrawingStruct.new(main, "Text", "Prefix", {
-            Text = ("Prefix: %s"):format(togs.Admin.Prefix),
-            Position = pos + Vector2.new(140, 2),
-            Color = Color3.new(1,1,1),
-            Outline = true,
-            Font = Drawing.Fonts.UI,
-            Size = 22,
-            Visible = true
-        })
+        b.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+        b.Color = Color3.fromRGB(40, 40, 40)
+        b.LineJoinMode = Enum.LineJoinMode.Round
+        b.Thickness = 2
+        b.Transparency = 0
+        b.Enabled = true
+        b.Name = "b"
+        b.Parent = CommandBar
 
-        local TE3 = DrawingStruct.new(main, "Text", "Bar", {
-            Text = "Command Bar",
-            Position = pos + Vector2.new(5, 40),
-            Color = Color3.new(1,1,1),
-            Outline = true,
-            Font = Drawing.Fonts.UI,
-            Size = 22,
-            Transparency = .7,
-            ZIndex = 2,
-            Visible = true
-        })
+        Bar.Name = "Bar"
+        Bar.Parent = CommandBar
+        Bar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Bar.BackgroundTransparency = 1.000
+        Bar.Position = UDim2.new(0.0167597774, 0, 0.462962955, 0)
+        Bar.Size = UDim2.new(0, 176, 0, 29)
+        Bar.Font = Enum.Font.SourceSans
+        Bar.PlaceholderText = "Enter command here"
+        Bar.Text = ""
+        Bar.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Bar.TextSize = 16.000
+        Bar.TextXAlignment = Enum.TextXAlignment.Left
 
-        tbox.FocusLost:Connect(function()
-            HandleMessage(togs.Admin.Prefix..tbox.Text)
+        BBar.Name = "BBar"
+        BBar.Parent = CommandBar
+        BBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        BBar.BackgroundTransparency = 1.000
+        BBar.Position = UDim2.new(0.0167597774, 0, 0.462962955, 0)
+        BBar.Size = UDim2.new(0, 176, 0, 29)
+        BBar.Font = Enum.Font.SourceSans
+        BBar.Text = ""
+        BBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+        BBar.TextSize = 16.000
+        BBar.TextXAlignment = Enum.TextXAlignment.Left
+
+        Bar.FocusLost:Connect(function()
+            HandleMessage(togs.Admin.Prefix..Bar.Text)
+            BBar.Text = ""
+            Bar.Text = ""
         end)
 
-        tbox.Changed:Connect(function()
-            TE3.Obj.Text = tbox.Text
-        end)
+        Bar.Changed:Connect(function()
+            local cmd = Bar.Text:split(" ")[1] or Bar.Text
+            local cmdtodisplay = ""
+            if #cmd < 2 then
+                BBar.Text = ""
 
-        local function Focus()
-            tbox:CaptureFocus()
-
-            while sv.UserInputService:GetFocusedTextBox() == tbox and task.wait() do
-                TE3.Obj.Transparency = 1
+                return
             end
 
-            TE3.Obj.Transparency = .7
-            TE3.Obj.Text = "Command Bar"
-        end
+            for _, v in next, commands do
+                if cmdtodisplay ~= "" then break end
 
-        sv.UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-            TE2.Text = ("Prefix: %s"):format(togs.Admin.Prefix) -- just need something to loop
-            if gameProcessedEvent then return end
+                if v.Command:lower():match("^"..cmd:lower()) then
+                    cmdtodisplay = v.Command
 
-            if input.KeyCode == togs.Admin.FocusKey then
-                task.defer(Focus)
-            end
-
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                local mpos = getmousepos()
-                
-                if IsInFrame(mpos, TE3.Obj.Position, Vector2.new(195, 20)) then
-                    task.defer(Focus)
+                    break
                 end
 
-                if IsInFrame(mpos, TE1.Obj.Position, TE1.Obj.TextBounds) then
-                    ToggleCommandList()
+                if (type(v.Aliases) == "string" and v.Aliases:lower():match("^"..cmd:lower())) then
+                    
+                    break
+                end
+
+                if type(v.Aliases) == "table" then
+                    for _, alias in pairs(v.Aliases) do
+                        if alias:lower():match("^"..cmd:lower()) then
+                            cmdtodisplay = alias
+
+                            break
+                        end
+                    end
                 end
             end
+
+            BBar.Text = cmd..cmdtodisplay:sub(#cmd + 1)
         end)
+
+        sv.UserInputService.InputBegan:Connect(function(key, n)
+            Commands.Text = "Prefix: "..togs.Admin.Prefix
+            if n then return end
+
+            if key.KeyCode == togs.Admin.FocusKey then
+                task.defer(Bar.CaptureFocus, Bar)
+            end
+        end)
+
+        Prefix.Activated:Connect(ToggleCommandList)
     end
 
     --[[
@@ -2088,253 +2098,6 @@ local commands, AddCommand, ChangeAdminPerms, HandleMessage, AdminListInit = {} 
 			Note(("Removed %s from admins."):format(plr))
 		end
 	end
-end
-
-do
-    local BoxAthena = Instance.new("Frame")
-    local UIGradient = Instance.new("UIGradient")
-    local Top = Instance.new("Frame")
-    local UIGradient_2 = Instance.new("UIGradient")
-    local Commands = Instance.new("TextLabel")
-    local Min = Instance.new("TextButton")
-    local frm = Instance.new("Frame")
-    local ScrollingFrame = Instance.new("ScrollingFrame")
-    local UIGridLayout = Instance.new("UIGridLayout")
-    local UIPadding = Instance.new("UIPadding")
-
-    BoxAthena.Name = "ExploiterDetect"
-    BoxAthena.Parent = ChatLogs
-    BoxAthena.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    BoxAthena.BackgroundTransparency = 0.350
-    BoxAthena.BorderSizePixel = 2
-    BoxAthena.Position = UDim2.new(0.5, 0, 0.595761478, 0)
-    BoxAthena.Size = UDim2.new(0, 514, 0, 274)
-    BoxAthena.Visible = false
-
-    UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
-    UIGradient.Rotation = 90
-    UIGradient.Parent = BoxAthena
-
-    Top.Name = "Top"
-    Top.Parent = BoxAthena
-    Top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Top.BackgroundTransparency = 0.650
-    Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
-    Top.BorderSizePixel = 2
-    Top.Size = UDim2.new(0, 514, 0, 24)
-
-    UIGradient_2.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
-    UIGradient_2.Rotation = 90
-    UIGradient_2.Parent = Top
-
-    Commands.Name = "Commands"
-    Commands.Parent = Top
-    Commands.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Commands.BackgroundTransparency = 1.000
-    Commands.BorderColor3 = Color3.fromRGB(0, 0, 0)
-    Commands.BorderSizePixel = 0
-    Commands.Position = UDim2.new(0.0170279779, 0, 0, 0)
-    Commands.Size = UDim2.new(0, 150, 0, 24)
-    Commands.Font = Enum.Font.SourceSansBold
-    Commands.Text = "Exploiter Detection"
-    Commands.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Commands.TextSize = 20.000
-    Commands.TextStrokeTransparency = 0.500
-    Commands.TextXAlignment = Enum.TextXAlignment.Left
-
-    Min.Name = "Min"
-    Min.Parent = Top
-    Min.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    Min.BorderColor3 = Color3.fromRGB(51, 51, 51)
-    Min.BorderSizePixel = 2
-    Min.Position = UDim2.new(0.955875456, -1, 0.125, 0)
-    Min.Size = UDim2.new(0, 17, 0, 17)
-    Min.Font = Enum.Font.SourceSans
-    Min.LineHeight = 1.150
-    Min.Text = "-"
-    Min.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Min.TextSize = 39.000
-
-    frm.Name = "frm"
-    frm.Parent = BoxAthena
-    frm.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    frm.BackgroundTransparency = 1.000
-    frm.BorderColor3 = Color3.fromRGB(27, 42, 53)
-    frm.Position = UDim2.new(0, 0, 0.0875912383, 0)
-    frm.Size = UDim2.new(0, 389, 0, 250)
-
-    ScrollingFrame.Parent = frm
-    ScrollingFrame.Active = true
-    ScrollingFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    ScrollingFrame.BackgroundTransparency = 1.000
-    ScrollingFrame.Size = UDim2.new(0, 180, 0, 250)
-    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 1, 0)
-    ScrollingFrame.ScrollBarThickness = 0
-
-    UIGridLayout.Parent = ScrollingFrame
-    UIGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    UIGridLayout.CellSize = UDim2.new(0, 176, 0, 20)
-
-    UIPadding.Parent = ScrollingFrame
-    UIPadding.PaddingBottom = UDim.new(0, 2)
-    UIPadding.PaddingLeft = UDim.new(0, 2)
-    UIPadding.PaddingRight = UDim.new(0, 2)
-    UIPadding.PaddingTop = UDim.new(0, 8)
-
-    local exploiterlogs = {}
-
-    function Log(plr, reason)
-        local newtbl = {}
-
-        if exploiterlogs[plr.Name] then
-            newtbl = exploiterlogs[plr.Name]
-        end
-
-        if table.find(newtbl, reason) then return end
-
-        table.insert(newtbl, reason)
-        exploiterlogs[plr.Name] = newtbl
-    end
-
-    local function UpdateLogs()
-        for i,v in pairs(exploiterlogs) do
-            if BoxAthena:FindFirstChild(i) then
-                BoxAthena[i].Info.Text = table.concat(v, "\n")
-                
-                continue
-            end
-
-            if togs.EDN then
-                Note(("Exploit detection caught %s!"):format(i))
-            end
-
-            local ExFrame = Instance.new("Frame")
-            local Name = Instance.new("TextLabel")
-            local Avatar = Instance.new("ImageLabel")
-            local Info = Instance.new("TextLabel")
-
-            local Button = Instance.new("Frame")
-            local UIGradient1 = Instance.new("UIGradient")
-            local UIListLayout = Instance.new("UIListLayout")
-            local TextButton = Instance.new("TextButton")
-
-            Button.Name = i
-            Button.Parent = ScrollingFrame
-            Button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            Button.BackgroundTransparency = 0.200
-            Button.BorderColor3 = Color3.fromRGB(23, 25, 52)
-            Button.Position = UDim2.new(-0.020833334, 0, 0.00840336177, 0)
-            Button.Size = UDim2.new(0, 153, 0, 20)
-
-            UIGradient1.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(86, 87, 85)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(78, 77, 73))}
-            UIGradient1.Rotation = 90
-            UIGradient1.Parent = Button
-
-            UIListLayout.Parent = Button
-            UIListLayout.FillDirection = Enum.FillDirection.Horizontal
-            UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-            TextButton.Parent = Button
-            TextButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            TextButton.BackgroundTransparency = 1.000
-            TextButton.Size = UDim2.new(1, 0, 1, 0)
-            TextButton.Font = Enum.Font.SourceSansBold
-            TextButton.Text = i
-            TextButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-            
-            TextButton.TextSize = 20.000
-            TextButton.TextStrokeTransparency = 0.500
-
-            ExFrame.Name = i
-            ExFrame.Parent = BoxAthena
-            ExFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            ExFrame.BackgroundTransparency = 1.000
-            ExFrame.Position = UDim2.new(0.357976645, 0, 0.0875912383, 0)
-            ExFrame.Size = UDim2.new(0, 330, 0, 250)
-            ExFrame.Visible = false
-
-            Name.Name = "Name"
-            Name.Parent = ExFrame
-            Name.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            Name.BackgroundTransparency = 1.000
-            Name.BorderColor3 = Color3.fromRGB(27, 42, 53)
-            Name.Position = UDim2.new(0.375514328, 0, 0.0320000015, 0)
-            Name.Size = UDim2.new(0, 205, 0, 64)
-            Name.Font = Enum.Font.SourceSansBold
-            Name.Text = ("%s\n(%s)"):format(i, sv.Players:FindFirstChild(i) and sv.Players[i].DisplayName or "Unknown")
-            Name.TextColor3 = Color3.fromRGB(255, 255, 255)
-            Name.TextSize = 20.000
-            Name.TextStrokeTransparency = 0.500
-
-            Avatar.Name = "Avatar"
-            Avatar.Parent = ExFrame
-            Avatar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            Avatar.BackgroundTransparency = 1.000
-            Avatar.Position = UDim2.new(0.121463276, 0, 0.0320000015, 0)
-            Avatar.Size = UDim2.new(0, 64, 0, 64)
-            Avatar.Image = sv.Players:GetUserThumbnailAsync(sv.Players:GetUserIdFromNameAsync(i), Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
-
-            Info.Name = "Info"
-            Info.Parent = ExFrame
-            Info.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            Info.BackgroundTransparency = 1.000
-            Info.BorderColor3 = Color3.fromRGB(27, 42, 53)
-            Info.Position = UDim2.new(0.0424079672, 0, 0.324000001, 0)
-            Info.Size = UDim2.new(0, 314, 0, 169)
-            Info.Font = Enum.Font.SourceSansBold
-            Info.TextWrapped = true
-            Info.Text = table.concat(v, "\n")
-            Info.TextColor3 = Color3.fromRGB(255, 255, 255)
-            Info.TextSize = 20.000
-            Info.TextStrokeTransparency = 0.500
-            Info.TextXAlignment = Enum.TextXAlignment.Left
-            Info.TextYAlignment = Enum.TextYAlignment.Top
-
-            TextButton.Activated:Connect(function()
-                for i2,v2 in pairs(BoxAthena:GetChildren()) do
-                    if not table.find({"frm", "Top"}, v2.Name) and v2:IsA("Frame") then
-                        v2.Visible = false
-                    end
-                end
-
-                BoxAthena[i].Visible = true
-            end)
-        end
-    end
-
-    Min.Activated:Connect(function()
-        BoxAthena.Visible = false
-    end)
-
-    draggable(BoxAthena)
-
-    task.spawn(function()
-        while task.wait(2) do
-            for i,v in pairs(sv.Players:GetPlayers()) do
-                if v == lp then continue end
-
-                if v.Character and v.Character:FindFirstChild("Humanoid") then
-                    if v.Character.Humanoid:GetState() == Enum.HumanoidStateType.PlatformStanding then
-                        Log(v, "Flying")
-                    end
-                end
-
-                if not v.Team then
-                    Log(v, "Custom team")
-                end
-
-                if ((v:FindFirstChild("Backpack") and v.Backpack:FindFirstChild("AK-47")) or (v.Character and v.Character:FindFirstChild("AK-47"))) and table.find({game.Teams.Inmates, game.Teams.Neutral}, v.Team) then
-                    Log(v, "Possible gun spawn")
-                end
-
-                if v.Character and v.Character:FindFirstChild("HumanoidRootPart") and not v.Character:FindFirstChild("Torso") then
-                    Log(v, "Invisible fling")
-                end
-            end
-
-            UpdateLogs()
-        end
-    end)
 end
 
 local ChatLogAdd do
@@ -2503,7 +2266,6 @@ local ChatLogAdd do
 end
 
 LoadData()
-workspace:WaitForChild("Remote"):WaitForChild("toggleSiren"):FireServer({Part1 = {Weld_Part = true, l = workspace:WaitForChild("Remote"):WaitForChild("toggleSiren"):WaitForChild("sirenToggleScript")},isOn = {Value = false},Speaker = {Weld_Part = true, Sound = workspace:WaitForChild("Prison_guardspawn"):WaitForChild("spawn"):WaitForChild("Sound")}})
 
 for i = 1,127 do table.insert(brickcolors, BrickColor.palette(i).Name) end
 
@@ -2513,7 +2275,7 @@ task.spawn(LoaderUpdate)
 
 do
     local ui =           loadstring(req({Url = "https://raw.githubusercontent.com/GFXTI/d/main/PianoUI.lua"}).Body)()
-    local lib =          ui.new("Piano")
+    local lib =          ui.new("Athena")
 
     -- Combat window
     do
@@ -2937,6 +2699,138 @@ do
     do
         local worldtop = lib.WindowTab("World")
 
+        do
+            local antis = worldtop.SideTab("Value Editor", 1000).Section("Value Editor")
+
+            antis.Toggle("Break doors", togs.BreakDoors, function(a)
+                togs.BreakDoors = a
+
+                if a then
+                    while task.wait() and togs.BreakDoors do
+                        for i,v in pairs(workspace.Doors:GetDescendants()) do
+                            if v.Name ~= "isActive" or v.Value == true then continue end
+
+                            workspace.Remote.toggleSiren:FireServer({isOn=v})
+                            v.Changed:Wait()
+                        end
+                    end
+                end
+            end)
+
+            antis.Toggle("Loop hostile all", togs.LHA, function(a)
+                togs.LHA = a
+
+                if a then
+                    for i,v in pairs(sv.Players:GetPlayers()) do
+                        if v.Status.isHostile.Value == true then continue end
+
+                        workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isHostile})
+                        v.Status.isHostile.Changed:Wait()
+                    end
+
+                    while task.wait(.1) and togs.LHA do
+                        for i,v in pairs(sv.Players:GetPlayers()) do
+                            if v.Status.isHostile.Value == true then continue end
+
+                            workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isHostile})
+                            v.Status.isHostile.Changed:Wait()
+                        end
+                    end
+                end
+            end)
+
+            antis.Toggle("Loop freindly all", togs.LFA, function(a)
+                togs.LFA = a
+
+                if a then
+                    for i,v in pairs(sv.Players:GetPlayers()) do
+                        if v.Status.isHostile.Value == false then continue end
+
+                        workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isHostile})
+                        v.Status.isHostile.Changed:Wait()
+                    end
+
+                    while task.wait(.1) and togs.LFA do
+                        for i,v in pairs(sv.Players:GetPlayers()) do
+                            if v.Status.isHostile.Value == false then continue end
+
+                            workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isHostile})
+                            v.Status.isHostile.Changed:Wait()
+                        end
+                    end
+                end
+            end)
+
+            antis.Toggle("Loop bad guard all", togs.LBGA, function(a)
+                togs.LBGA = a
+
+                if a then
+                    for i,v in pairs(sv.Players:GetPlayers()) do
+                        if v.Status.isBadGuard.Value == true then continue end
+
+                        workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isBadGuard})
+                        v.Status.isBadGuard.Changed:Wait()
+                    end
+
+                    while task.wait(.1) and togs.LBGA do
+                        for i,v in pairs(sv.Players:GetPlayers()) do
+                            if v.Status.isBadGuard.Value == true then continue end
+
+                            workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isBadGuard})
+                            v.Status.isBadGuard.Changed:Wait()
+                        end
+                    end
+                end
+            end)
+
+            antis.Toggle("Loop good guard all", togs.LGGA, function(a)
+                togs.LGGA = a
+
+                if a then
+                    while task.wait(.1) and togs.LGGA do
+                        for i,v in pairs(sv.Players:GetPlayers()) do
+                            if v.Status.isBadGuard.Value == false then continue end
+
+                            workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isBadGuard})
+                            v.Status.isBadGuard.Changed:Wait()
+                        end
+
+                        for i,v in pairs(sv.Players:GetPlayers()) do
+                            if v.Status.isBadGuard.Value == false then continue end
+
+                            workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isBadGuard})
+                            v.Status.isBadGuard.Changed:Wait()
+                        end
+                    end
+                end
+            end)
+
+            antis.Toggle("Loop reset kills all", togs.LRKA, function(a) 
+                togs.LRKA = a
+
+                if a then
+                    while task.wait(GetPing()) and togs.LRKA do
+                        for i,v in pairs(sv.Players:GetPlayers()) do
+                            workspace.Remote.toggleSiren:FireServer({isOn=v.Status.innocentKills})
+                        end
+                    end
+                end
+            end)
+
+            antis.Toggle("Infinite cars", togs.InfiniteCars, function(a) 
+                togs.InfiniteCars = a
+
+                while task.wait(.1) and togs.InfiniteCars do
+                    for i,v in pairs(workspace["Prison_ITEMS"].buttons:GetDescendants()) do
+                        if v.Value then continue end
+
+                        workspace.Remote.toggleSiren:FireServer({isOn=v})
+                        v.Changed:Wait()
+                    end
+                end
+            end)
+        end
+
         -- Drawing
         do
             local world = worldtop.SideTab("Drawing", 1000).Section("Drawing")
@@ -3030,113 +2924,115 @@ do
             end
         end
 
-        local world = worldtop.SideTab("Toggles", 1000).Section("Toggles & buttons")
+        do
+            local world = worldtop.SideTab("Toggles", 1000).Section("Toggles & buttons")
 
-        world.Toggle("Auto grab keycard", togs.AGK, function(a)
-            togs.AGK = a
-            local key = workspace.Prison_ITEMS.single:FindFirstChild("Key card")
-            if a and key then
-                remotes.Item:InvokeServer(key:WaitForChild"ITEMPICKUP")
-            end
-        end)
-
-        world.Button("Crash", function()
-            GetGun{"Remington 870"}
-            local rem = lp.Backpack:WaitForChild("Remington 870")
-            for i = 1,4000 do
-                remotes.Weld.FireServer(remotes.Weld, rem)
-            end
-            task.wait(2)
-            rem.Parent = lp.Character
-            task.wait()
-            rem.Parent = lp.Backpack
-            Note("Successfully sent weld crash")
-        end)
-
-        world.Button("Timeout", function()
-            GetGun{"M9"}
-            local gun = lp.Backpack:FindFirstChild("M9") or lp.Character:FindFirstChild("M9")
-
-            for i = 1, math.random(1500, 2000) do
-                remotes.Shoot:FireServer({}, gun)
-            end
-
-            Note("Successfully sent timeout")
-        end)
-
-        world.Button("Delay1", function()
-            GetGun{"M9"}
-            local gun = lp.Backpack:FindFirstChild("M9") or lp.Character:FindFirstChild("M9")
-
-            for i = 1, 300 do
-                remotes.Shoot:FireServer({}, gun)
-            end
-
-            Note("Successfully sent delay1")
-        end)
-
-        world.Button("Delay2", function()
-            GetGun{"Remington 870"}
-            local rem = lp.Backpack:WaitForChild("Remington 870")
-            for i = 1,300 do
-                remotes.Weld.FireServer(remotes.Weld, rem)
-            end
-            task.wait(2)
-            rem.Parent = lp.Character
-            task.wait()
-            rem.Parent = lp.Backpack
-            Note("Successfully sent delay2")
-        end)
-
-        world.Button("Teleport cars", function()
-            local oldpos = lp.Character:GetPivot()
-            local squadcars = {}
-
-            for i,v in pairs(workspace.Prison_ITEMS.buttons:GetChildren()) do
-                if v.Name == "Car Spawner" and v["Car Spawner"].type.Value == "Squad" then
-                    table.insert(squadcars, v)
+            world.Toggle("Auto grab keycard", togs.AGK, function(a)
+                togs.AGK = a
+                local key = workspace.Prison_ITEMS.single:FindFirstChild("Key card")
+                if a and key then
+                    remotes.Item:InvokeServer(key:WaitForChild"ITEMPICKUP")
                 end
-            end
+            end)
 
-            for i,v in pairs(squadcars) do
-                task.spawn(remotes.Item.InvokeServer, remotes.Item, v["Car Spawner"])
-                local car = workspace.CarContainer.ChildAdded:Wait()
-                repeat
-                    car:WaitForChild("Body"):WaitForChild("VehicleSeat"):Sit(lp.Character.Humanoid)
-                until not lp.Character or not lp.Character:FindFirstChild("Humanoid") or lp.Character.Humanoid.Sit or not task.wait()
-                Goto(oldpos)
-            end
-
-            lp.Character.Humanoid.Sit = false
-        end)
-
-        world.Toggle("Stay", false, function(a)
-            Stay(a and lp.Character:GetPivot() or not a)
-        end)
-         
-        world.Toggle("Guard gun spam", togs.GGS, function(a)
-            togs.GGS = a
-            Respawn(BrickColor.new("Bright blue"), lp.Character:GetPivot())
-        end)
-
-        world.Toggle("Spam arrest aura", togs.SpamArrestAura, function(a)
-            togs.SpamArrestAura = a
-        end)
-
-        world.Toggle("Player ESP", togs.ESP, function(a)
-            togs.ESP = a
-
-            if not a then
-                for i, v in next, PlayerESPDrawings do
-                    v.Name.Visible = false
-                    v.Info.Visible = false
+            world.Button("Crash", function()
+                GetGun{"Remington 870"}
+                local rem = lp.Backpack:WaitForChild("Remington 870")
+                for i = 1,4000 do
+                    remotes.Weld.FireServer(remotes.Weld, rem)
                 end
-            end
-        end)
+                task.wait(2)
+                rem.Parent = lp.Character
+                task.wait()
+                rem.Parent = lp.Backpack
+                Note("Successfully sent weld crash")
+            end)
 
-        world.Toggle("Troll godded", togs.TrollGodded, function(a)
-            togs.TrollGodded = a
-        end)
+            world.Button("Timeout", function()
+                GetGun{"M9"}
+                local gun = lp.Backpack:FindFirstChild("M9") or lp.Character:FindFirstChild("M9")
+
+                for i = 1, math.random(1500, 2000) do
+                    remotes.Shoot:FireServer({}, gun)
+                end
+
+                Note("Successfully sent timeout")
+            end)
+
+            world.Button("Delay1", function()
+                GetGun{"M9"}
+                local gun = lp.Backpack:FindFirstChild("M9") or lp.Character:FindFirstChild("M9")
+
+                for i = 1, 300 do
+                    remotes.Shoot:FireServer({}, gun)
+                end
+
+                Note("Successfully sent delay1")
+            end)
+
+            world.Button("Delay2", function()
+                GetGun{"Remington 870"}
+                local rem = lp.Backpack:WaitForChild("Remington 870")
+                for i = 1,300 do
+                    remotes.Weld.FireServer(remotes.Weld, rem)
+                end
+                task.wait(2)
+                rem.Parent = lp.Character
+                task.wait()
+                rem.Parent = lp.Backpack
+                Note("Successfully sent delay2")
+            end)
+
+            world.Button("Teleport cars", function()
+                local oldpos = lp.Character:GetPivot()
+                local squadcars = {}
+
+                for i,v in pairs(workspace.Prison_ITEMS.buttons:GetChildren()) do
+                    if v.Name == "Car Spawner" and v["Car Spawner"].type.Value == "Squad" then
+                        table.insert(squadcars, v)
+                    end
+                end
+
+                for i,v in pairs(squadcars) do
+                    task.spawn(remotes.Item.InvokeServer, remotes.Item, v["Car Spawner"])
+                    local car = workspace.CarContainer.ChildAdded:Wait()
+                    repeat
+                        car:WaitForChild("Body"):WaitForChild("VehicleSeat"):Sit(lp.Character.Humanoid)
+                    until not lp.Character or not lp.Character:FindFirstChild("Humanoid") or lp.Character.Humanoid.Sit or not task.wait()
+                    Goto(oldpos)
+                end
+
+                lp.Character.Humanoid.Sit = false
+            end)
+
+            world.Toggle("Stay", false, function(a)
+                Stay(a and lp.Character:GetPivot() or not a)
+            end)
+            
+            world.Toggle("Guard gun spam", togs.GGS, function(a)
+                togs.GGS = a
+                Respawn(BrickColor.new("Bright blue"), lp.Character:GetPivot())
+            end)
+
+            world.Toggle("Spam arrest aura", togs.SpamArrestAura, function(a)
+                togs.SpamArrestAura = a
+            end)
+
+            world.Toggle("Player ESP", togs.ESP, function(a)
+                togs.ESP = a
+
+                if not a then
+                    for i, v in next, PlayerESPDrawings do
+                        v.Name.Visible = false
+                        v.Info.Visible = false
+                    end
+                end
+            end)
+
+            world.Toggle("Troll godded", togs.TrollGodded, function(a)
+                togs.TrollGodded = a
+            end)
+        end
         
         do
             local misc = worldtop.SideTab("Players", 1000).Section("Players")
@@ -3144,6 +3040,55 @@ do
             misc.Box("Player", "name", function(a)
                 selected = GetPlayer(a)
             end)
+
+            do
+                misc.Label("Values")
+
+                misc.Button("Toggle hostile", function()
+                    if not selected then return end
+
+                    workspace.Remote.toggleSiren:FireServer({isOn=selected.Status.isHostile})
+                    selected.Status.isHostile.Changed:Wait()
+                    Note(("%s hostility is now: %s"):format(selected.Name, tostring(selected.Status.isHostile.Value)))
+                end)
+
+                misc.Button("Toggle bad guard", function()
+                    if not selected then return end
+
+                    workspace.Remote.toggleSiren:FireServer({isOn=selected.Status.isBadGuard})
+                    selected.Status.isBadGuard.Changed:Wait()
+                    Note(("%s guard status: %s"):format(selected.Name, tostring(selected.Status.isBadGuard.Value)))
+                end)
+
+                misc.Button("Reset kills", function()
+                    if not selected then return end
+
+                    workspace.Remote.toggleSiren:FireServer({isOn=selected.Status.innocentKills})
+                    Note(("Reset %s's kills"):format(selected.Name))
+                end)
+
+                misc.Button("Loop reset kills", function()
+                    if not selected then return end
+                    local plr = selected
+
+                    if connections["LRK"..plr.Name] then
+                        connections["LRK"..plr.Name]:Disconnect()
+                        connections["LRK"..plr.Name] = nil
+                        Note(("Stopped reseting %s's kills"):format(plr.Name))
+
+                        return
+                    end
+
+                    local t = tick()
+                    connections["LRK"..plr.Name] = sv.RunService.Heartbeat:Connect(function()
+                        if tick() - t < .1 or not plr.Parent then return end
+
+                        workspace.Remote.toggleSiren:FireServer({isOn=plr.Status.innocentKills.Value})
+                    end)
+
+                    Note(("Started reseting %s's kills"):format(plr.Name))
+                end)
+            end
 
             -- Player Toggles
             do
@@ -3176,7 +3121,7 @@ do
 
                     local a = table.find(givenkillaura, selected.Name)
                     table[a and "remove" or "insert"](givenkillaura, a or selected.Name)
-                    Note((a and "Gave %s killaura" or "Removed %s's killaura"):format(selected.Name))
+                    Note((not a and "Gave %s killaura" or "Removed %s's killaura"):format(selected.Name))
                 end)
 
                 misc.Button("Anti punch", function()
@@ -3184,7 +3129,7 @@ do
 
                     local a = table.find(givenantipunch, selected.Name)
                     table[a and "remove" or "insert"](givenantipunch, a or selected.Name)
-                    Note((a and "Gave %s anti punch" or "Removed %s's anti punch"):format(selected.Name))
+                    Note((not a and "Gave %s anti punch" or "Removed %s's anti punch"):format(selected.Name))
                 end)
 
                 misc.Button("Thorns", function()
@@ -3192,7 +3137,7 @@ do
 
                     local a = table.find(giventhorns, selected.Name)
                     table[a and "remove" or "insert"](giventhorns, a or selected.Name)
-                    Note((a and "Gave %s thorns" or "Removed %s's thorns"):format(selected.Name))
+                    Note((not a and "Gave %s thorns" or "Removed %s's thorns"):format(selected.Name))
                 end)
 
                 misc.Button("Anti touch", function()
@@ -3200,7 +3145,7 @@ do
 
                     local a = table.find(givenantitouch, selected.Name)
                     table[a and "remove" or "insert"](givenantitouch, a or selected.Name)
-                    Note((a and "Gave %s anti touch" or "Removed %s's anti touch"):format(selected.Name))
+                    Note((not a and "Gave %s anti touch" or "Removed %s's anti touch"):format(selected.Name))
                 end)
 
                 misc.Button("One shot guns", function()
@@ -3208,7 +3153,7 @@ do
 
                     local a = table.find(givenoneshot, selected.Name)
                     table[a and "remove" or "insert"](givenoneshot, a or selected.Name)
-                    Note((a and "Gave %s one shot guns" or "Removed %s's one shot guns"):format(selected.Name))
+                    Note((not a and "Gave %s one shot guns" or "Removed %s's one shot guns"):format(selected.Name))
                 end)
 
                 misc.Button("Spam auto team", function()
@@ -3262,8 +3207,8 @@ do
 
                         bringing = true
                         GetGun{togs.BringTool}
-                        Bring(selected, lp.Backpack:WaitForChild(togs.BringTool), lp.Character:GetPivot())
-                        task.wait(1.3)
+                        Bring(selected, lp.Backpack:WaitForChild(togs.BringTool), lp.Character:GetPivot(), 5)
+                        lp.CharacterAdded:Wait()
                         bringing = false
                     end)
                 end)
@@ -3394,8 +3339,7 @@ do
                     end
 
                     Goto(selected.Character:GetPivot())
-                    task.wait(GetPing())
-                    task.spawn(remotes.Arrest.InvokeServer, remotes.Arrest, selected.Character.Head)
+                    task.defer(remotes.Arrest.InvokeServer, remotes.Arrest, selected.Character.Head)
                     selected.Character.Head:WaitForChild("handcuffedGui", 1/0)
                     Goto(oldpos)
                     Note(("Arrested %s"):format(selected.Name))
@@ -3471,14 +3415,6 @@ do
 
             setting.Button("Athena chat", function()
                 ChatLogs.AthenaChat.Visible = true
-            end)
-
-            setting.Button("Exploiter detections", function()
-                ChatLogs.ExploiterDetect.Visible = true
-            end)
-
-            setting.Toggle("Notify on detect", togs.EDN, function(a)
-                togs.EDN = a
             end)
 
             setting.Toggle("No fade ui", togs.NoFade, function(a)
@@ -3581,19 +3517,13 @@ do
                 end
             end
 
-            if method == "FireServer" then
-                if s == sv.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest then
-                    local cmd = args[1]
-
-                    if cmd:sub(1, #togs.Admin.Prefix) == togs.Admin.Prefix then
-                        HandleMessage(args[1])
-                        
-                        if togs.Admin.Silent then
-                            return
-                        end
-                    end
+            if method == "Play" then
+                if tostring(s) == "FireSound" and togs.SilentGun then
+                    return
                 end
+            end
 
+            if method == "FireServer" then
                 if s == remotes.Sound then
                     if togs.SilentGun then
                         return
@@ -3667,7 +3597,7 @@ do
         if checkcaller() or not tostring(getcallingscript()):find("Interface") then return BrickColorHook() end
         local a = togs.CCB
 
-        return a.Rainbow and BrickColor.random() or BrickColor.new(a.R, a.G, a.B)
+        return a.Toggled and (a.Rainbow and BrickColor.random() or BrickColor.new(a.R, a.G, a.B)) or BrickColorHook()
     end)
 
     local RandomHook; RandomHook = hookfunction(math.random, function(a, b)
@@ -3675,6 +3605,23 @@ do
 
         return togs.GunMods.NoSpread and 0 or RandomHook(a, b)
     end)
+
+    local ChatHook = require(lp.PlayerScripts.ChatScript.ChatMain.MessageSender).SendMessage
+
+    require(lp.PlayerScripts.ChatScript.ChatMain.MessageSender).SendMessage = function(...)
+        local args = {...}
+        local cmd = args[2]
+
+        if cmd:sub(1, #togs.Admin.Prefix) == togs.Admin.Prefix then
+            HandleMessage(args[2])
+
+            if togs.Admin.Silent then
+                return
+            end
+        end
+
+        return ChatHook(...)
+    end
 
     for i,v in pairs(getgc()) do
 		if type(v) == "function" and getfenv(v).script == lp.PlayerScripts.ClientGunReplicator then -- i fucking hate syn v2
@@ -3758,11 +3705,9 @@ do
                 lp.Character:BreakJoints()
             end
                 
-            task.spawn(remotes.Load.InvokeServer, remotes.Load, nil, BrickColor.new("Bright blue").Color)
-            lp.CharacterAdded:Wait()
-            togs.AutoRespawn.Toggled = oldar
+            task.spawn(Respawn, BrickColor.new("Bright blue"), oldp)
             task.wait(1/30)
-            Goto(oldp)
+            togs.AutoRespawn.Toggled = oldar
         end
     end)
 
@@ -3966,6 +3911,7 @@ do
         if table.find(togs.Admin.Admins, msgdata.FromSpeaker) and msgdata.Message:sub(1, 1) == togs.Admin.Prefix then
             if table.find({"help", "cmds"}, msgdata.Message:lower():sub(2, 5)) then
                 sv.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(("/w %s Prefix is %s | Your commands list: "):format(msgdata.FromSpeaker, togs.Admin.Prefix), "All")
+                task.wait(GetPing() * 4)
                 local msg = ""
                 local msgs = {}
                 for i,v in pairs(commands) do
@@ -3974,15 +3920,15 @@ do
                     end
                 end
 
-                for i = 1, math.ceil(#msg / 250) do
-                    table.insert(msgs, msg:sub(i ~= 1 and (i - 1) * 250 or 1, i * 250))
+                for i = 1, math.ceil(#msg / 175) do
+                    table.insert(msgs, msg:sub(i ~= 1 and (i - 1) * 175 or 1, i * 175))
                 end
 
                 for i,v in pairs(msgs) do
-                    sv.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(v, ("To %s"):format(msgdata.FromSpeaker))
-                    task.wait(.5)
+                    task.wait(1)
+                    sv.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(("/w %s %s"):format(msgdata.FromSpeaker, v), "All")
                 end
-                
+
                 return
             end
 
@@ -4124,20 +4070,20 @@ do
                     if togs.Killaura[tostring(v.Team)] or (togs.Killaura.Custom and not v.Team) then
                         if lp.Character and lp:DistanceFromCharacter(v.Character:GetPivot().p) <= 10 then
                             table.insert(mkt, v)
-                            
+
                             continue
                         end
-                        
-                        for i,v2 in pairs(givenkillaura) do
-                            local plr = sv.Players:FindFirstChild(v2)
+                    end
 
-                            if plr and plr.Character and plr:DistanceFromCharacter(v.Character:GetPivot().p) <= 10 then
-                                table.insert(kt, v)
-                            end
+                    for i,v2 in pairs(givenkillaura) do
+                        local plr = sv.Players:FindFirstChild(v2)
+
+                        if plr and plr.Character and plr:DistanceFromCharacter(v.Character:GetPivot().p) <= 10 then
+                            table.insert(kt, v)
                         end
                     end
                 end
-                
+
                 if kt[1] then
                     task.spawn(Kill, kt)
                 end
@@ -4467,16 +4413,6 @@ do
         end
     end)
 
-    AddCommand("Bbring", "bb", "Brings player to you or an admin", true, true, function(plr, bplr, sec)
-        local bplr = GetPlayer(bplr)
-        if bplr == lp then
-            Goto(plr.Character:GetPivot())
-        end
-
-        GetGun{togs.BringTool}
-        Bring(bplr, lp.Backpack:FindFirstChild(togs.BringTool), plr and sv.Players[plr].Character:GetPivot() or lp.Character:GetPivot(), sec and tonumber(sec) or .5)
-    end)
-
     AddCommand("Fling", nil, "Flings player", true, true, function(plr, fplr)
         local fplr = GetPlayer(fplr)
 
@@ -4547,22 +4483,14 @@ do
         end
     end)
 
-     AddCommand("Bcriminal", "bc", "Criminals given player", true, true, function(plr, bplr, sec)
-        local bplr = GetPlayer(bplr)
-        if bplr == lp then return end
-
-        GetGun{togs.BringTool}
-        Crim(bplr, sec and tonumber(sec) or .5)
-    end)
-
     AddCommand("Spamarrest", "sa", "Spam arrests given players", true, false, function(plr, ...)
-        local plr, power, del, tn = ...
+        local plr, power, del = ...
         local aplr = GetPlayer(plr)
 
         if not aplr then return end
 
         if MessageBox("Confirm", ("Are you sure you want to spam arrest\n%s?"):format(aplr.Name)) then
-            SpamArrest(aplr, tonumber(power) or togs.SpamArrestPower, tonumber(del) or 0, GetBool(tn))
+            SpamArrest(aplr, tonumber(power) or togs.SpamArrestPower, tonumber(del))
         end
     end)
 
@@ -4617,9 +4545,102 @@ do
             workspace.Remote.equipShield:fireServer(s)
         end
     end)
-end
 
-AdminListInit()
+    AddCommand("toggledoors", "td", "Breaks doors", false, true, function()
+        for i,v in pairs(workspace.Doors:GetDescendants()) do
+            if v.Name ~= "isActive" then continue end
+            workspace.Remote.toggleSiren:FireServer({isOn=v})
+        end
+    end)
+
+    AddCommand("hostile", "hos", "Hostiles player", false, true, function(plr, ...)
+        for i,v in pairs({...}) do
+            for i, v2 in pairs(AGetPlayer(v)) do
+                if v2 == lp or v2.Name == tostring(plr) or v2.Status.isHostile.Value then continue end
+
+                workspace.Remote.toggleSiren:FireServer({isOn=v2.Status.isHostile})
+            end
+        end
+    end)
+
+    AddCommand("friendly", "fri", "Make player a friendly little goober", false, true, function(plr, ...)
+        for i,v in pairs({...}) do
+            for i, v2 in pairs(AGetPlayer(v)) do
+                if not v2.Status.isHostile.Value then continue end
+
+                workspace.Remote.toggleSiren:FireServer({isOn=v2.Status.isHostile})
+            end
+        end
+    end)
+
+    AddCommand("badguard", "bg", "Makes player bad guard", false, true, function(plr, ...)
+        for i,v in pairs({...}) do
+            for i, v2 in pairs(AGetPlayer(v)) do
+                if v2 == lp or v2.Name == tostring(plr) or v2.Status.isBadGuard.Value then continue end
+
+                workspace.Remote.toggleSiren:FireServer({isOn=v2.Status.isBadGuard})
+            end
+        end
+    end)
+
+    AddCommand("resetkills", "rk", "Reset players kills", false, true, function(plr, ...)
+        for i,v in pairs({...}) do
+            for i, v2 in pairs(AGetPlayer(v)) do
+                workspace.Remote.toggleSiren:FireServer({isOn=v2.Status.innocentKills})
+            end
+        end
+    end)
+
+    AddCommand("goodguard", "gg", "Makes player good guard", false, true, function(plr, ...)
+        for i,v in pairs({...}) do
+            for i, v2 in pairs(AGetPlayer(v)) do
+                if not v2.Status.isBadGuard.Value then continue end
+
+                workspace.Remote.toggleSiren:FireServer({isOn=v2.Status.isBadGuard})
+            end
+        end
+    end)
+
+    AddCommand("infcars", "ic", "Makes anyone able to spam cars", false, true, function()
+        for i,v in pairs(workspace["Prison_ITEMS"].buttons:GetDescendants()) do
+            if v.Name ~= "deb" then continue end
+
+            task.spawn(function()
+                while task.wait() do
+                    if v.Value then continue end
+
+                    workspace.Remote.toggleSiren:FireServer({isOn=v})
+                    v.Changed:Wait()
+                end
+            end)
+        end
+    end)
+
+    AddCommand("spamresetkills", "srk", "Reset players kills", false, true, function(plr, ...)
+        for i,v in pairs({...}) do
+            for i, v2 in pairs(AGetPlayer(v)) do
+                task.spawn(function()
+                    while task.wait(.1) do
+                        workspace.Remote.toggleSiren:FireServer({isOn=v2.Status.innocentKills})
+                    end
+                end)
+            end
+        end
+    end)
+
+    for i,v in pairs(positions) do
+        AddCommand(i, i:sub(1, 3), ("Goes to %s"):format(i), false, true, function(plr)
+            if plr then
+                GetGun{togs.BringTool}
+                Bring(sv.Players[plr], lp.Backpack:WaitForChild(togs.BringTool), v)
+
+                return
+            end
+
+            Goto(v)
+        end)
+    end
+end
 
 task.spawn(LoaderUpdate)
 Note("Press Right Control to open")
