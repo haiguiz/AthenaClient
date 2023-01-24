@@ -331,8 +331,7 @@ local function LoadData()
     end
 
 	if not isfile("athenaplconfig.json") then
-		writefile("athenaplconfig.json", sv.HttpService:JSONEncode(togs))
-		return
+		writefile("athenaplconfig.json", sv.HttpService:JSONEncode({}))
 	end
 
     if not isfile("athenacustomcommands.lua") then
