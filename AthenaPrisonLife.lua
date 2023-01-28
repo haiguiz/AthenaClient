@@ -5,7 +5,7 @@ local DEBUGGING_MODE = true
 
     Credits:
         D-C Team -- trolling those skiddies that say they know lua
-        sawd#2906 -- all the scripting + ui lib
+        sawd#2906 -- all the scripting
         FATE#8209 -- helpin with humanoid stuff (i never touched it before)
         t0xic_waste9807#2444 -- being a dumb retard who doesnt shut the fuck up
 	    dm me (sawd) if u want credit here
@@ -98,6 +98,7 @@ togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     [1980195146] = "Jess",
     [4189672133] = "Shortest being",
     [4218694845] = "Shortest being",
+    [4270072522] = "Shortest being",
     [160458279]  = "Hack Admin Dev",
     [225482815]  = "Furry gunclanner",
     [2413365536] = "Midnight",
@@ -113,7 +114,7 @@ togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
 },
 { -- yeah it should be "settings" but you are a little ni
     GunMods = {
-        Toggled =           false;
+        Toggled =           true;
         Automatic =         false;
         InfiniteAmmo =      false;
         OneShotGuns =       false;
@@ -127,7 +128,7 @@ togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
         Range =             5000;
     };
     Loopkill = {
-        Toggled =           false;
+        Toggled =           true;
         Neutral =           false;
         Custom =            false;
         Inmates =           false;
@@ -135,7 +136,7 @@ togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
         Criminals =         false;
     };
     Killaura = {
-        Toggled =           false;
+        Toggled =           true;
         Neutral =           false;
         Custom =            false;
         Inmates =           false;
@@ -170,7 +171,7 @@ togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
         B =                 255;
     };
     Drawing = {
-        Toggled =           false;
+        Toggled =           true;
         Delete =            false;
         InstaKill =         false;
         Refresh =           0.2;
@@ -179,17 +180,6 @@ togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     Fly = {
         Toggled =           false;
         Speed =             5;
-    };
-    SilentAim = {
-        Toggled =           false;
-        Punch =             false;
-        DeadCheck =         false;
-        Wallcheck =         false;
-        ShowFov =           false;
-        Spread =            false;
-        Radius =            500;
-        Range =             800;
-        HitPart =           "Head";
     };
     Whitelist = { -- sum friends
                             "MrGFXTI",
@@ -212,6 +202,7 @@ togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     };
     ESP =                   false;
     Noclip =                false;
+    AntiFling =             false;
     AntiShield =            false;
     ClickKill =             false;
     AntiTaze =              false;
@@ -331,7 +322,7 @@ local function LoadData()
     end
 
 	if not isfile("athenaplconfig.json") then
-		writefile("athenaplconfig.json", sv.HttpService:JSONEncode({}))
+		SaveData(togs)
 	end
 
     if not isfile("athenacustomcommands.lua") then
@@ -354,7 +345,7 @@ local function LoadData()
         if type(v) == "table" then
             if not data[i] then
                 data[i] = v
-                
+
                 continue
             end
 
@@ -792,7 +783,7 @@ local MessageBox do
 
         Accept.Name = "Accept"
         Accept.Parent = Confirm
-        Accept.BackgroundColor3 = Color3.fromRGB(49, 218, 46)
+        Accept.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
         Accept.BackgroundTransparency = 0.320
         Accept.Position = UDim2.new(0.0571428575, 0, 0.706666648, 0)
         Accept.Size = UDim2.new(0, 135, 0, 24)
@@ -933,6 +924,7 @@ local function GetGun(order)
                 remotes.Team:FireServer("Bright blue")
             end)
         end
+
         if v == "Riot Shield" and lp.Team ~= sv.Teams.Guards then
             local otc = lp.TeamColor
             local switch = lp.Team ~= nil and lp.Team ~= sv.Teams.Criminals and #sv.Teams.Guards:GetPlayers() < 8 and HasM4
@@ -978,6 +970,7 @@ local function Respawn(Color, pos)
 
     task.spawn(function()
         pcall(remotes.Load.InvokeServer, remotes.Load, lp, Color)
+        
         workspace:WaitForChild(lp.Name):PivotTo(Saved1)
     end)
 
@@ -1007,6 +1000,7 @@ function Team(Color)
     if Color == "Bright red" then
         if lp.Team == sv.Teams.Guards then
             Team("Bright orange")
+            task.wait(GetPing() / 2)
         end
 
         firetouchinterest(game.SpawnLocation, lp.Character.Torso, ffalse)
@@ -1268,9 +1262,11 @@ local OnCharacterAdded do
             if togs.AutoRespawn.Toggled then
                 local tool = char:FindFirstChildOfClass("Tool")
                 local isgun = table.find({"M4A1", "M9", "AK-47", "Remington 870"}, tool and tool.Name or "")
-                Respawn(nil, char:GetPivot())
+                task.spawn(Respawn, nil, char:GetPivot())
 
                 if togs.AutoRespawn.EquipOldWeapon then
+                    lp.CharacterAdded:Wait()
+                    task.wait(1/30)
                     local newtool = isgun and tool.Name
                     if newtool then
                         pcall(function()
@@ -1547,7 +1543,13 @@ local function PlayerCharacterAdded(plr)
     end)
 
     cons['d'] = char.ChildRemoved:Connect(function(part)
+        if part.Name == "HumanoidRootPart" and char.Parent ~= nil then
+            Log(plr, "Invisible")
+        end
+
         if part.Name == "Humanoid" and char.Parent ~= nil then
+            Log(plr, "Godmode/Bring")
+
             cons['D'] = char.ChildAdded:Connect(function(t)
                 if not t:IsA("Tool") then return end
             
@@ -1586,7 +1588,7 @@ local function PlayerCharacterAdded(plr)
                 Note(("%s is trying to weld crash!"):format(plr.Name))
             end
 
-            if togs.AntiBring then
+            if togs.HardendAntiBring then
                 local op = lp.Character:GetPivot()
                 sv.Debris:AddItem(lp.Character, 0)
                 task.delay(.5, Respawn, nil, op)
@@ -1650,7 +1652,7 @@ local function PlayerAdded(plr)
                         Note(("%s is trying to weld crash!"):format(plr.Name))
                     end
 
-                    if togs.AntiBring then
+                    if togs.HardendAntiBring then
                         local op = lp.Character:GetPivot()
                         sv.Debris:AddItem(lp.Character, 0)
                         task.delay(2, Respawn, nil, op)
@@ -1719,7 +1721,7 @@ local function SpamArrest(plr, power, d)
                     broken = true
                     Note(("Arrested with: %i arrests"):format(arrests))
                     Note(("Arrested in: %.02f seconds"):format(tick() - starttick))
-
+                    
                     break
                 end
 
@@ -1818,6 +1820,440 @@ local function draggable(obj)
 	end)
 end
 
+do
+    local skids = {}
+
+    local SkidDetection = Instance.new("Frame")
+    local a = Instance.new("UICorner")
+    local b = Instance.new("UIStroke")
+    local Label = Instance.new("TextLabel")
+    local exit = Instance.new("TextButton")
+    local Tabs = Instance.new("ScrollingFrame")
+    local b1 = Instance.new("UIGridLayout")
+    local a1 = Instance.new("UIPadding")
+
+    SkidDetection.Name = "SkidDetection"
+    SkidDetection.Parent = ChatLogs
+    SkidDetection.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+    SkidDetection.BorderColor3 = Color3.fromRGB(40, 40, 40)
+    SkidDetection.Position = UDim2.new(0.160701752, 0, 0.309876561, 0)
+    SkidDetection.Size = UDim2.new(0, 432, 0, 224)
+    SkidDetection.Visible = false
+
+    a.CornerRadius = UDim.new(0, 2)
+    a.Name = "a"
+    a.Parent = SkidDetection
+
+    b.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+    b.Color = Color3.fromRGB(40, 40, 40)
+    b.LineJoinMode = Enum.LineJoinMode.Round
+    b.Thickness = 2
+    b.Transparency = 0
+    b.Enabled = true
+    b.Name = "b"
+    b.Parent = SkidDetection
+
+    Label.Name = "Label"
+    Label.Parent = SkidDetection
+    Label.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Label.BackgroundTransparency = 1.000
+    Label.Size = UDim2.new(0, 105, 0, 30)
+    Label.Font = Enum.Font.SourceSans
+    Label.Text = "Skid Detections"
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.TextSize = 18.000
+
+    exit.Name = "exit"
+    exit.Parent = SkidDetection
+    exit.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    exit.BackgroundTransparency = 1.000
+    exit.Position = UDim2.new(0.92300272, 0, 0.019345317, 0)
+    exit.Size = UDim2.new(0, 20, 0, 20)
+    exit.Font = Enum.Font.Arcade
+    exit.Text = "X"
+    exit.TextColor3 = Color3.fromRGB(255, 255, 255)
+    exit.TextScaled = true
+    exit.TextSize = 100.000
+    exit.TextStrokeTransparency = 0.000
+    exit.TextWrapped = true
+
+    Tabs.Name = "Tabs"
+    Tabs.Parent = SkidDetection
+    Tabs.Active = true
+    Tabs.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Tabs.BackgroundTransparency = 1.000
+    Tabs.BorderSizePixel = 0
+    Tabs.Position = UDim2.new(0.0115740737, 0, 0.133928567, 0)
+    Tabs.Size = UDim2.new(0, 100, 0, 185)
+    Tabs.ScrollBarThickness = 0
+    Tabs.VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Left
+
+    b1.Name = "b1"
+    b1.Parent = Tabs
+    b1.SortOrder = Enum.SortOrder.LayoutOrder
+    b1.CellSize = UDim2.new(0, 94, 0, 20)
+
+    a1.Name = "a1"
+    a1.Parent = Tabs
+    a1.PaddingLeft = UDim.new(0, 3)
+    a1.PaddingRight = UDim.new(0, 3)
+
+    draggable(SkidDetection)
+
+    exit.Activated:Connect(function()
+        SkidDetection.Visible = false
+    end)
+
+    function Log(plr, reason)
+        if skids[plr.Name] then
+            if skids[plr.Name].Info.Text:find(reason) then return end
+
+            skids[plr.Name].Info.Text = ("%s | %s"):format(skids[plr.Name].Info.Text, reason)
+
+            return
+        end
+
+        do
+            local Tab = Instance.new("Frame")
+            skids[plr.Name] = Tab
+            local b2 = Instance.new("UIPadding")
+            local a2 = Instance.new("UICorner")
+            local Title = Instance.new("TextLabel")
+            local Headshot = Instance.new("ImageLabel")
+            local Info = Instance.new("TextLabel")
+            local a3 = Instance.new("UIPadding")
+            local Crim = Instance.new("TextButton")
+            local a2_2 = Instance.new("UICorner")
+            local Bring = Instance.new("TextButton")
+            local a2_3 = Instance.new("UICorner")
+            local Loopkill = Instance.new("TextButton")
+            local a2_4 = Instance.new("UICorner")
+            local View = Instance.new("TextButton")
+            local a2_5 = Instance.new("UICorner")
+            local SA = Instance.new("TextButton")
+            local a2_6 = Instance.new("UICorner")
+            local Kill = Instance.new("TextButton")
+            local a2_7 = Instance.new("UICorner")
+
+            Tab.Name = plr.Name
+            Tab.Parent = SkidDetection
+            Tab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            Tab.Position = UDim2.new(0.259259254, 0, 0.133928567, 0)
+            Tab.Size = UDim2.new(0, 306, 0, 185)
+
+            b2.Name = "b2"
+            b2.Parent = Tab
+            b2.PaddingLeft = UDim.new(0, 2)
+
+            a2.CornerRadius = UDim.new(0, 4)
+            a2.Name = "a2"
+            a2.Parent = Tab
+
+            Title.Name = "Title"
+            Title.Parent = Tab
+            Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Title.BackgroundTransparency = 1.000
+            Title.Position = UDim2.new(0.273026288, 0, 0, 0)
+            Title.Size = UDim2.new(0, 175, 0, 38)
+            Title.Font = Enum.Font.SourceSans
+            Title.Text = ("%s\n(%s)"):format(plr.Name, plr.DisplayName)
+            Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Title.TextSize = 18.000
+            Title.TextWrapped = true
+            Title.TextYAlignment = Enum.TextYAlignment.Top
+
+            Headshot.Name = "Headshot"
+            Headshot.Parent = Tab
+            Headshot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Headshot.BackgroundTransparency = 1.000
+            Headshot.Position = UDim2.new(0.049342107, 0, 0, 0)
+            Headshot.Size = UDim2.new(0, 60, 0, 60)
+
+            Info.Name = "Info"
+            Info.Parent = Tab
+            Info.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Info.BackgroundTransparency = 1.000
+            Info.Position = UDim2.new(-0.00657894742, 0, 0.32432431, 0)
+            Info.Size = UDim2.new(0, 306, 0, 80)
+            Info.Font = Enum.Font.SourceSans
+            Info.Text = ("Age: %i | UID: %i | %s"):format(plr.AccountAge, plr.UserId, reason)
+            Info.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Info.TextSize = 15.000
+            Info.TextWrapped = true
+            Info.TextXAlignment = Enum.TextXAlignment.Left
+            Info.TextYAlignment = Enum.TextYAlignment.Top
+
+            a3.Name = "a3"
+            a3.Parent = Info
+            a3.PaddingLeft = UDim.new(0, 3)
+            a3.PaddingTop = UDim.new(0, 3)
+
+            Crim.Name = "Crim"
+            Crim.Parent = Tab
+            Crim.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+            Crim.Position = UDim2.new(0.0160000008, 0, 0.879999995, 0)
+            Crim.Size = UDim2.new(0, 90, 0, 18)
+            Crim.Font = Enum.Font.SourceSans
+            Crim.Text = "Crim"
+            Crim.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Crim.TextSize = 18.000
+
+            a2_2.CornerRadius = UDim.new(0, 4)
+            a2_2.Name = "a2"
+            a2_2.Parent = Crim
+
+            Bring.Name = "Bring"
+            Bring.Parent = Tab
+            Bring.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+            Bring.Position = UDim2.new(0.348236859, 0, 0.879999995, 0)
+            Bring.Size = UDim2.new(0, 90, 0, 18)
+            Bring.Font = Enum.Font.SourceSans
+            Bring.Text = "Bring"
+            Bring.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Bring.TextSize = 18.000
+
+            a2_3.CornerRadius = UDim.new(0, 4)
+            a2_3.Name = "a2"
+            a2_3.Parent = Bring
+
+            Loopkill.Name = "Loopkill"
+            Loopkill.Parent = Tab
+            Loopkill.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+            Loopkill.Position = UDim2.new(0.348684192, 0, 0.756756783, 0)
+            Loopkill.Size = UDim2.new(0, 90, 0, 18)
+            Loopkill.Font = Enum.Font.SourceSans
+            Loopkill.Text = "Loopkill"
+            Loopkill.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Loopkill.TextSize = 18.000
+
+            a2_4.CornerRadius = UDim.new(0, 4)
+            a2_4.Name = "a2"
+            a2_4.Parent = Loopkill
+
+            View.Name = "View"
+            View.Parent = Tab
+            View.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+            View.Position = UDim2.new(0.674342036, 0, 0.756756783, 0)
+            View.Size = UDim2.new(0, 90, 0, 18)
+            View.Font = Enum.Font.SourceSans
+            View.Text = "View"
+            View.TextColor3 = Color3.fromRGB(255, 255, 255)
+            View.TextSize = 18.000
+
+            a2_5.CornerRadius = UDim.new(0, 4)
+            a2_5.Name = "a2"
+            a2_5.Parent = View
+
+            SA.Name = "SA"
+            SA.Parent = Tab
+            SA.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+            SA.Position = UDim2.new(0.673894763, 0, 0.879999995, 0)
+            SA.Size = UDim2.new(0, 90, 0, 18)
+            SA.Font = Enum.Font.SourceSans
+            SA.Text = "SA"
+            SA.TextColor3 = Color3.fromRGB(255, 255, 255)
+            SA.TextSize = 18.000
+
+            a2_6.CornerRadius = UDim.new(0, 4)
+            a2_6.Name = "a2"
+            a2_6.Parent = SA
+
+            Kill.Name = "Kill"
+            Kill.Parent = Tab
+            Kill.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+            Kill.Position = UDim2.new(0.016447369, 0, 0.756756783, 0)
+            Kill.Size = UDim2.new(0, 90, 0, 18)
+            Kill.Font = Enum.Font.SourceSans
+            Kill.Text = "Kill"
+            Kill.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Kill.TextSize = 18.000
+
+            Kill.Activated:Connect(function()
+                Kill{plr}
+            end)
+
+            SA.Activated:Connect(function()
+                SpamArrest(plr, togs.SpamArrestPower)
+            end)
+
+            View.Activated:Connect(function() 
+                viewing = viewing == plr and nil or plr
+
+                cam.CameraSubject = viewing and viewing.Character or lp.Character
+            end)
+
+            Loopkill.Activated:Connect(function()
+                table.insert(loopkilltable, plr.Name)
+            end)
+
+            Bring.Activated:Connect(function()
+                GetGun{togs.BringTool}
+
+                Bring(plr, lp.Backpack:WaitForChild(togs.BringTool), lp.Character:GetPivot())
+            end)
+
+            Crim.Activated:Connect(function()
+                Crim(plr)
+            end)
+
+            a2_7.CornerRadius = UDim.new(0, 4)
+            a2_7.Name = "a2"
+            a2_7.Parent = Kill
+
+            local B = Instance.new("TextButton")
+            local _1a2 = Instance.new("UICorner")
+            local _1b2 = Instance.new("UIPadding")
+
+            B.Name = "B"
+            B.Parent = Tabs
+            B.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            B.Size = UDim2.new(0, 200, 0, 50)
+            B.Font = Enum.Font.SourceSans
+            B.Text = plr.Name
+            B.TextColor3 = Color3.fromRGB(255, 255, 255)
+            B.TextSize = 15.000
+            B.TextXAlignment = Enum.TextXAlignment.Left
+
+            _1a2.CornerRadius = UDim.new(0, 4)
+            _1a2.Name = "a2"
+            _1a2.Parent = B
+
+            _1b2.Name = "b2"
+            _1b2.Parent = B
+            _1b2.PaddingLeft = UDim.new(0, 2)
+
+            B.Activated:Connect(function()
+                for i,v in pairs(skids) do
+                    v.Visible = i == plr.Name
+                end
+            end)
+
+            Headshot.Image = sv.Players:GetUserThumbnailAsync(plr.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+        end
+    end
+
+    task.spawn(function()
+        while task.wait(2) do
+            for i,v in pairs(sv.Players:GetPlayers()) do
+                if v == lp then continue end
+
+                if v.Character and v.Character:FindFirstChild("Humanoid") then
+                    if v.Character.Humanoid:GetState() == Enum.HumanoidStateType.PlatformStanding then
+                        Log(v, "Flying")
+                    end
+                end
+
+                if not v.Team then
+                    Log(v, "Custom team")
+                end
+
+                if ((v:FindFirstChild("Backpack") and v.Backpack:FindFirstChild("AK-47")) or (v.Character and v.Character:FindFirstChild("AK-47"))) and table.find({game.Teams.Inmates, game.Teams.Neutral}, v.Team) then
+                    Log(v, "Possible gun spawn")
+                end
+            end
+        end
+    end)
+end
+
+local function ExecuteCommand(CTbl)
+    local Execute = Instance.new("Frame")
+    local a = Instance.new("UICorner")
+    local b = Instance.new("UIStroke")
+    local Info = Instance.new("TextLabel")
+    local TextBox = Instance.new("TextBox")
+    local UICorner = Instance.new("UICorner")
+    local Title = Instance.new("TextLabel")
+    local TextButton = Instance.new("TextButton")
+    
+    Execute.Name = "Execute"
+    Execute.Parent = ChatLogs
+    Execute.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+    Execute.BorderColor3 = Color3.fromRGB(40, 40, 40)
+    Execute.Position = UDim2.new(0.5, -175, 0.5, -75)
+    Execute.Size = UDim2.new(0, 350, 0, 150)
+    
+    a.CornerRadius = UDim.new(0, 2)
+    a.Name = "a"
+    a.Parent = Execute
+    
+    b.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+    b.Color = Color3.fromRGB(40, 40, 40)
+    b.LineJoinMode = Enum.LineJoinMode.Round
+    b.Thickness = 2
+    b.Transparency = 0
+    b.Enabled = true
+    b.Name = "b"
+    b.Parent = Execute
+    
+    Info.Name = "Info"
+    Info.Parent = Execute
+    Info.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Info.BackgroundTransparency = 1.000
+    Info.Position = UDim2.new(0.0285714287, 0, 0.300000012, 0)
+    Info.Size = UDim2.new(0, 330, 0, 20)
+    Info.Font = Enum.Font.SourceSans
+    Info.Text = "Seperate arguments with \",\""
+    Info.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Info.TextSize = 17.000
+    Info.TextWrapped = true
+    Info.TextYAlignment = Enum.TextYAlignment.Top
+    
+    TextBox.Parent = Execute
+    TextBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    TextBox.Position = UDim2.new(0.0285714287, 0, 0.560000002, 0)
+    TextBox.Size = UDim2.new(0, 330, 0, 50)
+    TextBox.Font = Enum.Font.SourceSans
+    TextBox.PlaceholderText = "Enter arguments"
+    TextBox.Text = ""
+    TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TextBox.TextSize = 18.000
+    
+    UICorner.CornerRadius = UDim.new(0, 4)
+    UICorner.Parent = TextBox
+    
+    Title.Name = "Title"
+    Title.Parent = Execute
+    Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Title.BackgroundTransparency = 1.000
+    Title.Position = UDim2.new(0.268571436, 0, 0.0799999982, 0)
+    Title.Size = UDim2.new(0, 163, 0, 20)
+    Title.Font = Enum.Font.SourceSans
+    Title.Text = ("Execute %s"):format(CTbl.Command)
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 18.000
+    Title.TextWrapped = true
+    Title.TextYAlignment = Enum.TextYAlignment.Top
+    
+    TextButton.Parent = Execute
+    TextButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TextButton.BackgroundTransparency = 1.000
+    TextButton.Position = UDim2.new(0.914285719, 0, 0.0799999982, 0)
+    TextButton.Size = UDim2.new(0, 20, 0, 20)
+    TextButton.Font = Enum.Font.Arcade
+    TextButton.Text = "X"
+    TextButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TextButton.TextScaled = true
+    TextButton.TextSize = 100.000
+    TextButton.TextStrokeTransparency = 0.000
+    TextButton.TextWrapped = true
+    
+    TextButton.Activated:Connect(function() 
+        Execute:Destroy()
+    end)
+    
+    TextBox.FocusLost:Connect(function() 
+        Execute:Destroy()
+        local c = {}
+        for i, v in pairs(TextBox.Text:split(",")) do
+            local ins = v:gsub(" ", "")
+            
+            table.insert(c, ins)
+        end
+        
+        pcall(task.spawn, CTbl.Function, nil, unpack(c))
+    end)
+end
+
 local commands, AddCommand, ChangeAdminPerms, HandleMessage, CommandBar = {} do
     local ToggleCommandList do
         local CommandsList = Instance.new("Frame")
@@ -1869,6 +2305,45 @@ local commands, AddCommand, ChangeAdminPerms, HandleMessage, CommandBar = {} do
         d.PaddingLeft = UDim.new(0, 3)
         d.PaddingRight = UDim.new(0, 3)
         d.PaddingTop = UDim.new(0, 3)
+        
+        local CmdHoverInfo = Instance.new("Frame")
+        local TextInfo = Instance.new("TextLabel")
+        local a1 = Instance.new("UICorner")
+        local b1 = Instance.new("UIStroke")
+        
+        CmdHoverInfo.Name = "CmdHoverInfo"
+        CmdHoverInfo.Parent = ChatLogs
+        CmdHoverInfo.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+        CmdHoverInfo.Position = UDim2.new(0.100636944, 0, 0.246376812, 0)
+        CmdHoverInfo.Size = UDim2.new(0, 189, 0, 59)
+        CmdHoverInfo.Visible = false
+        
+        TextInfo.Name = "Info"
+        TextInfo.Parent = CmdHoverInfo
+        TextInfo.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+        TextInfo.BackgroundTransparency = 1.000
+        TextInfo.Position = UDim2.new(0, 3, 0, 0)
+        TextInfo.Size = UDim2.new(1, -3, 1, 0)
+        TextInfo.Font = Enum.Font.SourceSans
+        TextInfo.Text = ""
+        TextInfo.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TextInfo.TextSize = 18.000
+        TextInfo.TextWrapped = true
+        TextInfo.TextXAlignment = Enum.TextXAlignment.Left
+        TextInfo.TextYAlignment = Enum.TextYAlignment.Top
+        
+        a1.CornerRadius = UDim.new(0, 2)
+        a1.Name = "a"
+        a1.Parent = CmdHoverInfo
+        
+        b1.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+        b1.Color = Color3.fromRGB(40, 40, 40)
+        b1.LineJoinMode = Enum.LineJoinMode.Round
+        b1.Thickness = 2
+        b1.Transparency = 0
+        b1.Enabled = true
+        b1.Name = "b"
+        b1.Parent = CmdHoverInfo
 
         List.ChildAdded:Connect(function()
             task.wait()
@@ -1889,7 +2364,7 @@ local commands, AddCommand, ChangeAdminPerms, HandleMessage, CommandBar = {} do
             Final["IsUseableByOthers"] = IsUseableByOthers
             Final["Info"] = Info
 
-            local Cmd = Instance.new("TextButton")
+            local Cmd, con = Instance.new("TextButton")
 
             Cmd.Name = "Cmd"
             Cmd.Parent = List
@@ -1901,11 +2376,34 @@ local commands, AddCommand, ChangeAdminPerms, HandleMessage, CommandBar = {} do
             Cmd.Font = Enum.Font.SourceSans
             Cmd.TextColor3 = Color3.fromRGB(255, 255, 255)
             Cmd.TextSize = 16.000
-
-            --[[local fstr = Info.."\nIs usable by others: "..tostring(IsUseableByOthers).."\nRequires arguments: "..tostring(RequiresArgs)
-            if Aliases then
-                fstr = fstr.."\nAliases: {"..(type(Aliases) == "table" and table.concat(Aliases, ", ") or Aliases).."}"
-            end]]
+            
+            Cmd.Activated:Connect(function() 
+                if RequiresArgs then
+                    ExecuteCommand(Final)
+                end
+            end)
+            
+            local fstr = ("%s"..(Aliases ~= nil and 
+                (" (%s)"):format(type(Aliases) == "string" and Aliases or table.concat(Aliases, ", "))
+                or "").." %s\nUsed by others: %s"):format(
+            Command, tostring(Info), tostring(IsUseableByOthers))
+            local fsize = sv.TextService:GetTextSize(fstr, 18, "SourceSans", Vector2.new(300, 1/0)) + Vector2.new(3, 0)
+            
+            Cmd.MouseEnter:Connect(function() 
+                CmdHoverInfo.Visible = true
+                TextInfo.Text = fstr
+                CmdHoverInfo.Size = UDim2.new(0, fsize.X, 0, fsize.Y)
+                
+                con = sv.RunService.Stepped:Connect(function() 
+                    CmdHoverInfo.Position = UDim2.new(0, lp:GetMouse().X - fsize.X - 2, 0, lp:GetMouse().Y - fsize.Y - 2)
+                end)
+            end)
+            
+            Cmd.MouseLeave:Connect(function() 
+                pcall(con and con.Disconnect or function() end, con)
+                
+                CmdHoverInfo.Visible = false
+            end)
 
             table.insert(commands, Final)
         end
@@ -2101,136 +2599,127 @@ end
 
 local ChatLogAdd do
     local AthenaChat = Instance.new("Frame")
-    local Top = Instance.new("Frame")
-    local Min = Instance.new("TextButton")
-    local UIGradient = Instance.new("UIGradient")
-    local Commands = Instance.new("TextLabel")
-    local UIGradient_2 = Instance.new("UIGradient")
-    local Logs = Instance.new("ScrollingFrame")
-    local UIListLayout = Instance.new("UIListLayout")
+    local a = Instance.new("UICorner")
+    local b = Instance.new("UIStroke")
+    local Label = Instance.new("TextLabel")
+    local exit = Instance.new("TextButton")
+    local Chats = Instance.new("ScrollingFrame")
+    local Text = Instance.new("TextBox")
+    local a1 = Instance.new("UICorner")
+    local b1 = Instance.new("UIPadding")
     local UIPadding = Instance.new("UIPadding")
-    local TextBox = Instance.new("TextBox")
-
-    ChatLogs.Name = "ChatLogs"
-
-    AthenaChat.Parent = ChatLogs
-    AthenaChat.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    AthenaChat.BackgroundTransparency = 0.350
-    AthenaChat.BorderColor3 = Color3.fromRGB(0, 0, 0)
-    AthenaChat.BorderSizePixel = 2
-    AthenaChat.Position = UDim2.new(0.274984151, 0, 0.597905636, 0)
-    AthenaChat.Size = UDim2.new(0, 371, 0, 214)
-    AthenaChat.Name = "AthenaChat"
-    AthenaChat.Visible = false
-
-    Top.Name = "Top"
-    Top.Parent = AthenaChat
-    Top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Top.BackgroundTransparency = 0.650
-    Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
-    Top.BorderSizePixel = 2
-    Top.Position = UDim2.new(0, 0, -0.00165289803, 0)
-    Top.Size = UDim2.new(0, 371, 0, 24)
-
-    Min.Name = "Min"
-    Min.Parent = Top
-    Min.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    Min.BorderColor3 = Color3.fromRGB(51, 51, 51)
-    Min.BorderSizePixel = 2
-    Min.Position = UDim2.new(0.936603725, -1, 0.125, 0)
-    Min.Size = UDim2.new(0, 17, 0, 17)
-    Min.Font = Enum.Font.SourceSans
-    Min.LineHeight = 1.150
-    Min.Text = "-"
-    Min.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Min.TextSize = 39.000
-
-    UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
-    UIGradient.Rotation = 90
-    UIGradient.Parent = Top
-
-    Commands.Name = "Commands"
-    Commands.Parent = Top
-    Commands.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Commands.BackgroundTransparency = 1.000
-    Commands.BorderColor3 = Color3.fromRGB(0, 0, 0)
-    Commands.BorderSizePixel = 0
-    Commands.Position = UDim2.new(0.0306459349, 0, -0.0416666679, 0)
-    Commands.Size = UDim2.new(0, 95, 0, 24)
-    Commands.Font = Enum.Font.SourceSansBold
-    Commands.Text = "Athena chat"
-    Commands.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Commands.TextSize = 20.000
-    Commands.TextStrokeTransparency = 0.500
-    Commands.TextXAlignment = Enum.TextXAlignment.Left
-
-    UIGradient_2.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
-    UIGradient_2.Rotation = 90
-    UIGradient_2.Parent = AthenaChat
-
-    Logs.Name = "Logs"
-    Logs.Parent = AthenaChat
-    Logs.Active = true
-    Logs.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Logs.BackgroundTransparency = 1.000
-    Logs.BorderSizePixel = 0
-    Logs.Position = UDim2.new(0, 0, 0.110496446, 0)
-    Logs.Size = UDim2.new(0, 371, 0, 157)
-    Logs.ScrollBarThickness = 2
-    Logs.CanvasSize = UDim2.new()
-
-    UIListLayout.Parent = Logs
-    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-    UIPadding.Parent = Logs
+    local UIListLayout = Instance.new("UIListLayout")
+    
+    UIPadding.Parent = Chats
     UIPadding.PaddingLeft = UDim.new(0, 5)
+    UIPadding.PaddingRight = UDim.new(0, 5)
+    
+    UIListLayout.Parent = Chats
+    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    
+    AthenaChat.Name = "AthenaChat"
+    AthenaChat.Parent = ChatLogs
+    AthenaChat.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
+    AthenaChat.BorderColor3 = Color3.fromRGB(40, 40, 40)
+    AthenaChat.Position = UDim2.new(0.348070174, 0, 0.36172837, 0)
+    AthenaChat.Size = UDim2.new(0, 432, 0, 224)
+    AthenaChat.Visible = false
+    
+    a.CornerRadius = UDim.new(0, 2)
+    a.Name = "a"
+    a.Parent = AthenaChat
+    
+    b.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+    b.Color = Color3.fromRGB(40, 40, 40)
+    b.LineJoinMode = Enum.LineJoinMode.Round
+    b.Thickness = 2
+    b.Transparency = 0
+    b.Enabled = true
+    b.Name = "b"
+    b.Parent = AthenaChat
+    
+    Label.Name = "Label"
+    Label.Parent = AthenaChat
+    Label.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Label.BackgroundTransparency = 1.000
+    Label.Size = UDim2.new(0, 88, 0, 30)
+    Label.Font = Enum.Font.SourceSans
+    Label.Text = "Athena Chat"
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.TextSize = 18.000
+    
+    exit.Name = "exit"
+    exit.Parent = AthenaChat
+    exit.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    exit.BackgroundTransparency = 1.000
+    exit.Position = UDim2.new(0.92300272, 0, 0.019345317, 0)
+    exit.Size = UDim2.new(0, 20, 0, 20)
+    exit.Font = Enum.Font.Arcade
+    exit.Text = "X"
+    exit.TextColor3 = Color3.fromRGB(255, 255, 255)
+    exit.TextScaled = true
+    exit.TextSize = 100.000
+    exit.TextStrokeTransparency = 0.000
+    exit.TextWrapped = true
+    
+    Chats.Name = "Chats"
+    Chats.Parent = AthenaChat
+    Chats.Active = true
+    Chats.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Chats.BackgroundTransparency = 1.000
+    Chats.Position = UDim2.new(0, 0, 0.133928567, 0)
+    Chats.Size = UDim2.new(0, 432, 0, 155)
+    Chats.ScrollBarThickness = 0
+    Chats.CanvasSize = UDim2.new()
+    
+    Text.Name = "Text"
+    Text.Parent = AthenaChat
+    Text.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Text.Position = UDim2.new(0.0324074067, 0, 0.883928716, 0)
+    Text.Size = UDim2.new(0, 404, 0, 20)
+    Text.Font = Enum.Font.SourceSans
+    Text.PlaceholderText = "Send message here!"
+    Text.Text = ""
+    Text.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Text.TextSize = 18.000
+    Text.TextXAlignment = Enum.TextXAlignment.Left
+    
+    a1.CornerRadius = UDim.new(0, 2)
+    a1.Name = "a1"
+    a1.Parent = Text
+    
+    b1.Name = "b1"
+    b1.Parent = Text
+    b1.PaddingLeft = UDim.new(0, 5)
+    b1.PaddingRight = UDim.new(0, 5)
+    
+    exit.Activated:Connect(function() 
+        AthenaChat.Visible = false
+    end)
 
-    TextBox.Parent = AthenaChat
-    TextBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    TextBox.BackgroundTransparency = 1.000
-    TextBox.Position = UDim2.new(0.0134770889, 0, 0.846330047, 0)
-    TextBox.Size = UDim2.new(0, 366, 0, 32)
-    TextBox.Font = Enum.Font.SourceSansBold
-    TextBox.PlaceholderText = "Send a message!"
-    TextBox.Text = ""
-    TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TextBox.TextSize = 15.000
-    TextBox.TextWrapped = true
-    TextBox.TextStrokeTransparency = 0.500
-    TextBox.TextXAlignment = Enum.TextXAlignment.Left
-
-    TextBox.FocusLost:Connect(function(enter)
+    Text.FocusLost:Connect(function(enter)
         if not enter then return end
-        local idmsg = {["ACC_IDENTIFIER"] = lp}
-        local msg = {}
-
-        table.foreach(TextBox.Text:reverse():split(""), function(_, v)
-            msg["ACC_".._] = string.byte(v)
-            idmsg["ACC_"..RandomString(math.random(4, 16))] = math.random(1, 73821) + math.random(0, 1)
-        end)
+        local idmsg = {["CC_IDENTIFIER"] = lp}
+        local msg = {["Message_Unsecure"] = Text.Text}
         
         SendMsg({
             [1] = idmsg,
             [2] = msg
         })
     
-        ChatLogAdd(lp, TextBox.Text, tick())
+        ChatLogAdd(lp, Text.Text, tick())
 
-        TextBox.Text = ""
+        Text.Text = ""
     end)
 
-    Min.Activated:Connect(function()
-		AthenaChat.Visible = false
-	end)
-
-	Logs.ChildAdded:Connect(function(item)
+	Chats.ChildAdded:Connect(function(item)
         task.wait()
-		local os = Logs.AbsoluteCanvasSize
-		local op = Logs.CanvasPosition
-		Logs.CanvasSize += UDim2.new(0, 0, 0, item.Size.Y.Offset + 1)
+		local os = Chats.AbsoluteCanvasSize
+		local op = Chats.CanvasPosition
+		Chats.CanvasSize += UDim2.new(0, 0, 0, item.Size.Y.Offset)
 
-		if math.round(os.Y - 157) == op.Y then
-			Logs.CanvasPosition = Logs.AbsoluteCanvasSize
+		if math.round(os.Y - 155) == op.Y then
+			Chats.CanvasPosition = Chats.AbsoluteCanvasSize
 		end
 	end)
 
@@ -2244,22 +2733,21 @@ local ChatLogAdd do
         end
 
         chatticks[user] = tic
-		local Text = Instance.new("TextLabel")
+        
+        local Text = Instance.new("TextLabel")
         local name = user.Name
-		local size = sv.TextService:GetTextSize(name..": "..msg:sub(1, 300), 15, "SourceSansBold", Vector2.new(360, 1 / 0)).Y
-
-		Text.Name = "Text"
-        Text.Parent = Logs
+		local size = sv.TextService:GetTextSize(name..": "..msg:sub(1, 300), 18, "SourceSans", Vector2.new(404, 1 / 0)).Y
+        
+        Text.Parent = Chats
         Text.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         Text.BackgroundTransparency = 1.000
-        Text.Position = UDim2.new(0, 0, -0.00700934557, 0)
-        Text.Size = UDim2.new(0, 360, 0, size)
-        Text.Font = Enum.Font.SourceSansBold
-        Text.Text = name..": "..msg:sub(1, 300)
+        Text.Position = UDim2.new()
+        Text.Size = UDim2.new(0, 404, 0, size)
+        Text.Font = Enum.Font.SourceSans
+        Text.Text = ("<font color=\"rgb(0, 200, 0)\">%s</font>: %s"):format(name, msg:sub(1, 300))
         Text.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Text.TextSize = 15.000
-        Text.TextStrokeTransparency = 0.500
-        Text.TextWrapped = true
+        Text.RichText = true
+        Text.TextSize = 18.000
         Text.TextXAlignment = Enum.TextXAlignment.Left
 	end
 end
@@ -2330,47 +2818,6 @@ do
 
             combat.Slider("Fire rate", 0, 1, togs.GunMods.FireRate, true, function(a)
                 togs.GunMods.FireRate = a
-            end)
-        end
-
-        -- Broken ass silent aim
-        do
-            local combat = combattop.SideTab("Silent aim", 1000).Section("Silent aim")
-
-            combat.Toggle("Silent aim", togs.SilentAim.Toggled, function(a)
-                togs.SilentAim.Toggled = a
-            end)
-
-            combat.Toggle("Show fov", togs.SilentAim.ShowFov, function(a)
-                togs.SilentAim.ShowFov = a
-            end)
-
-            combat.Toggle("Dead check", togs.SilentAim.DeadCheck, function(a)
-                togs.SilentAim.DeadCheck = a
-            end)
-
-            combat.Toggle("Wall check", togs.SilentAim.Wallcheck, function(a)
-                togs.SilentAim.Wallcheck = a
-            end)
-
-            combat.Toggle("Hit torso", togs.SilentAim.HitPart == "Torso", function(a)
-                togs.SilentAim.HitPart = a and "Torso" or "Head"
-            end)
-
-            combat.Toggle("Spread", togs.SilentAim.Spread, function(a)
-                togs.SilentAim.Spread = a
-            end)
-
-            combat.Toggle("Punch", togs.SilentAim.Punch, function(a)
-                togs.SilentAim.Punch = a
-            end)
-
-            combat.Slider("Range", 1, 5000, togs.SilentAim.Range, false, function(a)
-                togs.SilentAim.Range = a
-            end)
-
-            combat.Slider("Radius", 1, 1000, togs.SilentAim.Radius, false, function(a)
-                togs.SilentAim.Radius = a
             end)
         end
 
@@ -2658,6 +3105,7 @@ do
 
         player.Button("Delete HumanoidRootPart", function()
             local c = lp.Character
+            
             c.Parent = nil
             c.HumanoidRootPart.Parent = nil
             c.Parent = workspace
@@ -2665,6 +3113,10 @@ do
 
         player.Toggle("Noclip", togs.Noclip, function(a)
             togs.Noclip = a
+        end)
+
+        player.Toggle("Anti fling", togs.AntiFling, function(a)
+            togs.AntiFling = a
         end)
 
         player.KeyBind("Noclip key", togs.Keybinds.Noclip, function(a)
@@ -2984,24 +3436,54 @@ do
 
             world.Button("Teleport cars", function()
                 local oldpos = lp.Character:GetPivot()
-                local squadcars = {}
+                local cars = {}
 
                 for i,v in pairs(workspace.Prison_ITEMS.buttons:GetChildren()) do
-                    if v.Name == "Car Spawner" and v["Car Spawner"].type.Value == "Squad" then
-                        table.insert(squadcars, v)
+                    if v.Name == "Car Spawner" then
+                        table.insert(cars, v)
                     end
                 end
 
-                for i,v in pairs(squadcars) do
+                for i,v in pairs(cars) do
                     task.spawn(remotes.Item.InvokeServer, remotes.Item, v["Car Spawner"])
                     local car = workspace.CarContainer.ChildAdded:Wait()
                     repeat
                         car:WaitForChild("Body"):WaitForChild("VehicleSeat"):Sit(lp.Character.Humanoid)
                     until not lp.Character or not lp.Character:FindFirstChild("Humanoid") or lp.Character.Humanoid.Sit or not task.wait()
-                    Goto(oldpos)
+                    car.PrimaryPart = lp.Character.Humanoid.SeatPart
+                    car:SetPrimaryPartCFrame(oldpos)
                 end
 
+                task.wait(.1)
+
                 lp.Character.Humanoid.Sit = false
+            end)
+
+            world.Toggle("Loop teleport cars", togs.LTC, function(a)
+                togs.LTC = a
+
+                local oldpos = lp.Character:GetPivot()
+                local cars = {}
+
+                for i,v in pairs(workspace.Prison_ITEMS.buttons:GetChildren()) do
+                    if v.Name == "Car Spawner" then
+                        table.insert(cars, v)
+                    end
+                end
+
+                while togs.LTC and task.wait() do
+                    for i,v in pairs(cars) do
+                        task.spawn(remotes.Item.InvokeServer, remotes.Item, v["Car Spawner"])
+                        local car = workspace.CarContainer.ChildAdded:Wait()
+                        repeat
+                            car:WaitForChild("Body"):WaitForChild("VehicleSeat"):Sit(lp.Character.Humanoid)
+                        until not lp.Character or not lp.Character:FindFirstChild("Humanoid") or lp.Character.Humanoid.Sit or not task.wait()
+                        car.PrimaryPart = lp.Character.Humanoid.SeatPart
+                        car:SetPrimaryPartCFrame(oldpos)
+                    end
+
+                    task.wait(5 + GetPing())
+                end
             end)
 
             world.Toggle("Stay", false, function(a)
@@ -3393,7 +3875,7 @@ do
                 togs.Drawing.Gun = a
             end)
 
-            setting.Dropdown("Bring tool", {"M9", "Remington 870", "M4A1", "AK-47", "Hammer", "Crude Knife"}, function(a)
+            setting.Dropdown("Bring tool", {"M9", "Remington 870", "M4A1", "AK-47", "Hammer", "Crude Knife", "Riot Shield"}, function(a)
                 togs.BringTool = a
             end)
 
@@ -3414,6 +3896,10 @@ do
 
             setting.Button("Athena chat", function()
                 ChatLogs.AthenaChat.Visible = true
+            end)
+
+            setting.Button("Skid detection", function()
+                ChatLogs.SkidDetection.Visible = true
             end)
 
             setting.Toggle("No fade ui", togs.NoFade, function(a)
@@ -3494,21 +3980,6 @@ do
 
                         table.insert(ignore, v)
                     end)
-                end
-
-                if togs.SilentAim.Toggled and table.find({"TaserInterface", "GunInterface"}, tostring(calling)) then
-                    local CPP, hit = GetClosestToMousePos(ignore, togs.SilentAim.Wallcheck, togs.SilentAim.Range, togs.SilentAim.Radius, togs.SilentAim.DeadCheck, togs.SilentAim.HitPart)
-
-                    if hit then
-                        local headp = lp.Character and lp.Character.FindFirstChild(lp.Character, "Head") and lp.Character.Head.Position
-
-                        if headp then
-                            local spread = require(lp.Character.FindFirstChildOfClass(lp.Character, "Tool").GunStates).Spread / (headp - CPP).magnitude
-                            CPP += togs.SilentAim.Spread and Vector3.new(math.random(-spread, spread), math.random(-spread, spread), math.random(-spread, spread)) or Vector3.zero -- math.random spam but what can ya do
-
-                            return hit, CPP
-                        end
-                    end
                 end
 
                 if table.find({"TaserInterface", "GunInterface"}, tostring(calling)) then
@@ -3749,16 +4220,8 @@ do
             return
         end
 
-        if bullets[1] and bullets[1]["ACC_IDENTIFIER"] then
-            local fnlmsg = {""}
-
-            table.foreach(bullets[2], function(_, v)
-                if _:sub(1, 3) == "ACC" then
-                    fnlmsg[tonumber(_:sub(5))] = string.char(v)
-                end
-            end)
-
-            ChatLogAdd(bullets[1]["ACC_IDENTIFIER"], table.concat(fnlmsg):reverse(), tick())
+        if bullets[1] and bullets[1]["CC_IDENTIFIER"] then
+            ChatLogAdd(bullets[1]["CC_IDENTIFIER"], bullets[2]["Message_Unsecure"], tick())
 
             return
         end
@@ -3874,19 +4337,27 @@ do
     end)
 
     sv.RunService.Stepped:Connect(function()
-        if not togs.Noclip and not sv.UserInputService:IsKeyDown(togs.Keybinds.Noclip) then return end
-        
-        for i,v in next, workspace.CarContainer:GetDescendants() do
-            if v:IsA("BasePart") then
-                v.CanCollide = false
-            end
-        end
+        if not togs.Noclip and not sv.UserInputService:IsKeyDown(togs.Keybinds.Noclip) or not lp.Character then return end
 
-        for i,v in next, sv.Players:GetPlayers() do
-            if v.Character then
-                for i2,v2 in next, v.Character:GetDescendants() do
-                    if v2:IsA("BasePart") then
-                        v2.CanCollide = false
+        for i,v in next, lp.Character:GetDescendants() do
+            if not v:IsA("BasePart") then continue end
+
+            v.CanCollide = false
+        end
+        
+        if togs.AntiFling then
+            for i,v in next, workspace.CarContainer:GetDescendants() do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false
+                end
+            end
+
+            for i,v in next, sv.Players:GetPlayers() do
+                if v.Character then
+                    for i2,v2 in next, v.Character:GetDescendants() do
+                        if v2:IsA("BasePart") then
+                            v2.CanCollide = false
+                        end
                     end
                 end
             end
@@ -4237,7 +4708,7 @@ end
 -- everyones favorite part (not fucking mine), COMMANDS!
 
 do
-    AddCommand("Kill", "k", "Kills given players or team", true --[[requiresargs]], true --[[IsUseableByOthers]], function(plr, ...)
+    AddCommand("Kill", "k", "<players | teams...>\nKills given players or team", true --[[requiresargs]], true --[[IsUseableByOthers]], function(plr, ...)
         local kt = {}
 
         for i,v in pairs({...}) do
@@ -4253,7 +4724,7 @@ do
         end
     end)
 
-    AddCommand("Loopkill", "lk", "Loopkills given players or team", true, true, function(plr, ...)
+    AddCommand("Loopkill", "lk", "<players | teams...>\nLoopkills given players or team", true, true, function(plr, ...)
         for i,v in pairs({...}) do
             local t = GetTeam(v) or GetPlayer(v)
             if t == lp then continue end
@@ -4269,11 +4740,11 @@ do
         end
     end)
 
-    AddCommand("Respawn", {"Re", "Reload"}, "Reloads your character", false, false, function(plr, ...)
+    AddCommand("Respawn", {"Re", "Reload"}, "<>\nReloads your character", false, false, function(plr, ...)
         Respawn()
     end)
 
-    AddCommand("Getswatitems", {"Getswat", "Gsi"}, "Gets swat items", false, false, function(plr, ...)
+    AddCommand("Getswatitems", {"Getswat", "Gsi"}, "<>\nGets swat items", false, false, function(plr, ...)
         local oldteam
         if lp.Team ~= sv.Teams.Guards then
             oldteam = lp.TeamColor.Name
@@ -4288,22 +4759,17 @@ do
         end
     end)
 
-    AddCommand("Getguns", "Guns", "Gets your guns in gun order", false, false, function(plr, ...)
+    AddCommand("Getguns", "Guns", "<>\nGets your guns in gun order", false, false, function(plr, ...)
         GetGun(togs.GunOrder)
     end)
 
-    AddCommand("Breakspamarrest", {"Breaksa", "Breakspam", "Bsa"}, "Breaks spam arrest", false, false, function(plr, ...)
+    AddCommand("Breakspamarrest", {"Breaksa", "Breakspam", "Bsa"}, "<>\nBreaks spam arrest", false, false, function(plr, ...)
         breaksa = true
         task.wait(.1)
         breaksa = false
     end)
 
-    AddCommand("Cleardrawing", "Cleard", "Clears all drawing objects", false, false, function(plr, ...)
-        drawingobjects = {}
-        workspacedrawingobjects:ClearAllChildren()
-    end)
-
-    AddCommand("Arrest", "ar", "Arrests player", true, true, function(plr, ...)
+    AddCommand("Arrest", "ar", "<players | teams...>\nArrests player", true, true, function(plr, ...)
         for i,v in pairs({...}) do
             for i, v2 in pairs(AGetPlayer(v)) do
                 if v2 == lp then continue end
@@ -4322,14 +4788,14 @@ do
         end
     end)
 
-    AddCommand("Copyteamcolor", {"ctc", "ct"}, "Copies player team color", true, false, function(plr, one)
+    AddCommand("Copyteamcolor", {"ctc", "ct"}, "<player>\nCopies player team color", true, false, function(plr, one)
         local splr = GetPlayer(one)
         if not splr then return end
 
         Respawn(splr.TeamColor)
     end)
 
-    AddCommand("Goto", {"to", "teleport"}, "Teleports player to player (only 1 argument accepted)", true, true, function(plr, one)
+    AddCommand("Goto", {"to", "teleport"}, "<player>\nTeleports player to player.", true, true, function(plr, one)
         local splr = GetPlayer(one)
         if not splr then return end
 
@@ -4343,11 +4809,11 @@ do
         Bring(sv.Players[plr], lp.Backpack:WaitForChild(togs.BringTool), splr.Character:GetPivot())
     end)
 
-    AddCommand("Rejoin", "Rj", "Rejoins the server", false, false, function(plr, ...)
+    AddCommand("Rejoin", "Rj", "<>\nRejoins the server", false, false, function(plr, ...)
         sv.TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
     end)
 
-    AddCommand("Team", "t", "Puts you on team", false, false, function(plr, ...)
+    AddCommand("Team", "t", "<Color3 | BrickColor | number>\nPuts you on team", false, false, function(plr, ...)
         local t = GetTeam(({...})[1])
 
         if t and t ~= "Custom" then
@@ -4365,7 +4831,7 @@ do
         Respawn(BrickColor.new(...))
     end)
 
-    AddCommand("Timeout", "Disconnect", "Timeouts the server", false, false, function(plr, ...)
+    AddCommand("Timeout", "Disconnect", "<>\nTimeouts the server", false, false, function(plr, ...)
         if not MessageBox("Confirm", "Are you sure you want timeout?") then return end
 
         GetGun{"M9"}
@@ -4376,7 +4842,7 @@ do
         end
     end)
 
-    AddCommand("Weldcrash", "Crash", "Crashes the server using welds", false, false, function(plr, ...)
+    AddCommand("Weldcrash", "Crash", "<>\nCrashes the server using welds", false, false, function(plr, ...)
         if not MessageBox("Confirm", "Are you sure you want to weld crash?") then return end
 
         GetGun{"Remington 870"}
@@ -4392,7 +4858,7 @@ do
         rem.Parent = lp.Backpack
     end)
 
-    AddCommand("Admin", "Rank", "Admins given player", true, false, function(plr, ...)
+    AddCommand("Admin", "Rank", "<players...>\nAdmins given player", true, false, function(plr, ...)
         for i,v in pairs({...}) do
             local splr = GetPlayer(v)
             if not splr then continue end
@@ -4401,7 +4867,7 @@ do
         end
     end)
 
-    AddCommand("Bring", "b", "Brings player to you or an admin", true, true, function(plr, ...)
+    AddCommand("Bring", "b", "<players | team...>\nBrings player to you or an admin", true, true, function(plr, ...)
         for i,v in pairs({...}) do
             for i, v2 in pairs(AGetPlayer(v)) do
                 if v2 == lp then continue end
@@ -4412,7 +4878,7 @@ do
         end
     end)
 
-    AddCommand("Fling", nil, "Flings player", true, true, function(plr, fplr)
+    AddCommand("Fling", nil, "<player>\nFlings player", true, true, function(plr, fplr)
         local fplr = GetPlayer(fplr)
 
         if fplr == lp or not fplr or not fplr.Character or not lp.Character then return end
@@ -4439,7 +4905,7 @@ do
         Note(("Flung %s"):format(fplr.Name))
     end)
 
-    AddCommand("Slide", "sl", "Slides given players", true, true, function(plr, ...)
+    AddCommand("Slide", "sl", "<players | team...>\nSlides given players", true, true, function(plr, ...)
         for i,v in pairs({...}) do
             for i, v2 in pairs(AGetPlayer(v)) do
                 if v2 == lp then continue end
@@ -4450,7 +4916,7 @@ do
         end
     end)
 
-    AddCommand("Void", "v", "Voids given players", true, true, function(plr, ...)
+    AddCommand("Void", "v", "<players | team...>\nVoids given players", true, true, function(plr, ...)
         for i,v in pairs({...}) do
             for i, v2 in pairs(AGetPlayer(v)) do
                 if v2 == lp then continue end
@@ -4461,7 +4927,7 @@ do
         end
     end)
 
-    AddCommand("Crashsa", "csa", "Very fast spam arrest", true, false, function(plr, ...)
+    AddCommand("Crashsa", "csa", "<player>\nVery fast spam arrest", true, false, function(plr, ...)
         local plr, d = ...
         plr = GetPlayer(plr)
         if not plr then return end
@@ -4471,7 +4937,7 @@ do
         end
     end)
 
-    AddCommand("Criminal", "Crim", "Criminals given players", true, true, function(plr, ...)
+    AddCommand("Criminal", "Crim", "<players | team...>\nCriminals given players", true, true, function(plr, ...)
         for i,v in pairs({...}) do
             for i, v2 in pairs(AGetPlayer(v)) do
                 if v2 == lp then continue end
@@ -4482,7 +4948,7 @@ do
         end
     end)
 
-    AddCommand("Spamarrest", "sa", "Spam arrests given players", true, false, function(plr, ...)
+    AddCommand("Spamarrest", "sa", "<player, power, delay>\nSpam arrests given players", true, false, function(plr, ...)
         local plr, power, del = ...
         local aplr = GetPlayer(plr)
 
@@ -4493,7 +4959,7 @@ do
         end
     end)
 
-    AddCommand("Unloopkill", "Unlk", "Unloopkills given players", true, true, function(plr, ...)
+    AddCommand("Unloopkill", "Unlk", "<players | team...>\nUnloopkills given players", true, true, function(plr, ...)
         for i,v in pairs({...}) do
             local t = GetTeam(v) or GetPlayer(v)
             if not t then continue end
@@ -4512,26 +4978,7 @@ do
         end
     end)
 
-    AddCommand("grabswat", "gsw", "Grabs swat items", false, false, function()
-        if not HasM4 then Note("You must have the swat gamepass", true); return end
-
-        local oldteam = lp.TeamColor.Name
-        if lp.Team ~= sv.Teams.Guards then
-            oldteam = lp.TeamColor.Name
-            Team(BrickColor.new("Bright blue"))
-        end
-
-        remotes.Item:InvokeServer(workspace.Prison_ITEMS.clothes:FindFirstChild("Riot Police").ITEMPICKUP)
-        GetGun{"Riot Shield"}
-
-        Note("Given swat items")
-
-        if oldteam then
-            Team(oldteam)
-        end
-    end)
-
-    AddCommand("grabshield", "gs", "Grabs a shield off a random swat user if any", false, false, function()
+    AddCommand("grabshield", "gs", "<>\nGrabs a shield off a random swat user if any", false, false, function()
         local s
 
         for i,v in pairs(sv.Players:GetPlayers()) do
@@ -4545,14 +4992,14 @@ do
         end
     end)
 
-    AddCommand("toggledoors", "td", "Breaks doors", false, true, function()
+    AddCommand("toggledoors", "td", "<>\nBreaks doors", false, true, function()
         for i,v in pairs(workspace.Doors:GetDescendants()) do
             if v.Name ~= "isActive" then continue end
             workspace.Remote.toggleSiren:FireServer({isOn=v})
         end
     end)
 
-    AddCommand("hostile", "hos", "Hostiles player", false, true, function(plr, ...)
+    AddCommand("hostile", "hos", "<players | teams...>\nHostiles player", false, true, function(plr, ...)
         for i,v in pairs({...}) do
             for i, v2 in pairs(AGetPlayer(v)) do
                 if v2 == lp or v2.Name == tostring(plr) or v2.Status.isHostile.Value then continue end
@@ -4562,7 +5009,7 @@ do
         end
     end)
 
-    AddCommand("friendly", "fri", "Make player a friendly little goober", false, true, function(plr, ...)
+    AddCommand("friendly", "fri", "<players | teams...>\nMake player a friendly little goober", false, true, function(plr, ...)
         for i,v in pairs({...}) do
             for i, v2 in pairs(AGetPlayer(v)) do
                 if not v2.Status.isHostile.Value then continue end
@@ -4572,7 +5019,7 @@ do
         end
     end)
 
-    AddCommand("badguard", "bg", "Makes player bad guard", false, true, function(plr, ...)
+    AddCommand("badguard", "bg", "<players | teams...>\nMakes player bad guard", false, true, function(plr, ...)
         for i,v in pairs({...}) do
             for i, v2 in pairs(AGetPlayer(v)) do
                 if v2 == lp or v2.Name == tostring(plr) or v2.Status.isBadGuard.Value then continue end
@@ -4582,7 +5029,7 @@ do
         end
     end)
 
-    AddCommand("resetkills", "rk", "Reset players kills", false, true, function(plr, ...)
+    AddCommand("resetkills", "rk", "<players | teams...>\nReset players kills", false, true, function(plr, ...)
         for i,v in pairs({...}) do
             for i, v2 in pairs(AGetPlayer(v)) do
                 workspace.Remote.toggleSiren:FireServer({isOn=v2.Status.innocentKills})
@@ -4590,7 +5037,7 @@ do
         end
     end)
 
-    AddCommand("goodguard", "gg", "Makes player good guard", false, true, function(plr, ...)
+    AddCommand("goodguard", "gg", "<players | teams...>\nMakes player good guard", false, true, function(plr, ...)
         for i,v in pairs({...}) do
             for i, v2 in pairs(AGetPlayer(v)) do
                 if not v2.Status.isBadGuard.Value then continue end
@@ -4600,7 +5047,7 @@ do
         end
     end)
 
-    AddCommand("infcars", "ic", "Makes anyone able to spam cars", false, true, function()
+    AddCommand("infcars", "ic", "<>\nMakes anyone able to spam cars", false, true, function()
         for i,v in pairs(workspace["Prison_ITEMS"].buttons:GetDescendants()) do
             if v.Name ~= "deb" then continue end
 
@@ -4615,7 +5062,7 @@ do
         end
     end)
 
-    AddCommand("spamresetkills", "srk", "Reset players kills", false, true, function(plr, ...)
+    AddCommand("spamresetkills", "srk", "<players | teams...>\nReset players kills", false, true, function(plr, ...)
         for i,v in pairs({...}) do
             for i, v2 in pairs(AGetPlayer(v)) do
                 task.spawn(function()
@@ -4628,7 +5075,7 @@ do
     end)
 
     for i,v in pairs(positions) do
-        AddCommand(i, i:sub(1, 3), ("Goes to %s"):format(i), false, true, function(plr)
+        AddCommand(i, i:sub(1, 3), ("<>\nGoes to %s"):format(i), false, true, function(plr)
             if plr then
                 GetGun{togs.BringTool}
                 Bring(sv.Players[plr], lp.Backpack:WaitForChild(togs.BringTool), v)
