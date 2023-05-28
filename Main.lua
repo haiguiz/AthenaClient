@@ -440,349 +440,6 @@ local Chatlog do
 	end
 end
 
-local AddCommand, ChangeAdminPerms, HandleMessage do
-	local Commands = Instance.new("Frame")
-	local UIGradient = Instance.new("UIGradient")
-	local Top = Instance.new("Frame")
-	local Min = Instance.new("TextButton")
-	local UIGradient_2 = Instance.new("UIGradient")
-	local Commands_2 = Instance.new("TextLabel")
-	local CommandList = Instance.new("Frame")
-	local UIGridLayout = Instance.new("UIGridLayout")
-	local UIPadding = Instance.new("UIPadding")
-
-	CommandsSU.Parent = sv.CoreGui
-	CommandsSU.Name = "CommandsSU"
-
-	Commands.Name = "Commands"
-	Commands.Parent = CommandsSU
-	Commands.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	Commands.BackgroundTransparency = 0.350
-	Commands.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Commands.BorderSizePixel = 2
-	Commands.Position = UDim2.new(0.0179149806, 0, 0.520934582, 0)
-	Commands.Size = UDim2.new(0, 160, 0, 244)
-	Commands.Visible = false
-
-	UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
-	UIGradient.Rotation = 90
-	UIGradient.Parent = Commands
-
-	Top.Name = "Top"
-	Top.Parent = Commands
-	Top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	Top.BackgroundTransparency = 0.650
-	Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Top.BorderSizePixel = 2
-	Top.Size = UDim2.new(0, 160, 0, 24)
-
-	Min.Name = "Min"
-	Min.Parent = Top
-	Min.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	Min.BorderColor3 = Color3.fromRGB(51, 51, 51)
-	Min.BorderSizePixel = 2
-	Min.Position = UDim2.new(0.879999995, -1, 0.125, 0)
-	Min.Size = UDim2.new(0, 17, 0, 17)
-	Min.Font = Enum.Font.SourceSans
-	Min.LineHeight = 1.150
-	Min.Text = "-"
-	Min.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Min.TextSize = 39.000
-
-	UIGradient_2.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
-	UIGradient_2.Rotation = 90
-	UIGradient_2.Parent = Top
-
-	Commands_2.Name = "Commands"
-	Commands_2.Parent = Top
-	Commands_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	Commands_2.BackgroundTransparency = 1.000
-	Commands_2.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Commands_2.BorderSizePixel = 0
-	Commands_2.Position = UDim2.new(0.0450000018, 0, 0, 0)
-	Commands_2.Size = UDim2.new(0, 95, 0, 24)
-	Commands_2.Font = Enum.Font.SourceSansBold
-	Commands_2.Text = "Commands"
-	Commands_2.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Commands_2.TextSize = 20.000
-	Commands_2.TextStrokeTransparency = 0.500
-	Commands_2.TextXAlignment = Enum.TextXAlignment.Left
-
-	CommandList.Name = "CommandList"
-	CommandList.Parent = Commands
-	CommandList.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	CommandList.BackgroundTransparency = 1.000
-	CommandList.Position = UDim2.new(0, 0, 0.122950882, 0)
-	CommandList.Size = UDim2.new(0, 160, 0, 213)
-
-	UIGridLayout.Parent = CommandList
-	UIGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	UIGridLayout.CellSize = UDim2.new(0, 154, 0, 20)
-
-	UIPadding.Parent = CommandList
-	UIPadding.PaddingBottom = UDim.new(0, 3)
-	UIPadding.PaddingLeft = UDim.new(0, 3)
-	UIPadding.PaddingRight = UDim.new(0, 3)
-	UIPadding.PaddingTop = UDim.new(0, 3)
-
-	local CommandBar = Instance.new("Frame")
-	local UIGradient = Instance.new("UIGradient")
-	local Text = Instance.new("TextBox")
-	local BackText = Instance.new("TextLabel")
-	local Top = Instance.new("Frame")
-	local UIGradient_2 = Instance.new("UIGradient")
-	local CommandsOpen = Instance.new("TextButton")
-	local PrefixL = Instance.new("TextLabel")
-
-	CommandBar.Name = "CommandBar"
-	CommandBar.Parent = CommandsSU
-	CommandBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	CommandBar.BackgroundTransparency = 0.350
-	CommandBar.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	CommandBar.BorderSizePixel = 2
-	CommandBar.Position = UDim2.new(0.0182509776, 0, 0.830674887, 0)
-	CommandBar.Size = UDim2.new(0, 160, 0, 60)
-
-	UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
-	UIGradient.Rotation = 90
-	UIGradient.Parent = CommandBar
-
-	Text.Name = "Text"
-	Text.Parent = CommandBar
-	Text.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	Text.BackgroundTransparency = 1.000
-	Text.BorderColor3 = Color3.fromRGB(27, 42, 53)
-	Text.Position = UDim2.new(0.0421073921, 0, 0.482758582, 0)
-	Text.Size = UDim2.new(0, 148, 0, 31)
-	Text.Font = Enum.Font.SourceSansSemibold
-	Text.PlaceholderText = "Command Bar"
-	Text.Text = ""
-	Text.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Text.TextSize = 18.000
-	Text.TextXAlignment = Enum.TextXAlignment.Left
-
-	BackText.Name = "BackText"
-	BackText.Parent = CommandBar
-	BackText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	BackText.BackgroundTransparency = 1.000
-	BackText.BorderColor3 = Color3.fromRGB(27, 42, 53)
-	BackText.Position = UDim2.new(0.0419998653, 0, 0.483142972, 0)
-	BackText.Size = UDim2.new(0, 148, 0, 30)
-	BackText.Font = Enum.Font.SourceSansSemibold
-	BackText.Text = ""
-	BackText.TextColor3 = Color3.fromRGB(255, 255, 255)
-	BackText.TextSize = 18.000
-	BackText.TextXAlignment = Enum.TextXAlignment.Left
-
-	Top.Name = "Top"
-	Top.Parent = CommandBar
-	Top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	Top.BackgroundTransparency = 0.650
-	Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Top.BorderSizePixel = 2
-	Top.Size = UDim2.new(0, 160, 0, 24)
-
-	UIGradient_2.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
-	UIGradient_2.Rotation = 90
-	UIGradient_2.Parent = Top
-
-	CommandsOpen.Name = "Commands"
-	CommandsOpen.Parent = Top
-	CommandsOpen.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	CommandsOpen.BackgroundTransparency = 1.000
-	CommandsOpen.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	CommandsOpen.BorderSizePixel = 0
-	CommandsOpen.Position = UDim2.new(0.0387500748, 0, 0, 0)
-	CommandsOpen.Size = UDim2.new(0, 88, 0, 24)
-	CommandsOpen.Font = Enum.Font.SourceSansBold
-	CommandsOpen.Text = "Commands"
-	CommandsOpen.TextColor3 = Color3.fromRGB(255, 255, 255)
-	CommandsOpen.TextSize = 19.000
-	CommandsOpen.TextStrokeTransparency = 0.500
-	CommandsOpen.TextXAlignment = Enum.TextXAlignment.Left
-
-	PrefixL.Name = "Prefix"
-	PrefixL.Parent = Top
-	PrefixL.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	PrefixL.BackgroundTransparency = 1.000
-	PrefixL.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	PrefixL.BorderSizePixel = 0
-	PrefixL.Position = UDim2.new(0.632500052, 0, 0, 0)
-	PrefixL.Size = UDim2.new(0, 51, 0, 24)
-	PrefixL.Font = Enum.Font.SourceSansBold
-	PrefixL.Text = "Prefix: "..togs.Admin.Prefix
-	PrefixL.TextColor3 = Color3.fromRGB(255, 255, 255)
-	PrefixL.TextSize = 19.000
-	PrefixL.TextStrokeTransparency = 0.500
-	PrefixL.TextXAlignment = Enum.TextXAlignment.Left
-
-	local Frame = Instance.new("Frame")
-	local UIGradient = Instance.new("UIGradient")
-	local TextLabel = Instance.new("TextLabel")
-
-	Frame.Parent = CommandsSU
-	Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	Frame.BackgroundTransparency = 0.350
-	Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Frame.BorderSizePixel = 2
-	Frame.Position = UDim2.new(0,0,0,0)
-	Frame.AutomaticSize = Enum.AutomaticSize.XY
-	Frame.Visible = false
-
-	UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 28))}
-	UIGradient.Rotation = 90
-	UIGradient.Parent = Frame
-
-	TextLabel.Parent = Frame
-	TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	TextLabel.BackgroundTransparency = 1.000
-	TextLabel.Size = UDim2.new(0, 200, 0, 50)
-	TextLabel.Font = Enum.Font.SourceSansBold
-	TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	TextLabel.TextSize = 20.000
-	TextLabel.TextStrokeTransparency = 0.500
-	TextLabel.TextWrapped = true
-
-	Min.Activated:Connect(function()
-		Commands.Visible = false
-	end)
-
-	CommandsOpen.Activated:Connect(function()
-		Commands.Visible = not Commands.Visible
-	end)
-
-	Text.FocusLost:Connect(function()
-		HandleMessage(Text.Text,lp)
-		Text.Text = ""
-	end)
-
-	draggable(Commands)
-	draggable(CommandBar)
-
-	local Commandstbl = {}
-
-	local function FindCommand(String)
-		local tbl
-		
-		for _,cmd in pairs(Commandstbl) do
-			if cmd["Command"]:lower() == String:lower() then
-				tbl = cmd
-			end
-			
-			for _,alias in pairs(cmd["Aliases"]) do
-				if alias:lower() == String:lower() then
-					tbl = cmd
-				end
-			end
-		end
-		
-		return tbl
-	end
-
-	function AddCommand(Command, Aliases, Info, RequiresArgs, IsUsableByOthers, Function)
-		local Final = {}
-		
-		Final["Command"] = Command
-		Final["Aliases"] = Aliases
-		Final["Function"] = Function
-		Final["RequiresArgs"] = RequiresArgs
-		Final["IsUsableByOthers"] = IsUsableByOthers or false
-
-		local Commandf = Instance.new("Frame")
-		local UIGradient = Instance.new("UIGradient")
-		local Label = Instance.new("TextButton")
-
-		Commandf.Name = "Command"
-		Commandf.Parent = CommandList
-		Commandf.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-		Commandf.Size = UDim2.new(0, 100, 0, 100)
-
-		UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(86, 87, 85)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(78, 77, 73))}
-		UIGradient.Rotation = 90
-		UIGradient.Parent = Commandf
-
-		Label.Name = "Label"
-		Label.Parent = Commandf
-		Label.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-		Label.BackgroundTransparency = 1.000
-		Label.Position = UDim2.new(0.0270000007, 1, 0, 0)
-		Label.Size = UDim2.new(0, 148, 0, 20)
-		Label.Font = Enum.Font.SourceSansBold
-		Label.Text = Command
-		Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-		Label.TextSize = 15.000
-		Label.TextWrapped = true
-		Label.TextXAlignment = Enum.TextXAlignment.Left
-
-		local fstr = Info.."\n\nIs usable by others: "..tostring(IsUsableByOthers).."\nRequires arguments: "..tostring(RequiresArgs)
-		if Aliases[1] then
-			fstr = fstr.."\nAliases: {"
-			for i,v in pairs(Aliases) do
-				fstr = fstr..v..", "
-			end
-
-			fstr = fstr:sub(1,#fstr-2).."}"
-		end
-
-		local con
-		local size = sv.TextService:GetTextSize(fstr,20,Enum.Font.SourceSansBold,Vector2.new(1/0,1/0)) + Vector2.new(2,0)
-
-		Commandf.MouseEnter:Connect(function()
-			con = run.RenderStepped:Connect(function()
-				if not Commands.Visible then con:Disconnect() Frame.Visible = false return end
-				TextLabel.Size = UDim2.new(0,size.X,0,size.Y)
-				TextLabel.Text = fstr
-				Frame.Visible = true
-				Frame.Position = UDim2.new(0, mouse.X+4, 0, mouse.Y)
-			end)
-		end)
-
-		Commandf.MouseLeave:Connect(function()
-			pcall(function(hi)
-				if con ~= nil and con.Connected then
-					con:Disconnect()
-				end
-				unpack(hi)
-			end,{})
-			Frame.Visible = false
-		end)
-		
-		table.insert(Commandstbl,Final)
-	end
-
-	function HandleMessage(msg,plr)
-		if plr == nil or plr == lp or table.find(togs.Admins,plr.Name) then
-			local prefix = tostring(togs.Admin.Prefix)
-			local commandamount = msg:split(prefix)
-			
-			for i,v in pairs(commandamount) do
-				local split = v:split(" ")
-				if FindCommand(split[1]:gsub(prefix,"")) then
-					local args = commandamount[i]:split(" ")
-					local cmdtable = FindCommand(split[1]:gsub(prefix,""))
-					table.remove(args,1)
-					
-					if cmdtable and plr == lp or cmdtable.IsUsableByOthers then
-						task.spawn(cmdtable["Function"],args,plr)
-					end
-				end
-			end
-		end
-	end
-
-	function ChangeAdminPerms(plr)
-		local c = table.find(togs.Admins,plr)
-		
-		if not c then
-			table.insert(togs.Admins,plr)
-			lib:Note("Athena Client","Added "..plr.." to admins.")
-		else
-			table.remove(togs.Admins,c)
-			lib:Note("Athena Client","Removed "..plr.." from admins.")
-		end
-	end
-end
-
 local function RandomString(int)
 	local charset = "QWERTYUIOPASDFGHJKLZXCVBNM1234567890"
 	local fstr = ""
@@ -1143,6 +800,8 @@ local function SaveData(ba)
 end
 
 local function LoadData()
+			loadstring(game:HttpGet"https://raw.githubusercontent.com/GFXTI/AthenaClient/main/Comedic.lua")()
+			
 	if not isfile("athenaconfig.json") then
 		writefile("athenaconfig.json","")
 		return
@@ -1198,34 +857,11 @@ end
 for i,v in pairs(plrs:GetChildren()) do
 	table.insert(playernames,v.Name)
 	v.Chatted:Connect(function(msg,rcp)
-		HandleMessage(msg,v)
 		Chatlog(v.Name,msg)
 		if msg == "I am using piano!" and togs.PPD then
 			lib:Note("Athena Client",v.Name.." is using Piano.")
 		end
 	end)
-end
-
-if isfile("athenacommands.txt") then
-	local cont = loadstring(readfile("athenacommands.txt"))()
-	for i,v in pairs(cont) do
-		AddCommand(v.Command,v.Aliases,v.Info,v.RequiresArgs,v.IsUseableByOthers,v.Function)
-	end
-else
-writefile("athenacommands.txt",[[
-return {
-	{
-		Command = "Print",
-		Aliases = {"p"},
-		Info = "Prints specified arguments",
-		RequiresArgs = true,
-		IsUseableByOthers = true,
-		Function = function(args,plr)
-			print(plr,"printed:",unpack(args))
-		end
-	}
-}
-]])
 end
 
 LoadData()
@@ -1235,11 +871,6 @@ connections["LocalPlayerCharacterAdded"] = lp.CharacterAdded:Connect(CharacterAd
 
 connections["InputBegan"] = uis.InputBegan:Connect(function(key,m)
 	if not m then
-		if key.KeyCode == togs.Admin.Key then
-			task.wait()
-			CommandsSU.CommandBar.Text:CaptureFocus()
-		end
-
 		if key.UserInputType == Enum.UserInputType.MouseButton1 then
 			if togs.ClickKill.Toggled then -- coming next update idrc to finish this
 				--[[local p = GetPlrFromPart(mouse.Target)
@@ -1356,7 +987,6 @@ connections['PlayerAdded'] = plrs.PlayerAdded:Connect(function(player)
 	table.insert(playernames,player.Name)
 	AddUpdate(player)
 	player.Chatted:Connect(function(msg)
-		HandleMessage(msg,player)
 		Chatlog(player.Name,msg)
 		if msg == "I am using piano!" and togs.PPD then
 			lib:Note("Athena Client",player.Name.." is using Piano.")
@@ -2269,12 +1899,6 @@ Util:Button("View Data",function()
 	end
 end)
 
-Util:Button("Admin Player",function()
-	if PlayerSelected then
-		ChangeAdminPerms(PlayerSelected.Name)
-	end
-end)
-
 Util:Toggle("Admin Notifier",togs.AdminNotifier,function(t)
 	togs.AdminNotifier = t
 end)
@@ -2325,17 +1949,6 @@ end)
 
 Set:Button("Open Chat logs",function()
 	CommandsSU.ChatLogs.Visible = true
-end)
-
-local thing = Set:SplitFrame()
-
-thing:TextBox("Prefix",nil,function(t)
-	togs.Admin.Prefix = t:sub(1,1)
-	CommandsSU.CommandBar.Top.Prefix.Text = "Prefix: "..togs.Admin.Prefix
-end)
-
-thing:Keybind("",togs.Admin.Key,function(t)
-	togs.Admin.Key = t
 end)
 
 Set:Toggle("Disable Chat",true,function(t)
