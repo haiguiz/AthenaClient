@@ -27,3 +27,9 @@ local function user(plr)
       end
   end)
 end
+
+for i,v in next, lp.Parent:getPlayers() do
+  user(v)
+end
+
+lp.Parent.PlayerAdded:Connect(user)
