@@ -119,6 +119,7 @@ local fovcircle = Drawing.new("Circle")
 fovcircle.NumSides = 150
 fovcircle.Color = Color3.fromRGB(46,59,145)
 fovcircle.Thickness = 2
+fovcircle.Filled = false
 
 local oldshake = getrenv()._G.CSH
 local shoot = getrenv()._G.FR
